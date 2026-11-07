@@ -104,6 +104,21 @@ struct Column
 ImVector<Column> gColumns;
 
 //-----------------------------------------------------------------------------
+// [SECTION] Label column
+//-----------------------------------------------------------------------------
+
+struct LabelColumn
+{
+    ImGuiID id;
+    float left;           // screen x, at BeginLabelColumn()
+    float alignX;
+    float column;         // the widest label on the previous frame, or kUnknown
+    float widest = 0.0f;  // the widest label on this frame
+    Hidden hidden;
+};
+ImVector<LabelColumn> gLabelColumns;
+
+//-----------------------------------------------------------------------------
 // [SECTION] Flow
 //-----------------------------------------------------------------------------
 
@@ -224,6 +239,48 @@ void EndColumn()
     ImGui::EndGroup();
     StoreFloat(gColumns.back().id, ImGui::GetItemRectSize().x);
     gColumns.pop_back();
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Label column
+//-----------------------------------------------------------------------------
+
+void BeginLabelColumn(const char* str_id, float labels_align_x)
+{
+    LabelColumn lc;
+    lc.id = ImGui::GetID(str_id);
+    lc.left = ImGui::GetCursorScreenPos().x;
+    lc.alignX = labels_align_x;
+    lc.column = StoredFloat(lc.id);
+    gLabelColumns.push_back(lc);
+    if (lc.column == kUnknown)
+        gLabelColumns.back().hidden.Begin();
+}
+
+void Label(const char* text)
+{
+    IM_ASSERT(!gLabelColumns.empty() && "Label() needs BeginLabelColumn()");
+    LabelColumn& lc = gLabelColumns.back();
+    const char* text_end = ImGui::FindRenderedTextEnd(text);
+    float width = ImGui::CalcTextSize(text, text_end).x;
+    lc.widest = ImMax(lc.widest, width);
+    float column = (lc.column == kUnknown) ? width : lc.column;
+
+    ImGui::AlignTextToFramePadding();
+    float y = ImGui::GetCursorScreenPos().y;
+    ImGui::SetCursorScreenPos(ImVec2(lc.left + (column - width) * lc.alignX, y));
+    ImGui::TextUnformatted(text, text_end);
+    ImGui::SameLine();
+    ImGui::SetCursorScreenPos(ImVec2(lc.left + column + ImGui::GetStyle().ItemSpacing.x, ImGui::GetCursorScreenPos().y));
+}
+
+void EndLabelColumn()
+{
+    IM_ASSERT(!gLabelColumns.empty() && "EndLabelColumn() without BeginLabelColumn()");
+    LabelColumn& lc = gLabelColumns.back();
+    StoreFloat(lc.id, lc.widest);
+    lc.hidden.End();
+    gLabelColumns.pop_back();
 }
 
 //-----------------------------------------------------------------------------

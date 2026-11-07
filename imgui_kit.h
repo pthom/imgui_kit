@@ -106,6 +106,25 @@ IMGUI_API void   EndAlignedGroup();
 IMGUI_API void   BeginColumn(const char* str_id);
 IMGUI_API void   EndColumn();
 
+// Label column: labels on the left, and the widgets after them aligned, at the widest label (of the previous frame).
+// Label() starts a row; the rest of the row is a normal line.
+// labels_align_x: 0.0 = left-aligned labels, 1.0 = right-aligned (as the x of the style's ButtonTextAlign).
+//
+//     Volume   [=======o========]
+//     Output   [x] Muted  [Test sound]
+//
+//     ImGuiKit::BeginLabelColumn("audio");
+//     ImGuiKit::Label("Volume");
+//     ImGui::SliderFloat("##volume", &volume, 0.0f, 1.0f);
+//     ImGuiKit::Label("Output");
+//     ImGui::Checkbox("Muted", &muted);
+//     ImGui::SameLine();
+//     ImGui::Button("Test sound");
+//     ImGuiKit::EndLabelColumn();
+IMGUI_API void   BeginLabelColumn(const char* str_id, float labels_align_x = 0.0f);
+IMGUI_API void   Label(const char* text);
+IMGUI_API void   EndLabelColumn();
+
 // Flow: items on the same line while they fit, then on the next one, as words in a paragraph.
 // Call FlowNext() before each item (the first one too). An item wider than the line takes a line of its own.
 //

@@ -46,10 +46,9 @@ void DemoToolbar(float* font_size)
         app_rounding = style.FrameRounding;
     }
 
-    // First line: the theme
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Theme");
-    ImGui::SameLine();
+    // Each row: a label, then its widgets, aligned at the widest label
+    BeginLabelColumn("toolbar");
+    Label("Theme");
     static int theme = 0;
     const char* themes[] = { "App", "Dark", "Light", "Classic" };
     if (SegmentedSwitch("##theme", &theme, themes, IM_ARRAYSIZE(themes)))
@@ -65,37 +64,24 @@ void DemoToolbar(float* font_size)
             ImGui::StyleColorsClassic();
     }
 
-    // Second line: the sizes (its parts flow to a new line on a narrow screen)
-    BeginFlow("sizes");
-    FlowNext();
-    ImGui::BeginGroup();
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Font size");
-    ImGui::SameLine();
+    Label("Font size");
     ImGui::SetNextItemWidth(EmSize(8.f));
     ImGui::SliderFloat("##font_size", font_size, 8.0f, 40.0f, "%.0f px");
-    ImGui::EndGroup();
 
-    FlowNext();
-    ImGui::BeginGroup();
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Frame rounding");
-    ImGui::SameLine();
+    Label("Frame rounding");
     ImGui::SetNextItemWidth(EmSize(8.f));
     ImGui::SliderFloat("##rounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f px");
     ImGui::SameLine();
     HelpMarker("The style's FrameRounding: ImGui::GetStyle().FrameRounding. Buttons, sliders, input fields and "
                "the segmented switch round their corners with it. 0 gives square frames; half the frame's height "
                "gives a pill.");
-    ImGui::EndGroup();
-
-    FlowNext();
+    ImGui::SameLine();
     if (ImGui::Button("Reset"))  // the application's font size and frame rounding
     {
         *font_size = style.FontSizeBase;
         style.FrameRounding = app_rounding;
     }
-    EndFlow();
+    EndLabelColumn();
 }
 
 //-----------------------------------------------------------------------------
@@ -205,6 +191,30 @@ void DemoColumn()
     ImGui::TreePop();
 }
 
+void DemoLabelColumn()
+{
+    IMGUI_DEMO_MARKER("Layout/Label column");
+    if (!ImGui::TreeNode("Label column"))
+        return;
+    ImGui::TextWrapped("Labels on the left, and the widgets after them aligned at the widest label. "
+                       "After its label, a row is a normal line: SameLine() adds widgets to it.");
+    static int labels_align = 0;
+    static float volume = 0.5f;
+    static bool muted = false;
+    BeginLabelColumn("audio", labels_align == 0 ? 0.0f : 1.0f);
+    Label("Labels");
+    const char* aligns[] = { "Left", "Right" };
+    SegmentedSwitch("##labels_align", &labels_align, aligns, IM_ARRAYSIZE(aligns));
+    Label("Volume");
+    ImGui::SliderFloat("##volume", &volume, 0.0f, 1.0f);
+    Label("Output");
+    ImGui::Checkbox("Muted", &muted);
+    ImGui::SameLine();
+    ImGui::Button("Test sound");
+    EndLabelColumn();
+    ImGui::TreePop();
+}
+
 void DemoFlow()
 {
     IMGUI_DEMO_MARKER("Layout/Flow");
@@ -239,6 +249,7 @@ void DemoLayout()
     DemoFillRow();
     DemoAlignedGroup();
     DemoColumn();
+    DemoLabelColumn();
     DemoFlow();
 }
 

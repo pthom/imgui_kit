@@ -103,6 +103,34 @@ TEST_CASE("Column: an aligned group inside it is centered in the column, not on 
     CHECK(small_left - column_left == doctest::Approx(column_right - small_right));
 }
 
+TEST_CASE("Label column: the widgets after labels of different widths start at the same x")
+{
+    Bench bench;
+    float x_short = 0, x_long = 0, label_right_short = 0, label_right_long = 0;
+    for (float align : {0.0f, 1.0f})
+    {
+        auto gui = [&] {
+            ImGui::PushID(align == 0.0f ? "left" : "right");
+            ImGuiKit::BeginLabelColumn("lc", align);
+            ImGuiKit::Label("A");
+            label_right_short = ImGui::GetItemRectMax().x;
+            ImGui::Button("short widget");
+            x_short = ImGui::GetItemRectMin().x;
+            ImGuiKit::Label("A much longer label");
+            label_right_long = ImGui::GetItemRectMax().x;
+            ImGui::Button("long widget");
+            x_long = ImGui::GetItemRectMin().x;
+            ImGuiKit::EndLabelColumn();
+            ImGui::PopID();
+        };
+        for (int i = 0; i < 3; i++)
+            bench.Frame(600, gui);
+        CHECK(x_short == doctest::Approx(x_long));
+        if (align == 1.0f)
+            CHECK(label_right_short == doctest::Approx(label_right_long));
+    }
+}
+
 TEST_CASE("Flow: items stay on a line while they fit, then wrap")
 {
     Bench bench;
