@@ -23,6 +23,8 @@ if (NOT TARGET imgui)
         ${IMGUI_KIT_IMGUI_DIR}/imgui.cpp ${IMGUI_KIT_IMGUI_DIR}/imgui_demo.cpp ${IMGUI_KIT_IMGUI_DIR}/imgui_draw.cpp
         ${IMGUI_KIT_IMGUI_DIR}/imgui_tables.cpp ${IMGUI_KIT_IMGUI_DIR}/imgui_widgets.cpp)
     target_include_directories(imgui PUBLIC ${IMGUI_KIT_IMGUI_DIR})
+    # The kit uses no obsolete name of Dear ImGui: apps that disable them (as Dear ImGui Bundle does) can build it
+    target_compile_definitions(imgui PUBLIC IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
     set(IMGUI_KIT_BUILT_IMGUI ON)
 endif()
 

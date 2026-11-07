@@ -262,11 +262,11 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     float rounding = size.y * 0.5f;
     auto fill_segment = [&](int i, ImGuiCol col)
     {
-        ImDrawFlags flags = ImDrawFlags_RoundCornersNone;
+        ImDrawFlags flags = ImDrawFlags_RoundNone;
         if (i == 0)
-            flags = ImDrawFlags_RoundCornersLeft;
+            flags = ImDrawFlags_RoundLeft;
         if (i == labels_count - 1)
-            flags = (labels_count == 1) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersRight;
+            flags = (labels_count == 1) ? ImDrawFlags_RoundAll : ImDrawFlags_RoundRight;
         float x0 = p0.x + segment_width * (float)i;
         draw_list->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x0 + segment_width, p1.y), ImGui::GetColorU32(col), rounding, flags);
     };
