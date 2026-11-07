@@ -1,0 +1,7 @@
+build*/
+cmake-build-*/
+.idea/
+.vscode/
+dist/
+__pycache__/
+imgui.ini
