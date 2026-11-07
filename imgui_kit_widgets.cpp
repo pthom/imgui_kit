@@ -344,6 +344,11 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     }
     if (*current >= 0 && *current < labels_count)
         fill_pill(*current, 0.22f);
+    for (int i = 1; i < labels_count; i++)
+    {
+        float x = p0.x + segment_width * (float)i;
+        draw_list->AddLine(ImVec2(x, p0.y + pad), ImVec2(x, p1.y - pad), ImGui::GetColorU32(ImGuiCol_Border));
+    }
     for (int i = 0; i < labels_count; i++)
     {
         ImVec2 text_size = ImGui::CalcTextSize(labels[i], nullptr, true);
