@@ -4,6 +4,7 @@
 #include "imgui_impl_null.h"
 #include "imgui_kit.h"
 #include "imgui_internal.h"
+#include <initializer_list>
 
 namespace
 {
