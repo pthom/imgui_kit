@@ -22,8 +22,6 @@ Index of this file:
 
 #define IMGUI_DEMO_MARKER(section)  do { ImGui::DemoMarker("imgui_kit_demo.cpp", __LINE__, section); } while (0)
 
-namespace ImGuiKit
-{
 namespace
 {
 
@@ -47,11 +45,11 @@ void DemoToolbar(float* font_size)
     }
 
     // Each row: a label, then its widgets, aligned at the widest label
-    BeginLabelColumn("toolbar");
-    Label("Theme");
+    ImGuiKit::BeginLabelColumn("toolbar");
+    ImGuiKit::Label("Theme");
     static int theme = 0;
     const char* themes[] = { "App", "Dark", "Light", "Classic" };
-    if (SegmentedSwitch("##theme", &theme, themes, IM_ARRAYSIZE(themes)))
+    if (ImGuiKit::SegmentedSwitch("##theme", &theme, themes, IM_ARRAYSIZE(themes)))
     {
         if (theme == 0)
             for (int i = 0; i < ImGuiCol_COUNT; i++)
@@ -64,24 +62,24 @@ void DemoToolbar(float* font_size)
             ImGui::StyleColorsClassic();
     }
 
-    Label("Font size");
-    ImGui::SetNextItemWidth(EmSize(8.f));
+    ImGuiKit::Label("Font size");
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
     ImGui::SliderFloat("##font_size", font_size, 8.0f, 40.0f, "%.0f px");
 
-    Label("Frame rounding");
-    ImGui::SetNextItemWidth(EmSize(8.f));
+    ImGuiKit::Label("Frame rounding");
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
     ImGui::SliderFloat("##rounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f px");
     ImGui::SameLine();
-    HelpMarker("The style's FrameRounding: ImGui::GetStyle().FrameRounding. Buttons, sliders, input fields and "
-               "the segmented switch round their corners with it. 0 gives square frames; half the frame's height "
-               "gives a pill.");
+    ImGuiKit::HelpMarker("The style's FrameRounding: ImGui::GetStyle().FrameRounding. Buttons, sliders, input "
+                         "fields and the segmented switch round their corners with it. 0 gives square frames; half "
+                         "the frame's height gives a pill.");
     ImGui::SameLine();
     if (ImGui::Button("Reset"))  // the application's font size and frame rounding
     {
         *font_size = style.FontSizeBase;
         style.FrameRounding = app_rounding;
     }
-    EndLabelColumn();
+    ImGuiKit::EndLabelColumn();
 }
 
 //-----------------------------------------------------------------------------
@@ -96,14 +94,14 @@ void DemoEmUnits()
     ImGui::TextWrapped("Sizes in em follow the font: the first button is 8 em wide and 2 em high, on any screen. "
                        "Change the font size at the top: it grows with the text, as a standard button does. "
                        "The last button keeps its size in pixels: at a large font, its label gets cut.");
-    ImGui::Button("8 x 2 em", EmToVec2(8.f, 2.f));
+    ImGui::Button("8 x 2 em", ImGuiKit::EmToVec2(8.f, 2.f));
     ImGui::SameLine();
     ImGui::Button("A standard button");
     ImGui::SameLine();
     ImGui::Button("100 x 30 px", ImVec2(100.f, 30.f));
     ImGui::SameLine();
-    HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
-    ImGui::Text("1 em = %.1f px", EmSize());
+    ImGuiKit::HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
+    ImGui::Text("1 em = %.1f px", ImGuiKit::EmSize());
 }
 
 //-----------------------------------------------------------------------------
@@ -117,24 +115,24 @@ void DemoFillRow()
         return;
     ImGui::TextWrapped("The slider fills the line; the arrows and the (i) stay on the right. Resize the window.");
     static int slice = 37;
-    BeginFillRow("slice");
+    ImGuiKit::BeginFillRow("slice");
     ImGui::SliderInt("##slice", &slice, 0, 59, "Slice %d of 59");
-    FillRowTail();
+    ImGuiKit::FillRowTail();
     if (ImGui::ArrowButton("##prev", ImGuiDir_Left) && slice > 0)
         slice--;
     ImGui::SameLine();
     if (ImGui::ArrowButton("##next", ImGuiDir_Right) && slice < 59)
         slice++;
     ImGui::SameLine();
-    HelpMarker("BeginFillRow(), the slider, FillRowTail(), the arrows and this marker, EndFillRow().");
-    EndFillRow();
+    ImGuiKit::HelpMarker("BeginFillRow(), the slider, FillRowTail(), the arrows and this marker, EndFillRow().");
+    ImGuiKit::EndFillRow();
 
     static char text[64] = "An InputText fills the line too";
-    BeginFillRow("input");
+    ImGuiKit::BeginFillRow("input");
     ImGui::InputText("##input", text, IM_ARRAYSIZE(text));
-    FillRowTail();
+    ImGuiKit::FillRowTail();
     ImGui::Button("Send");
-    EndFillRow();
+    ImGuiKit::EndFillRow();
     ImGui::TreePop();
 }
 
@@ -143,22 +141,22 @@ void DemoAlignedGroup()
     IMGUI_DEMO_MARKER("Layout/Aligned group");
     if (!ImGui::TreeNode("Aligned group"))
         return;
-    BeginAlignedGroup("right", 1.0f);
+    ImGuiKit::BeginAlignedGroup("right", 1.0f);
     ImGui::Button("Cancel");
     ImGui::SameLine();
     ImGui::Button("Apply");
-    EndAlignedGroup();
+    ImGuiKit::EndAlignedGroup();
 
-    BeginAlignedGroup("center", 0.5f);
+    ImGuiKit::BeginAlignedGroup("center", 0.5f);
     ImGui::Text("A centered group");
-    EndAlignedGroup();
+    ImGuiKit::EndAlignedGroup();
 
-    BeginAlignedGroup("center_two_lines", 0.5f);
+    ImGuiKit::BeginAlignedGroup("center_two_lines", 0.5f);
     ImGui::Text("Two lines, centered as one box:");
     ImGui::Button("OK");
-    EndAlignedGroup();
+    ImGuiKit::EndAlignedGroup();
     ImGui::SameLine();
-    HelpMarker("The group's box is centered, not each line: the button stays at the box's left.");
+    ImGuiKit::HelpMarker("The group's box is centered, not each line: the button stays at the box's left.");
     ImGui::TreePop();
 }
 
@@ -175,17 +173,17 @@ void DemoColumn()
     for (int i = 0; i < 3; i++)
     {
         ImGui::PushID(i);
-        BeginColumn("column");
+        ImGuiKit::BeginColumn("column");
         ImGui::Text("%s", labels[i]);
-        BeginAlignedGroup("slider", 0.5f);
-        ImGui::VSliderFloat("##v", EmToVec2(1.6f, 6.f), &values[i], 0.0f, 1.0f, "");
-        EndAlignedGroup();
-        BeginAlignedGroup("help", 0.5f);
-        HelpMarker(helps[i]);
-        EndAlignedGroup();
-        EndColumn();
+        ImGuiKit::BeginAlignedGroup("slider", 0.5f);
+        ImGui::VSliderFloat("##v", ImGuiKit::EmToVec2(1.6f, 6.f), &values[i], 0.0f, 1.0f, "");
+        ImGuiKit::EndAlignedGroup();
+        ImGuiKit::BeginAlignedGroup("help", 0.5f);
+        ImGuiKit::HelpMarker(helps[i]);
+        ImGuiKit::EndAlignedGroup();
+        ImGuiKit::EndColumn();
         ImGui::PopID();
-        ImGui::SameLine(0.0f, EmSize(1.5f));
+        ImGui::SameLine(0.0f, ImGuiKit::EmSize(1.5f));
     }
     ImGui::NewLine();
     ImGui::TreePop();
@@ -201,17 +199,17 @@ void DemoLabelColumn()
     static int labels_align = 0;
     static float volume = 0.5f;
     static bool muted = false;
-    BeginLabelColumn("audio", labels_align == 0 ? 0.0f : 1.0f);
-    Label("Labels");
+    ImGuiKit::BeginLabelColumn("audio", labels_align == 0 ? 0.0f : 1.0f);
+    ImGuiKit::Label("Labels");
     const char* aligns[] = { "Left", "Right" };
-    SegmentedSwitch("##labels_align", &labels_align, aligns, IM_ARRAYSIZE(aligns));
-    Label("Volume");
+    ImGuiKit::SegmentedSwitch("##labels_align", &labels_align, aligns, IM_ARRAYSIZE(aligns));
+    ImGuiKit::Label("Volume");
     ImGui::SliderFloat("##volume", &volume, 0.0f, 1.0f);
-    Label("Output");
+    ImGuiKit::Label("Output");
     ImGui::Checkbox("Muted", &muted);
     ImGui::SameLine();
     ImGui::Button("Test sound");
-    EndLabelColumn();
+    ImGuiKit::EndLabelColumn();
     ImGui::TreePop();
 }
 
@@ -224,10 +222,10 @@ void DemoFlow()
     static int selected = 0;
     const char* presets[] = { "Coral", "Lavender", "Mint", "Sunflower yellow", "Sky", "Peach", "Forest green",
                               "Sand", "Honey", "Midnight blue", "Rose", "Turquoise", "Custom" };
-    BeginFlow("presets");
+    ImGuiKit::BeginFlow("presets");
     for (int i = 0; i < IM_ARRAYSIZE(presets); i++)
     {
-        FlowNext();
+        ImGuiKit::FlowNext();
         bool is_selected = (i == selected);
         if (is_selected)
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -236,7 +234,7 @@ void DemoFlow()
         if (is_selected)
             ImGui::PopStyleColor();
     }
-    EndFlow();
+    ImGuiKit::EndFlow();
     ImGui::TreePop();
 }
 
@@ -268,16 +266,16 @@ void DemoHelpMarker()
     ImGui::BulletText("On a touch screen: tap to open, tap elsewhere to close.");
     ImGui::Text("Try it:");
     ImGui::SameLine();
-    HelpMarker("With a mouse, hovering shows this text, and a click pins it until a click elsewhere. "
-               "On a touch screen, a tap opens it.");
+    ImGuiKit::HelpMarker("With a mouse, hovering shows this text, and a click pins it until a click elsewhere. "
+                         "On a touch screen, a tap opens it.");
     ImGui::Text("Any content, with Begin/End:");
     ImGui::SameLine();
-    if (BeginHelpMarker("##custom"))
+    if (ImGuiKit::BeginHelpMarker("##custom"))
     {
         ImGui::Text("A help with widgets:");
         ImGui::BulletText("a list");
         ImGui::Button("and a button");
-        EndHelpMarker();
+        ImGuiKit::EndHelpMarker();
     }
     ImGui::TreePop();
 }
@@ -290,17 +288,17 @@ void DemoIconButton()
     ImGui::TextWrapped("The icons are drawn with the window's draw list (lines, rectangles, circles): "
                        "no icon font to load, and they follow the font size.");
     static float zoom = 1.0f;
-    if (IconButton("##minus", ImGuiKitIcon_Minus)) zoom /= 1.25f;
+    if (ImGuiKit::IconButton("##minus", ImGuiKitIcon_Minus)) zoom /= 1.25f;
     ImGui::SameLine();
-    if (IconButton("##plus", ImGuiKitIcon_Plus)) zoom *= 1.25f;
+    if (ImGuiKit::IconButton("##plus", ImGuiKitIcon_Plus)) zoom *= 1.25f;
     ImGui::SameLine();
-    if (IconButton("##zoom_in", ImGuiKitIcon_ZoomIn)) zoom *= 1.25f;
+    if (ImGuiKit::IconButton("##zoom_in", ImGuiKitIcon_ZoomIn)) zoom *= 1.25f;
     ImGui::SameLine();
-    if (IconButton("##zoom_out", ImGuiKitIcon_ZoomOut)) zoom /= 1.25f;
+    if (ImGuiKit::IconButton("##zoom_out", ImGuiKitIcon_ZoomOut)) zoom /= 1.25f;
     ImGui::SameLine();
-    if (IconButton("##zoom_1", ImGuiKitIcon_ZoomOneToOne)) zoom = 1.0f;
+    if (ImGuiKit::IconButton("##zoom_1", ImGuiKitIcon_ZoomOneToOne)) zoom = 1.0f;
     ImGui::SameLine();
-    if (IconButton("##zoom_fit", ImGuiKitIcon_ZoomFit)) zoom = 0.5f;
+    if (ImGuiKit::IconButton("##zoom_fit", ImGuiKitIcon_ZoomFit)) zoom = 0.5f;
     ImGui::SameLine();
     ImGui::Text("zoom: %.2f", zoom);
     ImGui::TreePop();
@@ -314,18 +312,18 @@ void DemoSegmentedSwitch()
     ImGui::TextWrapped("Its corners follow the style's FrameRounding, as a button's do: change it at the top.");
     static int view = 0;
     const char* views[] = { "Demo", "Code" };
-    SegmentedSwitch("##view", &view, views, IM_ARRAYSIZE(views));
+    ImGuiKit::SegmentedSwitch("##view", &view, views, IM_ARRAYSIZE(views));
     ImGui::SameLine();
     ImGui::Text("showing: %s", views[view]);
     static int unit = 1;
     const char* units[] = { "mm", "cm", "inch" };
-    SegmentedSwitch("##unit", &unit, units, IM_ARRAYSIZE(units));
+    ImGuiKit::SegmentedSwitch("##unit", &unit, units, IM_ARRAYSIZE(units));
 
     ImGui::TextWrapped("One switch as a pill: push a FrameRounding of half the frame's height around it.");
     static int period = 1;
     const char* periods[] = { "Day", "Week", "Month" };
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, ImGui::GetFrameHeight() * 0.5f);
-    SegmentedSwitch("##period", &period, periods, IM_ARRAYSIZE(periods));
+    ImGuiKit::SegmentedSwitch("##period", &period, periods, IM_ARRAYSIZE(periods));
     ImGui::PopStyleVar();
     ImGui::TreePop();
 }
@@ -346,19 +344,19 @@ void DemoWidgets()
 // [SECTION] Demo window
 //-----------------------------------------------------------------------------
 
-void ShowDemoWindow(bool* p_open)
+void ImGuiKit::ShowDemoWindow(bool* p_open)
 {
-    ImGui::SetNextWindowSize(EmToVec2(36.f, 30.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImGuiKit::EmToVec2(36.f, 30.f), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("ImGuiKit Demo", p_open))
     {
         ImGui::End();
         return;
     }
-    ShowDemoContents();
+    ImGuiKit::ShowDemoContents();
     ImGui::End();
 }
 
-void ShowDemoContents()
+void ImGuiKit::ShowDemoContents()
 {
     ImGui::Text("ImGuiKit %s: small, standalone additions to Dear ImGui", IMGUI_KIT_VERSION);
     static float font_size = 0.0f;  // 0: the application's size, read at the first frame
@@ -372,8 +370,6 @@ void ShowDemoContents()
     DemoWidgets();
     ImGui::PopFont();
 }
-
-} // namespace ImGuiKit
 
 #else
 
