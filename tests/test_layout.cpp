@@ -4,6 +4,8 @@
 #include "imgui_impl_null.h"
 #include "imgui_kit.h"
 #include "imgui_internal.h"
+#include <string>
+#include <string.h>
 
 namespace
 {
@@ -206,4 +208,27 @@ TEST_CASE("Fill row: a help marker in the tail stays on the line, and the tail e
         bench.Frame(400, gui);
     CHECK(marker_y == doctest::Approx(slider_y));
     CHECK(marker_right == doctest::Approx(region_right));
+}
+
+TEST_CASE("Fit text: the text itself when it fits, else cut at a word, with an ellipsis, within the lines")
+{
+    Bench bench;
+    const char* short_text = "Short";
+    const char* long_text = "A summary much longer than the two lines it may take on a narrow card, so it gets cut";
+    const char* fitted_short = nullptr;
+    float fitted_height = 0, line_height = 0;
+    std::string fitted_long;
+    auto gui = [&] {
+        fitted_short = ImGuiKit::FitText(short_text, 120.0f, 2);
+        const char* r = ImGuiKit::FitText(long_text, 120.0f, 2);
+        fitted_long = r;
+        fitted_height = ImGui::CalcTextSize(r, nullptr, false, 120.0f).y;
+        line_height = ImGui::GetTextLineHeight();
+    };
+    bench.Frame(400, gui);
+    CHECK(fitted_short == short_text);
+    CHECK(fitted_long.size() < strlen(long_text));
+    CHECK(fitted_long.compare(fitted_long.size() - 3, 3, "\xE2\x80\xA6") == 0);
+    CHECK(std::string(long_text).rfind(fitted_long.substr(0, fitted_long.size() - 3), 0) == 0);  // a prefix
+    CHECK(fitted_height <= 2 * line_height + 1);
 }
