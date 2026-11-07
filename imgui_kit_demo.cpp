@@ -198,6 +198,7 @@ void DemoLabelColumn()
                        "After its label, a row is a normal line: SameLine() adds widgets to it.");
     static int labels_align = 0;
     static float volume = 0.5f;
+    static float balance = 0.0f;
     static bool muted = false;
     ImGuiKit::BeginLabelColumn("audio", labels_align == 0 ? 0.0f : 1.0f);
     ImGuiKit::Label("Labels");
@@ -205,6 +206,8 @@ void DemoLabelColumn()
     ImGuiKit::SegmentedSwitch("##labels_align", &labels_align, aligns, IM_ARRAYSIZE(aligns));
     ImGuiKit::Label("Volume");
     ImGui::SliderFloat("##volume", &volume, 0.0f, 1.0f);
+    ImGuiKit::Label("Left/right balance");
+    ImGui::SliderFloat("##balance", &balance, -1.0f, 1.0f);
     ImGuiKit::Label("Output");
     ImGui::Checkbox("Muted", &muted);
     ImGui::SameLine();
