@@ -105,7 +105,8 @@ void DemoFlow()
         return;
     ImGui::TextWrapped("The buttons stay on a line while they fit. Resize the window: they flow to the next line.");
     static int selected = 0;
-    const char* presets[] = { "Lung", "Mediastinum", "Bone", "Full range", "Brain", "Liver", "Soft tissue" };
+    const char* presets[] = { "Lung", "Mediastinum", "Bone", "Full range", "Brain", "Liver", "Soft tissue",
+                              "Abdomen", "Spine", "Angiography", "Stroke", "Temporal bone", "Custom" };
     BeginFlow("presets");
     for (int i = 0; i < IM_ARRAYSIZE(presets); i++)
     {
