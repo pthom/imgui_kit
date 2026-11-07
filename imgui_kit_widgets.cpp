@@ -318,7 +318,7 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 p1 = p0 + size;
-    float rounding = size.y * 0.5f;
+    float rounding = ImMin(style.FrameRounding, size.y * 0.5f);
     // The active segment's color is mixed from the frame and the text colors: it stands out in any theme, and its
     // label stays readable.
     ImVec4 window_bg = style.Colors[ImGuiCol_WindowBg], frame = style.Colors[ImGuiCol_FrameBg];

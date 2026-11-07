@@ -142,7 +142,8 @@ IMGUI_API void   SetHelpMarkerTextRenderer(HelpMarkerTextRenderer renderer);
 // high in a button), in the text's color. size: (0, 0) = a square of the frame's height.
 IMGUI_API bool   IconButton(const char* str_id, ImGuiKitIcon icon, const ImVec2& size = ImVec2(0, 0));
 
-// Segmented switch: exclusive choices in one rounded frame, the current one filled.
+// Segmented switch: exclusive choices in one frame, the current one filled. Its corners follow the style's
+// FrameRounding, as buttons and sliders do.
 //
 //     ( Demo | Code )        <- current = 1: "Code" is filled
 //

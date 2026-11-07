@@ -31,7 +31,8 @@ namespace
 // [SECTION] Toolbar: theme and font size
 //-----------------------------------------------------------------------------
 
-// The theme applies to the whole application; "App" restores the colors it had. The font size applies to the demo.
+// The theme and the frame rounding apply to the whole application; "App" restores the colors it had.
+// The font size applies to the demo.
 void DemoToolbar(float* font_size)
 {
     IMGUI_DEMO_MARKER("Toolbar");
@@ -74,6 +75,16 @@ void DemoToolbar(float* font_size)
     ImGui::SameLine();
     if (ImGui::Button("Reset"))
         *font_size = style.FontSizeBase;
+    ImGui::EndGroup();
+
+    FlowNext();
+    ImGui::BeginGroup();
+    ImGui::SetNextItemWidth(EmSize(10.f));
+    ImGui::SliderFloat("##rounding", &style.FrameRounding, 0.0f, 12.0f, "Frame rounding %.0f px");
+    ImGui::SameLine();
+    HelpMarker("The style's FrameRounding: ImGui::GetStyle().FrameRounding. Buttons, sliders, input fields and "
+               "the segmented switch round their corners with it. 0 gives square frames; half the frame's height "
+               "gives a pill.");
     ImGui::EndGroup();
     EndFlow();
 }
@@ -250,6 +261,7 @@ void DemoSegmentedSwitch()
     IMGUI_DEMO_MARKER("Widgets/Segmented switch");
     if (!ImGui::TreeNode("Segmented switch"))
         return;
+    ImGui::TextWrapped("Its corners follow the style's FrameRounding, as a button's do: change it at the top.");
     static int view = 0;
     const char* views[] = { "Demo", "Code" };
     SegmentedSwitch("##view", &view, views, IM_ARRAYSIZE(views));
