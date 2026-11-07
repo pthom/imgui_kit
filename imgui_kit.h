@@ -43,6 +43,8 @@ namespace ImGuiKit
 
 // The kit's demo window, as ImGui::ShowDemoWindow(). Removed by IMGUI_KIT_DISABLE_DEMO.
 IMGUI_API void ShowDemoWindow(bool* p_open = nullptr);
+// The demo's content, in the current window (a host that places the window itself)
+IMGUI_API void ShowDemoContents();
 
 //-----------------------------------------------------------------------------
 // [SECTION] Em units

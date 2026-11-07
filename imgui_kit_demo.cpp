@@ -221,12 +221,17 @@ void ShowDemoWindow(bool* p_open)
         ImGui::End();
         return;
     }
+    ShowDemoContents();
+    ImGui::End();
+}
+
+void ShowDemoContents()
+{
     ImGui::Text("imgui_kit %s: small, standalone additions to Dear ImGui", IMGUI_KIT_VERSION);
     ImGui::Separator();
     DemoEmUnits();
     DemoLayout();
     DemoWidgets();
-    ImGui::End();
 }
 
 } // namespace ImGuiKit
@@ -234,5 +239,6 @@ void ShowDemoWindow(bool* p_open)
 #else
 
 void ImGuiKit::ShowDemoWindow(bool*) {}
+void ImGuiKit::ShowDemoContents() {}
 
 #endif // #ifndef IMGUI_KIT_DISABLE_DEMO
