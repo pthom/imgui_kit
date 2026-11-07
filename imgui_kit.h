@@ -87,10 +87,24 @@ IMGUI_API void   EndFillRow();
 
 // Aligned group: a group placed on the line from its width on the previous frame.
 // align_x: 0.0 = left, 0.5 = centered, 1.0 = right. It aligns the group's box, not each line inside it.
+// Inside a column (below), it aligns within the column's width instead of the line's.
 //
 //     |                         [Cancel] [Apply] |    <- BeginAlignedGroup("buttons", 1.0f)
 IMGUI_API void   BeginAlignedGroup(const char* str_id, float align_x);
 IMGUI_API void   EndAlignedGroup();
+
+// Column: a group that knows its width (from the previous frame), so that aligned groups inside it align within it.
+// Items under a knob, centered under it:
+//
+//     ImGuiKit::BeginColumn("clahe");
+//     ImGuiKnobs::Knob("CLAHE", &clip, 1.0f, 6.0f);
+//     ImGuiKit::BeginAlignedGroup("help", 0.5f);   // centered under the knob
+//     ImGuiKit::HelpMarker("Contrast-limited adaptive histogram equalization...");
+//     ImGuiKit::EndAlignedGroup();
+//     ImGuiKit::EndColumn();
+//     ImGui::SameLine();                             // the next column
+IMGUI_API void   BeginColumn(const char* str_id);
+IMGUI_API void   EndColumn();
 
 // Flow: items on the same line while they fit, then on the next one, as words in a paragraph.
 // Call FlowNext() before each item (the first one too). An item wider than the line takes a line of its own.

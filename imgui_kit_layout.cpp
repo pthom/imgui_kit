@@ -92,6 +92,18 @@ struct AlignedGroup
 ImVector<AlignedGroup> gAlignedGroups;
 
 //-----------------------------------------------------------------------------
+// [SECTION] Column
+//-----------------------------------------------------------------------------
+
+struct Column
+{
+    ImGuiID id;
+    float left;   // screen x, at BeginColumn()
+    float width;  // on the previous frame, or kUnknown
+};
+ImVector<Column> gColumns;
+
+//-----------------------------------------------------------------------------
 // [SECTION] Flow
 //-----------------------------------------------------------------------------
 
@@ -163,11 +175,18 @@ void BeginAlignedGroup(const char* str_id, float align_x)
     AlignedGroup group;
     group.id = ImGui::GetID(str_id);
     float width = StoredFloat(group.id);
-    if (width == kUnknown)
+    // The room to align in: up to the innermost column's right edge, else up to the line's end
+    float room = ImGui::GetContentRegionAvail().x;
+    if (!gColumns.empty())
+    {
+        const Column& column = gColumns.back();
+        room = (column.width == kUnknown) ? kUnknown : column.left + column.width - ImGui::GetCursorScreenPos().x;
+    }
+    if (width == kUnknown || room == kUnknown)
         group.hidden.Begin();
     else
     {
-        float offset = (ImGui::GetContentRegionAvail().x - width) * align_x;
+        float offset = (room - width) * align_x;
         if (offset > 0.0f)
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
     }
@@ -183,6 +202,28 @@ void EndAlignedGroup()
     StoreFloat(group.id, ImGui::GetItemRectSize().x);
     group.hidden.End();
     gAlignedGroups.pop_back();
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Column
+//-----------------------------------------------------------------------------
+
+void BeginColumn(const char* str_id)
+{
+    Column column;
+    column.id = ImGui::GetID(str_id);
+    column.left = ImGui::GetCursorScreenPos().x;
+    column.width = StoredFloat(column.id);
+    gColumns.push_back(column);
+    ImGui::BeginGroup();
+}
+
+void EndColumn()
+{
+    IM_ASSERT(!gColumns.empty() && "EndColumn() without BeginColumn()");
+    ImGui::EndGroup();
+    StoreFloat(gColumns.back().id, ImGui::GetItemRectSize().x);
+    gColumns.pop_back();
 }
 
 //-----------------------------------------------------------------------------

@@ -81,6 +81,28 @@ TEST_CASE("Aligned group: right-aligned from the second frame")
     CHECK(group_right == doctest::Approx(region_right));
 }
 
+TEST_CASE("Column: an aligned group inside it is centered in the column, not on the line")
+{
+    Bench bench;
+    float column_left = 0, column_right = 0, small_left = 0, small_right = 0;
+    auto gui = [&] {
+        ImGuiKit::BeginColumn("c");
+        ImGui::Button("A wide button, wider than the small one", ImVec2(200, 0));
+        ImGuiKit::BeginAlignedGroup("g", 0.5f);
+        ImGui::Button("x", ImVec2(40, 0));
+        ImGuiKit::EndAlignedGroup();
+        small_left = ImGui::GetItemRectMin().x;
+        small_right = ImGui::GetItemRectMax().x;
+        ImGuiKit::EndColumn();
+        column_left = ImGui::GetItemRectMin().x;
+        column_right = ImGui::GetItemRectMax().x;
+    };
+    for (int i = 0; i < 3; i++)
+        bench.Frame(800, gui);
+    CHECK(column_right - column_left == doctest::Approx(200));
+    CHECK(small_left - column_left == doctest::Approx(column_right - small_right));
+}
+
 TEST_CASE("Flow: items stay on a line while they fit, then wrap")
 {
     Bench bench;

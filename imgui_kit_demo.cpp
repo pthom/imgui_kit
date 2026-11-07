@@ -167,6 +167,35 @@ void DemoAlignedGroup()
     ImGui::TreePop();
 }
 
+void DemoColumn()
+{
+    IMGUI_DEMO_MARKER("Layout/Column");
+    if (!ImGui::TreeNode("Column"))
+        return;
+    ImGui::TextWrapped("Each column knows its width: the aligned groups inside it center its slider and its help "
+                       "under its label, whatever the label's length.");
+    static float values[] = { 0.3f, 0.6f, 0.45f };
+    const char* labels[] = { "Bass", "Midrange", "Treble" };
+    const char* helps[] = { "Bass: below 250 Hz.", "Midrange: from 250 Hz to 4 kHz.", "Treble: above 4 kHz." };
+    for (int i = 0; i < 3; i++)
+    {
+        ImGui::PushID(i);
+        BeginColumn("column");
+        ImGui::Text("%s", labels[i]);
+        BeginAlignedGroup("slider", 0.5f);
+        ImGui::VSliderFloat("##v", EmToVec2(1.6f, 6.f), &values[i], 0.0f, 1.0f, "");
+        EndAlignedGroup();
+        BeginAlignedGroup("help", 0.5f);
+        HelpMarker(helps[i]);
+        EndAlignedGroup();
+        EndColumn();
+        ImGui::PopID();
+        ImGui::SameLine(0.0f, EmSize(1.5f));
+    }
+    ImGui::NewLine();
+    ImGui::TreePop();
+}
+
 void DemoFlow()
 {
     IMGUI_DEMO_MARKER("Layout/Flow");
@@ -200,6 +229,7 @@ void DemoLayout()
     ImGui::TextWrapped("These helpers measure their parts on the previous frame. The first frame draws them hidden.");
     DemoFillRow();
     DemoAlignedGroup();
+    DemoColumn();
     DemoFlow();
 }
 
