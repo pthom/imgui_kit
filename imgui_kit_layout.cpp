@@ -1,0 +1,231 @@
+// imgui_kit: small, standalone additions to Dear ImGui
+// https://github.com/pthom/imgui_kit (MIT license)
+
+/*
+
+Index of this file:
+// [SECTION] Helpers
+// [SECTION] Fill row
+// [SECTION] Aligned group
+// [SECTION] Flow
+
+*/
+
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+#include "imgui_kit.h"
+#include "imgui_kit_internal.h"
+#include "imgui_internal.h"
+
+namespace ImGuiKit
+{
+namespace
+{
+
+//-----------------------------------------------------------------------------
+// [SECTION] Helpers
+//-----------------------------------------------------------------------------
+// The layout helpers keep what they measured in the window's state storage, under the ID of their str_id.
+// A value never measured reads as kUnknown: the helper then draws hidden on that frame (Alpha = 0) and keeps its
+// overflow out of the window's content size, so that a first frame neither flashes nor adds a scrollbar.
+// Their Begin/End stacks are global: one Dear ImGui context at a time uses them, as one frame at a time.
+
+constexpr float kUnknown = -1.0f;
+
+float StoredFloat(ImGuiID id)
+{
+    return ImGui::GetStateStorage()->GetFloat(id, kUnknown);
+}
+
+void StoreFloat(ImGuiID id, float v)
+{
+    ImGui::GetStateStorage()->SetFloat(id, v);
+}
+
+// Hides what follows until EndHidden(), and forgets how far it reached (its overflow adds no scrollbar)
+struct Hidden
+{
+    bool active = false;
+    ImVec2 cursorMaxPos;
+
+    void Begin()
+    {
+        active = true;
+        cursorMaxPos = ImGui::GetCurrentWindow()->DC.CursorMaxPos;
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
+    }
+    void End()
+    {
+        if (!active)
+            return;
+        ImGui::PopStyleVar();
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        // The hidden items still take their height: keep the vertical extent, drop the horizontal one
+        window->DC.CursorMaxPos.x = cursorMaxPos.x;
+        active = false;
+    }
+};
+
+//-----------------------------------------------------------------------------
+// [SECTION] Fill row
+//-----------------------------------------------------------------------------
+
+struct FillRow
+{
+    ImGuiID id;
+    float fillRight = 0.0f;  // the fill item's right edge (screen x), when the tail starts
+    bool tailStarted = false;
+    Hidden hidden;
+};
+ImVector<FillRow> gFillRows;
+
+//-----------------------------------------------------------------------------
+// [SECTION] Aligned group
+//-----------------------------------------------------------------------------
+
+struct AlignedGroup
+{
+    ImGuiID id;
+    Hidden hidden;
+};
+ImVector<AlignedGroup> gAlignedGroups;
+
+//-----------------------------------------------------------------------------
+// [SECTION] Flow
+//-----------------------------------------------------------------------------
+
+struct Flow
+{
+    ImGuiID id;
+    float rightEdge;  // screen x: the line's end, fixed at BeginFlow()
+    int index = 0;    // the rank of the next item
+    Hidden hidden;
+};
+ImVector<Flow> gFlows;
+
+ImGuiID FlowItemKey(const Flow& flow, int index)
+{
+    return ImHashData(&index, sizeof(index), flow.id);
+}
+
+} // namespace
+
+bool Internal::IsInFillRowTail()
+{
+    return !gFillRows.empty() && gFillRows.back().tailStarted;
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Fill row
+//-----------------------------------------------------------------------------
+
+float BeginFillRow(const char* str_id)
+{
+    FillRow row;
+    row.id = ImGui::GetID(str_id);
+    float tail = StoredFloat(row.id);
+    float width = ImMax(1.0f, ImGui::GetContentRegionAvail().x - (tail == kUnknown ? 0.0f : tail));
+    ImGui::SetNextItemWidth(width);
+    gFillRows.push_back(row);
+    return width;
+}
+
+void FillRowTail()
+{
+    IM_ASSERT(!gFillRows.empty() && "FillRowTail() needs BeginFillRow()");
+    FillRow& row = gFillRows.back();
+    IM_ASSERT(!row.tailStarted && "FillRowTail() called twice");
+    row.fillRight = ImGui::GetItemRectMax().x;
+    row.tailStarted = true;
+    if (StoredFloat(row.id) == kUnknown)
+        row.hidden.Begin();
+    ImGui::SameLine();
+}
+
+void EndFillRow()
+{
+    IM_ASSERT(!gFillRows.empty() && "EndFillRow() without BeginFillRow()");
+    FillRow& row = gFillRows.back();
+    // The tail's width: from the fill item's right edge to the tail's last item, the spacing included
+    float tail = row.tailStarted ? ImMax(0.0f, ImGui::GetItemRectMax().x - row.fillRight) : 0.0f;
+    StoreFloat(row.id, tail);
+    row.hidden.End();
+    gFillRows.pop_back();
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Aligned group
+//-----------------------------------------------------------------------------
+
+void BeginAlignedGroup(const char* str_id, float align_x)
+{
+    AlignedGroup group;
+    group.id = ImGui::GetID(str_id);
+    float width = StoredFloat(group.id);
+    if (width == kUnknown)
+        group.hidden.Begin();
+    else
+    {
+        float offset = (ImGui::GetContentRegionAvail().x - width) * align_x;
+        if (offset > 0.0f)
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+    }
+    gAlignedGroups.push_back(group);
+    ImGui::BeginGroup();
+}
+
+void EndAlignedGroup()
+{
+    IM_ASSERT(!gAlignedGroups.empty() && "EndAlignedGroup() without BeginAlignedGroup()");
+    ImGui::EndGroup();
+    AlignedGroup& group = gAlignedGroups.back();
+    StoreFloat(group.id, ImGui::GetItemRectSize().x);
+    group.hidden.End();
+    gAlignedGroups.pop_back();
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Flow
+//-----------------------------------------------------------------------------
+
+void BeginFlow(const char* str_id)
+{
+    Flow flow;
+    flow.id = ImGui::GetID(str_id);
+    flow.rightEdge = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+    if (StoredFloat(flow.id) == kUnknown)  // never drawn: no widths yet
+        flow.hidden.Begin();
+    gFlows.push_back(flow);
+}
+
+void FlowNext()
+{
+    IM_ASSERT(!gFlows.empty() && "FlowNext() needs BeginFlow()");
+    Flow& flow = gFlows.back();
+    if (flow.index > 0)
+    {
+        // The previous item is drawn: keep its width, and decide where the next one goes
+        StoreFloat(FlowItemKey(flow, flow.index - 1), ImGui::GetItemRectSize().x);
+        float nextWidth = StoredFloat(FlowItemKey(flow, flow.index));
+        if (nextWidth == kUnknown)
+            nextWidth = 0.0f;
+        float nextLeft = ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x;
+        if (nextLeft + nextWidth <= flow.rightEdge)
+            ImGui::SameLine();
+    }
+    ++flow.index;
+}
+
+void EndFlow()
+{
+    IM_ASSERT(!gFlows.empty() && "EndFlow() without BeginFlow()");
+    Flow& flow = gFlows.back();
+    if (flow.index > 0)
+        StoreFloat(FlowItemKey(flow, flow.index - 1), ImGui::GetItemRectSize().x);
+    StoreFloat(flow.id, (float)flow.index);  // the flow was drawn (its items' count)
+    flow.hidden.End();
+    gFlows.pop_back();
+}
+
+} // namespace ImGuiKit

@@ -1,8 +1,9 @@
 // imgui_kit: small, standalone additions to Dear ImGui
 // https://github.com/pthom/imgui_kit (MIT license)
 //
-// Two files: imgui_kit.h and imgui_kit.cpp, beside Dear ImGui. imgui_kit_demo.cpp holds the demo (optional).
-// They need only Dear ImGui (its docking or master branch, 1.93 or later).
+// One header, imgui_kit.h. Its sources, beside it: imgui_kit.cpp, imgui_kit_layout.cpp, imgui_kit_widgets.cpp,
+// and imgui_kit_demo.cpp (the demo, optional). They need only Dear ImGui (its docking or master branch, 1.93 or later).
+// Define IMGUI_KIT_USE_STL to get overloads that take std::string and std::vector.
 
 /*
 
@@ -10,6 +11,8 @@ Index of this file:
 // [SECTION] Header mess
 // [SECTION] Demo
 // [SECTION] Em units
+// [SECTION] Layout
+// [SECTION] Widgets
 
 */
 
@@ -23,6 +26,13 @@ Index of this file:
 #define IMGUI_KIT_VERSION_NUM   100     // major * 10000 + minor * 100 + patch
 
 #include "imgui.h"
+
+#ifdef IMGUI_KIT_USE_STL
+#include <string>
+#include <vector>
+#endif
+
+typedef int ImGuiKitIcon;   // -> enum ImGuiKitIcon_
 
 namespace ImGuiKit
 {
@@ -47,4 +57,100 @@ IMGUI_API ImVec2 EmToVec2(ImVec2 v);
 IMGUI_API ImVec2 PixelsToEm(ImVec2 pixels);         // Pixels, in em
 IMGUI_API float  PixelSizeToEm(float pixel_size);
 
+//-----------------------------------------------------------------------------
+// [SECTION] Layout
+//-----------------------------------------------------------------------------
+// Dear ImGui sizes an item when it is called, before the items that follow it exist. The helpers below measure
+// what they need on the previous frame (kept in the window's state storage), so a row can know the width of its
+// end, or a group its own width, before drawing them. The first frame draws them hidden while they are measured.
+
+// Fill row: the next item takes the line's width, minus the items after FillRowTail().
+//
+//     | [====== slider, it fills the line ======] [>] (i) |
+//       ^ the fill item                           ^ the tail, on the right
+//
+// Every widget that takes its width from SetNextItemWidth() fills the line this way: sliders, drags, InputText,
+// Combo, ColorEdit... A widget that takes a size argument instead (a plot, a child window) gets the width that
+// BeginFillRow() returns. Without a fill row, the room for the tail must be computed by hand, and an error of a
+// few pixels gives the window a horizontal scrollbar.
+//
+//     ImGuiKit::BeginFillRow("slice");
+//     ImGui::SliderInt("##slice", &z, 0, 59);        // fills the line
+//     ImGuiKit::FillRowTail();                        // the items after this call stay on the right
+//     ImGui::ArrowButton("##next", ImGuiDir_Right);
+//     ImGuiKit::EndFillRow();
+IMGUI_API float  BeginFillRow(const char* str_id);   // Sets the next item's width, and returns it
+IMGUI_API void   FillRowTail();
+IMGUI_API void   EndFillRow();
+
+// Aligned group: a group placed on the line from its width on the previous frame.
+// align_x: 0.0 = left, 0.5 = centered, 1.0 = right. It aligns the group's box, not each line inside it.
+//
+//     |                         [Cancel] [Apply] |    <- BeginAlignedGroup("buttons", 1.0f)
+IMGUI_API void   BeginAlignedGroup(const char* str_id, float align_x);
+IMGUI_API void   EndAlignedGroup();
+
+// Flow: items on the same line while they fit, then on the next one, as words in a paragraph.
+// Call FlowNext() before each item (the first one too). An item wider than the line takes a line of its own.
+//
+//     | [Lung] [Mediastinum] [Bone] |
+//     | [Full range] [Custom]       |
+//
+//     ImGuiKit::BeginFlow("presets");
+//     for (int i = 0; i < count; i++)
+//     {
+//         ImGuiKit::FlowNext();
+//         if (ImGui::Button(labels[i])) ...
+//     }
+//     ImGuiKit::EndFlow();
+IMGUI_API void   BeginFlow(const char* str_id);
+IMGUI_API void   FlowNext();
+IMGUI_API void   EndFlow();
+
+//-----------------------------------------------------------------------------
+// [SECTION] Widgets
+//-----------------------------------------------------------------------------
+
+// Help marker: a small drawn (i). It shows its text:
+//   - with a mouse: in a tooltip while hovered; a click pins it in a popup, until a click elsewhere or Escape;
+//   - on a touch screen (which has no hover): in a popup, opened by a tap.
+// It goes to the next line when the current one has no room for it. Its ID is its text: two markers with the
+// same text in the same ID scope share their popup (use PushID() or BeginHelpMarker() to tell them apart).
+IMGUI_API void   HelpMarker(const char* text);
+// The same, with any content: draw it between the two calls when BeginHelpMarker() returns true.
+//     if (ImGuiKit::BeginHelpMarker("##level_help")) { ImGui::Text("..."); ImGuiKit::EndHelpMarker(); }
+IMGUI_API bool   BeginHelpMarker(const char* str_id);
+IMGUI_API void   EndHelpMarker();
+// The width a help marker takes at the end of a line, with the spacing before it
+IMGUI_API float  HelpMarkerWidth();
+// How HelpMarker() draws its text. By default: wrapped plain text. An app can install a richer renderer
+// (Dear ImGui Bundle installs one that renders Markdown). nullptr restores the default.
+typedef void (*HelpMarkerTextRenderer)(const char* text);
+IMGUI_API void   SetHelpMarkerTextRenderer(HelpMarkerTextRenderer renderer);
+
+// Icon button: a button with a symbol drawn with the draw list, centered (a font's glyph often sits a little
+// high in a button), in the text's color. size: (0, 0) = a square of the frame's height.
+IMGUI_API bool   IconButton(const char* str_id, ImGuiKitIcon icon, const ImVec2& size = ImVec2(0, 0));
+
+// Segmented switch: exclusive choices in one rounded frame, the current one filled.
+//
+//     ( Demo | Code )        <- current = 1: "Code" is filled
+//
+// It reacts at the press, not the release, which suits touch screens. Returns true when *current changed.
+IMGUI_API bool   SegmentedSwitch(const char* str_id, int* current, const char* const labels[], int labels_count);
+#ifdef IMGUI_KIT_USE_STL
+IMGUI_API bool   SegmentedSwitch(const char* str_id, int* current, const std::vector<std::string>& labels);
+#endif
+
 } // namespace ImGuiKit
+
+// The symbols of IconButton()
+enum ImGuiKitIcon_
+{
+    ImGuiKitIcon_Minus,
+    ImGuiKitIcon_Plus,
+    ImGuiKitIcon_ZoomIn,
+    ImGuiKitIcon_ZoomOut,
+    ImGuiKitIcon_ZoomOneToOne,
+    ImGuiKitIcon_ZoomFit,
+};

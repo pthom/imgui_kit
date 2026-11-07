@@ -26,7 +26,8 @@ if (NOT TARGET imgui)
     set(IMGUI_KIT_BUILT_IMGUI ON)
 endif()
 
-add_library(imgui_kit STATIC imgui_kit.cpp imgui_kit_demo.cpp)
+file(GLOB IMGUI_KIT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit*.cpp)  # imgui_kit.cpp, imgui_kit_layout.cpp...
+add_library(imgui_kit STATIC ${IMGUI_KIT_SOURCES})
 target_include_directories(imgui_kit PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(imgui_kit PUBLIC imgui)
 
@@ -35,7 +36,7 @@ if (IMGUI_KIT_BUILD_TESTS)
         message(FATAL_ERROR "imgui_kit's tests build Dear ImGui's null backend: give IMGUI_KIT_IMGUI_DIR, or no `imgui` target")
     endif()
     enable_testing()
-    add_executable(imgui_kit_tests tests/test_main.cpp tests/test_em.cpp ${IMGUI_KIT_IMGUI_DIR}/backends/imgui_impl_null.cpp)
+    add_executable(imgui_kit_tests tests/test_main.cpp tests/test_em.cpp tests/test_layout.cpp ${IMGUI_KIT_IMGUI_DIR}/backends/imgui_impl_null.cpp)
     target_include_directories(imgui_kit_tests PRIVATE tests ${IMGUI_KIT_IMGUI_DIR}/backends)
     target_link_libraries(imgui_kit_tests PRIVATE imgui_kit)
     add_test(NAME imgui_kit_tests COMMAND imgui_kit_tests)
