@@ -340,6 +340,18 @@ TEST_CASE("Touch scroll: on a touch screen, the release of a handover is not a l
     CHECK(!ImGui::IsMousePosValid());
 }
 
+// Two fingers on the screen (ids 1 and 2), as a platform reports them; their lift
+void Fingers(ImVec2 a, ImVec2 b)
+{
+    ImGuiTouch::AddFingerEvent(1, a, true);
+    ImGuiTouch::AddFingerEvent(2, b, true);
+}
+void LiftFingers()
+{
+    ImGuiTouch::AddFingerEvent(1, ImVec2(0, 0), false);
+    ImGuiTouch::AddFingerEvent(2, ImVec2(0, 0), false);
+}
+
 TEST_CASE("Touch pinch: two fingers scale the font, and take the press from the swipe layer")
 {
     Bench b;
@@ -347,17 +359,17 @@ TEST_CASE("Touch pinch: two fingers scale the font, and take the press from the 
     ImGui::GetStyle().FontScaleMain = 1.f;
     b.Press(b.linesRect.GetCenter());
     b.Drag(ImVec2(0.f, -30.f), 3);
-    ImGuiTouch::SetPointers(2, 1.f);  // the second finger lands
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));  // the second finger lands, 100 px from the first
     b.Frame();
-    ImGuiTouch::SetPointers(2, 1.5f);  // the fingers spread
+    Fingers(ImVec2(100, 100), ImVec2(250, 100));  // the fingers spread: 150 px, a scale of 1.5
     b.Frames(2);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);
     b.Drag(ImVec2(0.f, -30.f), 3);  // the first finger's motion scrolls no more
     CHECK(Near(b.scrollY, 30.f));
-    ImGuiTouch::SetPointers(2, 6.f);  // clamped
+    Fingers(ImVec2(100, 100), ImVec2(700, 100));  // a scale of 6: clamped
     b.Frame();
     CHECK(ImGui::GetStyle().FontScaleMain == 5.f);
-    ImGuiTouch::SetPointers(0, 1.f);  // the fingers lift: the scale stays, no tap, no inertia
+    LiftFingers();  // the scale stays, no tap, no inertia
     b.Release();
     b.Frames(10);
     CHECK(ImGui::GetStyle().FontScaleMain == 5.f);
@@ -372,17 +384,17 @@ TEST_CASE("Touch pinch: two fingers that move together are a right drag, the lef
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
     b.Press(b.linesRect.GetCenter());
-    ImGuiTouch::SetPointers(2, 1.f, ImVec2(0.f, 0.f));  // the second finger lands
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));  // the second finger lands
     b.Frames(2);
     CHECK(!b.rightDown);
-    ImGuiTouch::SetPointers(2, 1.02f, ImVec2(0.f, -30.f));  // the two move together
+    Fingers(ImVec2(100, 70), ImVec2(202, 70));  // the two move together, 30 px up (and spread a little: 1.02)
     b.Frames(4);
     CHECK(b.rightDown);
     CHECK(!ImGui::GetIO().MouseDown[0]);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
     b.Drag(ImVec2(0.f, -30.f), 3);  // the first finger moves: no scroll (it is a right drag now)
     CHECK(b.scrollY == 0.f);
-    ImGuiTouch::SetPointers(0, 1.f, ImVec2(0.f, 0.f));
+    LiftFingers();
     b.Release();
     CHECK(!b.rightDown);
     CHECK(b.clicks == 0);
@@ -395,12 +407,14 @@ TEST_CASE("Touch pinch: a widget that holds the press keeps it, unless the pinch
     ImGui::GetStyle().FontScaleMain = 1.f;
     b.Press(b.sliderRect.GetCenter());
     b.Frames(20);  // the hold: the slider got the press
-    ImGuiTouch::SetPointers(2, 1.5f);
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));
+    b.Frame();
+    Fingers(ImVec2(100, 100), ImVec2(250, 100));  // a scale of 1.5
     b.Frames(2);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);  // the slider keeps its drag
     b.Drag(ImVec2(60.f, 0.f), 5);
     CHECK(b.slider > 0.6f);
-    ImGuiTouch::SetPointers(0, 1.f);
+    LiftFingers();
     b.Release();
 
     b.pinchInterrupts = true;
@@ -408,12 +422,14 @@ TEST_CASE("Touch pinch: a widget that holds the press keeps it, unless the pinch
     b.Press(b.sliderRect.GetCenter());
     b.Frames(20);
     float held = b.slider;  // the press moved the grab to the finger
-    ImGuiTouch::SetPointers(2, 1.5f);
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));
+    b.Frame();
+    Fingers(ImVec2(100, 100), ImVec2(250, 100));  // a scale of 1.5
     b.Frames(2);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);  // the pinch took over
     b.Drag(ImVec2(60.f, 0.f), 5);
     CHECK(b.slider == held);  // the slider lost the drag
-    ImGuiTouch::SetPointers(0, 1.f);
+    LiftFingers();
     b.Release();
     ImGui::GetStyle().FontScaleMain = 1.f;
 }

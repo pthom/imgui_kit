@@ -246,8 +246,8 @@ IMGUI_API void   SetupWheelSession(bool enabled = true);
 //     ImGuiTouch::Setup();      // once: the layer then runs at each frame, through Dear ImGui's context hooks
 //
 // The touch input: io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen) tells a finger from a mouse (the Auto mode),
-// and io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen gives thin scroll bars. The pinch needs the fingers' count,
-// from the platform: ImGuiTouch::SetPointers().
+// and io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen gives thin scroll bars. The pinch needs the fingers, from
+// the platform: ImGuiTouch::AddFingerEvent().
 
 enum ImGuiTouchScrollMode_
 {
@@ -286,10 +286,12 @@ IMGUI_API bool   IsAnimating();
 // it, not to the swipe. long_press_is_right_click: a long press on it is still a right click.
 IMGUI_API void   SetItemTakesDrags(bool long_press_is_right_click = true);
 
-// The fingers on the screen, before each frame, for a platform that can count them: their count, the pinch's scale
-// (the distance between the first two fingers, over their distance when the second one landed), and the two
-// fingers' move since the last frame.
-IMGUI_API void   SetPointers(int count, float pinch_scale, const ImVec2& two_finger_move = ImVec2(0, 0));
+// A finger on a touch screen, as the platform reports it (a browser's touch or pointer events, SDL's finger events):
+// its id (any number the platform gives, stable while the finger is down), its position (in the mouse's coordinates),
+// and whether it is down. Dear ImGui sees only the first finger, as the mouse: these events let the kit see the others.
+// With two fingers down: they spread or close, a pinch (the font scales); they move together, a right drag.
+// A desktop app with a mouse never calls it.
+IMGUI_API void   AddFingerEvent(int id, const ImVec2& pos, bool down);
 } // namespace ImGuiTouch
 
 // The symbols of IconButton()
