@@ -36,7 +36,8 @@ void DemoEmUnits()
     if (!ImGui::CollapsingHeader("Em units"))
         return;
     ImGui::TextWrapped("Sizes in em follow the font: the first button is 8 em wide and 2 em high, on any screen. "
-                       "Change the font size: it grows with the text, as a standard button does.");
+                       "Change the font size: it grows with the text, as a standard button does. "
+                       "The last button keeps its size in pixels: at a large font, its label gets cut.");
     static float font_size = 0.0f;  // 0: the current size, unchanged
     if (font_size == 0.0f)
         font_size = ImGui::GetStyle().FontSizeBase;
@@ -50,6 +51,8 @@ void DemoEmUnits()
     ImGui::Button("8 x 2 em", EmToVec2(8.f, 2.f));
     ImGui::SameLine();
     ImGui::Button("A standard button");
+    ImGui::SameLine();
+    ImGui::Button("100 x 30 px", ImVec2(100.f, 30.f));
     ImGui::SameLine();
     HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
     ImGui::Text("1 em = %.1f px", EmSize());
@@ -157,7 +160,11 @@ void DemoHelpMarker()
     IMGUI_DEMO_MARKER("Widgets/Help marker");
     if (!ImGui::TreeNode("Help marker"))
         return;
-    ImGui::Text("Hover the (i), or click it to pin its text:");
+    ImGui::TextWrapped("A touch screen has no hover: a tooltip never shows there. The (i) opens on a tap as well, "
+                       "so its text reaches every user.");
+    ImGui::BulletText("With a mouse: hover to read, click to pin.");
+    ImGui::BulletText("On a touch screen: tap to open, tap elsewhere to close.");
+    ImGui::Text("Try it:");
     ImGui::SameLine();
     HelpMarker("With a mouse, hovering shows this text, and a click pins it until a click elsewhere. "
                "On a touch screen, a tap opens it.");
@@ -178,6 +185,8 @@ void DemoIconButton()
     IMGUI_DEMO_MARKER("Widgets/Icon button");
     if (!ImGui::TreeNode("Icon button"))
         return;
+    ImGui::TextWrapped("The icons are drawn with the window's draw list (lines, rectangles, circles): "
+                       "no icon font to load, and they follow the font size.");
     static float zoom = 1.0f;
     if (IconButton("##minus", ImGuiKitIcon_Minus)) zoom /= 1.25f;
     ImGui::SameLine();

@@ -319,15 +319,21 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 p1 = p0 + size;
     float rounding = size.y * 0.5f;
+    auto segment_flags = [&](int i) -> ImDrawFlags
+    {
+        if (labels_count == 1)
+            return ImDrawFlags_RoundAll;
+        if (i == 0)
+            return ImDrawFlags_RoundLeft;
+        if (i == labels_count - 1)
+            return ImDrawFlags_RoundRight;
+        return ImDrawFlags_RoundNone;
+    };
     auto fill_segment = [&](int i, ImGuiCol col)
     {
-        ImDrawFlags flags = ImDrawFlags_RoundNone;
-        if (i == 0)
-            flags = ImDrawFlags_RoundLeft;
-        if (i == labels_count - 1)
-            flags = (labels_count == 1) ? ImDrawFlags_RoundAll : ImDrawFlags_RoundRight;
         float x0 = p0.x + segment_width * (float)i;
-        draw_list->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x0 + segment_width, p1.y), ImGui::GetColorU32(col), rounding, flags);
+        draw_list->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x0 + segment_width, p1.y), ImGui::GetColorU32(col), rounding,
+                                 segment_flags(i));
     };
     draw_list->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_FrameBg), rounding);
     if (ImGui::IsItemHovered())
@@ -344,6 +350,16 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
         draw_list->AddLine(ImVec2(x, p0.y), ImVec2(x, p1.y), ImGui::GetColorU32(ImGuiCol_Border));
     }
     draw_list->AddRect(p0, p1, ImGui::GetColorU32(ImGuiCol_Border), rounding);
+    // The active segment's outline, in the color of a checked box: some themes give ButtonActive nearly the color
+    // of FrameBg (DarculaDarker), and CheckMark under the label would make it unreadable in others.
+    if (*current >= 0 && *current < labels_count)
+    {
+        float thickness = ImMax(2.0f, ImTrunc(ImGui::GetFontSize() * 0.12f));
+        float x0 = p0.x + segment_width * (float)*current;
+        ImVec2 inset(thickness * 0.5f, thickness * 0.5f);
+        draw_list->AddRect(ImVec2(x0, p0.y) + inset, ImVec2(x0 + segment_width, p1.y) - inset,
+                           ImGui::GetColorU32(ImGuiCol_CheckMark), rounding, thickness, segment_flags(*current));
+    }
     for (int i = 0; i < labels_count; i++)
     {
         ImVec2 text_size = ImGui::CalcTextSize(labels[i], nullptr, true);
