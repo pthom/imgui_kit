@@ -35,11 +35,25 @@ void DemoEmUnits()
     IMGUI_DEMO_MARKER("Em units");
     if (!ImGui::CollapsingHeader("Em units"))
         return;
-    ImGui::TextWrapped("Sizes in em follow the font: this button is 8 em wide and 2 em high, on any screen.");
+    ImGui::TextWrapped("Sizes in em follow the font: the first button is 8 em wide and 2 em high, on any screen. "
+                       "Change the font size: it grows with the text, as a standard button does.");
+    static float font_size = 0.0f;  // 0: the current size, unchanged
+    if (font_size == 0.0f)
+        font_size = ImGui::GetStyle().FontSizeBase;
+    ImGui::SetNextItemWidth(EmSize(12.f));
+    ImGui::SliderFloat("Font size", &font_size, 8.0f, 40.0f, "%.0f px");
+    ImGui::SameLine();
+    if (ImGui::Button("Reset"))
+        font_size = ImGui::GetStyle().FontSizeBase;
+
+    ImGui::PushFont(nullptr, font_size);
     ImGui::Button("8 x 2 em", EmToVec2(8.f, 2.f));
     ImGui::SameLine();
-    HelpMarker("EmToVec2(8, 2) gives the size in pixels. Change the font size: the button follows it.");
+    ImGui::Button("A standard button");
+    ImGui::SameLine();
+    HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
     ImGui::Text("1 em = %.1f px", EmSize());
+    ImGui::PopFont();
 }
 
 //-----------------------------------------------------------------------------
