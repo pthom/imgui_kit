@@ -319,36 +319,42 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 p1 = p0 + size;
     float rounding = size.y * 0.5f;
-    // The active segment is a pill inset in the track, its color mixed from the frame and the text colors:
-    // it stands out in any theme, and its label stays readable.
+    // The active segment's color is mixed from the frame and the text colors: it stands out in any theme, and its
+    // label stays readable.
     ImVec4 window_bg = style.Colors[ImGuiCol_WindowBg], frame = style.Colors[ImGuiCol_FrameBg];
     ImVec4 track = ImLerp(window_bg, frame, frame.w);
     track.w = 1.0f;
     ImVec4 text = style.Colors[ImGuiCol_Text];
-    float pad = ImMax(2.0f, ImTrunc(ImGui::GetFontSize() * 0.15f));
-    auto fill_pill = [&](int i, float text_amount)
+    auto fill_segment = [&](int i, float text_amount)
     {
         ImVec4 col = ImLerp(track, text, text_amount);
         col.w = 1.0f;
+        ImDrawFlags flags = ImDrawFlags_RoundNone;  // round only at the switch's ends
+        if (labels_count == 1)
+            flags = ImDrawFlags_RoundAll;
+        else if (i == 0)
+            flags = ImDrawFlags_RoundLeft;
+        else if (i == labels_count - 1)
+            flags = ImDrawFlags_RoundRight;
         float x0 = p0.x + segment_width * (float)i;
-        ImVec2 a(x0 + pad, p0.y + pad), b(x0 + segment_width - pad, p1.y - pad);
-        draw_list->AddRectFilled(a, b, ImGui::GetColorU32(col), (b.y - a.y) * 0.5f);
+        draw_list->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x0 + segment_width, p1.y), ImGui::GetColorU32(col), rounding,
+                                 flags);
     };
     draw_list->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_FrameBg), rounding);
-    draw_list->AddRect(p0, p1, ImGui::GetColorU32(ImGuiCol_Border), rounding);
     if (ImGui::IsItemHovered())
     {
         int over = ImClamp((int)((ImGui::GetIO().MousePos.x - p0.x) / segment_width), 0, labels_count - 1);
         if (over != *current)
-            fill_pill(over, 0.08f);
+            fill_segment(over, 0.08f);
     }
     if (*current >= 0 && *current < labels_count)
-        fill_pill(*current, 0.22f);
+        fill_segment(*current, 0.22f);
     for (int i = 1; i < labels_count; i++)
     {
         float x = p0.x + segment_width * (float)i;
-        draw_list->AddLine(ImVec2(x, p0.y + pad), ImVec2(x, p1.y - pad), ImGui::GetColorU32(ImGuiCol_Border));
+        draw_list->AddLine(ImVec2(x, p0.y), ImVec2(x, p1.y), ImGui::GetColorU32(ImGuiCol_Border));
     }
+    draw_list->AddRect(p0, p1, ImGui::GetColorU32(ImGuiCol_Border), rounding);
     for (int i = 0; i < labels_count; i++)
     {
         ImVec2 text_size = ImGui::CalcTextSize(labels[i], nullptr, true);
