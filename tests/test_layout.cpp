@@ -4,7 +4,6 @@
 #include "imgui_impl_null.h"
 #include "imgui_kit.h"
 #include "imgui_internal.h"
-#include <initializer_list>
 
 namespace
 {
@@ -108,7 +107,8 @@ TEST_CASE("Label column: the widgets after labels of different widths start at t
 {
     Bench bench;
     float x_short = 0, x_long = 0, label_right_short = 0, label_right_long = 0;
-    for (float align : {0.0f, 1.0f})
+    const float aligns[] = { 0.0f, 1.0f };
+    for (float align : aligns)
     {
         auto gui = [&] {
             ImGui::PushID(align == 0.0f ? "left" : "right");
