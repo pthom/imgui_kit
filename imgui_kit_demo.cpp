@@ -7,7 +7,7 @@
 /*
 
 Index of this file:
-// [SECTION] Toolbar: theme and font size
+// [SECTION] Toolbar: theme, font size, frame rounding
 // [SECTION] Em units
 // [SECTION] Layout
 // [SECTION] Widgets
@@ -28,7 +28,7 @@ namespace
 {
 
 //-----------------------------------------------------------------------------
-// [SECTION] Toolbar: theme and font size
+// [SECTION] Toolbar: theme, font size, frame rounding
 //-----------------------------------------------------------------------------
 
 // The theme and the frame rounding apply to the whole application; "App" restores the colors it had.
@@ -37,18 +37,16 @@ void DemoToolbar(float* font_size)
 {
     IMGUI_DEMO_MARKER("Toolbar");
     static ImVec4 app_colors[ImGuiCol_COUNT];
-    static bool app_colors_saved = false;
+    static float app_rounding = -1.0f;  // -1: not read yet
     ImGuiStyle& style = ImGui::GetStyle();
-    if (!app_colors_saved)
+    if (app_rounding < 0.0f)
     {
         for (int i = 0; i < ImGuiCol_COUNT; i++)
             app_colors[i] = style.Colors[i];
-        app_colors_saved = true;
+        app_rounding = style.FrameRounding;
     }
 
-    BeginFlow("toolbar");
-    FlowNext();
-    ImGui::BeginGroup();
+    // First line: the theme
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Theme");
     ImGui::SameLine();
@@ -66,26 +64,37 @@ void DemoToolbar(float* font_size)
         else
             ImGui::StyleColorsClassic();
     }
-    ImGui::EndGroup();
 
+    // Second line: the sizes (its parts flow to a new line on a narrow screen)
+    BeginFlow("sizes");
     FlowNext();
     ImGui::BeginGroup();
-    ImGui::SetNextItemWidth(EmSize(8.f));
-    ImGui::SliderFloat("##font_size", font_size, 8.0f, 40.0f, "Font %.0f px");
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Font size");
     ImGui::SameLine();
-    if (ImGui::Button("Reset"))
-        *font_size = style.FontSizeBase;
+    ImGui::SetNextItemWidth(EmSize(8.f));
+    ImGui::SliderFloat("##font_size", font_size, 8.0f, 40.0f, "%.0f px");
     ImGui::EndGroup();
 
     FlowNext();
     ImGui::BeginGroup();
-    ImGui::SetNextItemWidth(EmSize(10.f));
-    ImGui::SliderFloat("##rounding", &style.FrameRounding, 0.0f, 12.0f, "Frame rounding %.0f px");
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Frame rounding");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(EmSize(8.f));
+    ImGui::SliderFloat("##rounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f px");
     ImGui::SameLine();
     HelpMarker("The style's FrameRounding: ImGui::GetStyle().FrameRounding. Buttons, sliders, input fields and "
                "the segmented switch round their corners with it. 0 gives square frames; half the frame's height "
                "gives a pill.");
     ImGui::EndGroup();
+
+    FlowNext();
+    if (ImGui::Button("Reset"))  // the application's font size and frame rounding
+    {
+        *font_size = style.FontSizeBase;
+        style.FrameRounding = app_rounding;
+    }
     EndFlow();
 }
 
