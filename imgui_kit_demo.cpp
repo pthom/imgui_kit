@@ -270,6 +270,13 @@ void DemoSegmentedSwitch()
     static int unit = 1;
     const char* units[] = { "mm", "cm", "inch" };
     SegmentedSwitch("##unit", &unit, units, IM_ARRAYSIZE(units));
+
+    ImGui::TextWrapped("One switch as a pill: push a FrameRounding of half the frame's height around it.");
+    static int period = 1;
+    const char* periods[] = { "Day", "Week", "Month" };
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, ImGui::GetFrameHeight() * 0.5f);
+    SegmentedSwitch("##period", &period, periods, IM_ARRAYSIZE(periods));
+    ImGui::PopStyleVar();
     ImGui::TreePop();
 }
 
