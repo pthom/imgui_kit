@@ -7,6 +7,7 @@
 /*
 
 Index of this file:
+// [SECTION] Toolbar: theme and font size
 // [SECTION] Em units
 // [SECTION] Layout
 // [SECTION] Widgets
@@ -27,6 +28,57 @@ namespace
 {
 
 //-----------------------------------------------------------------------------
+// [SECTION] Toolbar: theme and font size
+//-----------------------------------------------------------------------------
+
+// The theme applies to the whole application; "App" restores the colors it had. The font size applies to the demo.
+void DemoToolbar(float* font_size)
+{
+    IMGUI_DEMO_MARKER("Toolbar");
+    static ImVec4 app_colors[ImGuiCol_COUNT];
+    static bool app_colors_saved = false;
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (!app_colors_saved)
+    {
+        for (int i = 0; i < ImGuiCol_COUNT; i++)
+            app_colors[i] = style.Colors[i];
+        app_colors_saved = true;
+    }
+
+    BeginFlow("toolbar");
+    FlowNext();
+    ImGui::BeginGroup();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Theme");
+    ImGui::SameLine();
+    static int theme = 0;
+    const char* themes[] = { "App", "Dark", "Light", "Classic" };
+    if (SegmentedSwitch("##theme", &theme, themes, IM_ARRAYSIZE(themes)))
+    {
+        if (theme == 0)
+            for (int i = 0; i < ImGuiCol_COUNT; i++)
+                style.Colors[i] = app_colors[i];
+        else if (theme == 1)
+            ImGui::StyleColorsDark();
+        else if (theme == 2)
+            ImGui::StyleColorsLight();
+        else
+            ImGui::StyleColorsClassic();
+    }
+    ImGui::EndGroup();
+
+    FlowNext();
+    ImGui::BeginGroup();
+    ImGui::SetNextItemWidth(EmSize(8.f));
+    ImGui::SliderFloat("##font_size", font_size, 8.0f, 40.0f, "Font %.0f px");
+    ImGui::SameLine();
+    if (ImGui::Button("Reset"))
+        *font_size = style.FontSizeBase;
+    ImGui::EndGroup();
+    EndFlow();
+}
+
+//-----------------------------------------------------------------------------
 // [SECTION] Em units
 //-----------------------------------------------------------------------------
 
@@ -36,18 +88,8 @@ void DemoEmUnits()
     if (!ImGui::CollapsingHeader("Em units"))
         return;
     ImGui::TextWrapped("Sizes in em follow the font: the first button is 8 em wide and 2 em high, on any screen. "
-                       "Change the font size: it grows with the text, as a standard button does. "
+                       "Change the font size at the top: it grows with the text, as a standard button does. "
                        "The last button keeps its size in pixels: at a large font, its label gets cut.");
-    static float font_size = 0.0f;  // 0: the current size, unchanged
-    if (font_size == 0.0f)
-        font_size = ImGui::GetStyle().FontSizeBase;
-    ImGui::SetNextItemWidth(EmSize(12.f));
-    ImGui::SliderFloat("Font size", &font_size, 8.0f, 40.0f, "%.0f px");
-    ImGui::SameLine();
-    if (ImGui::Button("Reset"))
-        font_size = ImGui::GetStyle().FontSizeBase;
-
-    ImGui::PushFont(nullptr, font_size);
     ImGui::Button("8 x 2 em", EmToVec2(8.f, 2.f));
     ImGui::SameLine();
     ImGui::Button("A standard button");
@@ -56,7 +98,6 @@ void DemoEmUnits()
     ImGui::SameLine();
     HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
     ImGui::Text("1 em = %.1f px", EmSize());
-    ImGui::PopFont();
 }
 
 //-----------------------------------------------------------------------------
@@ -122,8 +163,8 @@ void DemoFlow()
         return;
     ImGui::TextWrapped("The buttons stay on a line while they fit. Resize the window: they flow to the next line.");
     static int selected = 0;
-    const char* presets[] = { "Lung", "Mediastinum", "Bone", "Full range", "Brain", "Liver", "Soft tissue",
-                              "Abdomen", "Spine", "Angiography", "Stroke", "Temporal bone", "Custom" };
+    const char* presets[] = { "Coral", "Lavender", "Mint", "Sunflower yellow", "Sky", "Peach", "Forest green",
+                              "Sand", "Honey", "Midnight blue", "Rose", "Turquoise", "Custom" };
     BeginFlow("presets");
     for (int i = 0; i < IM_ARRAYSIZE(presets); i++)
     {
@@ -251,10 +292,16 @@ void ShowDemoWindow(bool* p_open)
 void ShowDemoContents()
 {
     ImGui::Text("ImGuiKit %s: small, standalone additions to Dear ImGui", IMGUI_KIT_VERSION);
+    static float font_size = 0.0f;  // 0: the application's size, read at the first frame
+    if (font_size == 0.0f)
+        font_size = ImGui::GetStyle().FontSizeBase;
+    DemoToolbar(&font_size);
     ImGui::Separator();
+    ImGui::PushFont(nullptr, font_size);
     DemoEmUnits();
     DemoLayout();
     DemoWidgets();
+    ImGui::PopFont();
 }
 
 } // namespace ImGuiKit
