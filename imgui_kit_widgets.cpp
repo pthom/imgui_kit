@@ -9,6 +9,7 @@ Index of this file:
 // [SECTION] Icon button
 // [SECTION] Segmented switch
 // [SECTION] Fit text
+// [SECTION] Resize handle
 
 */
 
@@ -404,6 +405,66 @@ const char* FitText(const char* text, float wrap_width, int max_lines)
         if (end == 0 || ImGui::CalcTextSize(buffer.Data, nullptr, false, wrap_width).y <= max_height)
             return buffer.Data;
     }
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Resize handle
+//-----------------------------------------------------------------------------
+
+// The grip lies over the item it resizes, which was submitted first and may own the hover (a plot, a text field): the
+// grip takes the active state at the press itself, so that the drag goes to it.
+bool ResizeHandle(const char* str_id, ImVec2* size, const ImVec2& min_size)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+    ImGuiContext& g = *GImGui;
+    const ImGuiID id = window->GetID(str_id);
+    const ImVec2 item_min = ImGui::GetItemRectMin(), item_max = ImGui::GetItemRectMax();
+    const float grip = ImGui::GetFontSize();
+    const ImRect grip_bb(ImVec2(item_max.x - grip, item_max.y - grip), item_max);
+    ImGui::ItemAdd(grip_bb, id, nullptr, ImGuiItemFlags_NoNav);
+
+    ImGuiStorage* storage = ImGui::GetStateStorage();
+    const ImGuiID offset_x_key = ImHashStr("offset_x", 0, id), offset_y_key = ImHashStr("offset_y", 0, id);
+    // The item may be a child window (a multiline text field, a child): it, not this window, is then the hovered one
+    const ImGuiHoveredFlags hover_flags = ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_ChildWindows;
+    const bool hovered = ImGui::IsWindowHovered(hover_flags) && ImGui::IsMouseHoveringRect(grip_bb.Min, grip_bb.Max);
+    if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    {
+        ImGui::SetActiveID(id, window);
+        ImGui::FocusWindow(window);
+        // Where the grip was taken, from the item's corner: the corner stays at that distance from the mouse
+        storage->SetFloat(offset_x_key, item_max.x - g.IO.MousePos.x);
+        storage->SetFloat(offset_y_key, item_max.y - g.IO.MousePos.y);
+    }
+
+    bool changed = false;
+    const bool active = (g.ActiveId == id);
+    if (active)
+    {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+            ImVec2 corner(g.IO.MousePos.x + storage->GetFloat(offset_x_key),
+                          g.IO.MousePos.y + storage->GetFloat(offset_y_key));
+            ImVec2 new_size(ImMax(corner.x - item_min.x, min_size.x), ImMax(corner.y - item_min.y, min_size.y));
+            if (new_size.x != size->x || new_size.y != size->y)
+            {
+                *size = new_size;
+                changed = true;
+            }
+        }
+        else
+            ImGui::ClearActiveID();
+    }
+    if (hovered || active)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNWSE);
+
+    // A window's resize grip: its colors, a triangle in the corner
+    ImGuiCol col = active ? ImGuiCol_ResizeGripActive : hovered ? ImGuiCol_ResizeGripHovered : ImGuiCol_ResizeGrip;
+    window->DrawList->AddTriangleFilled(grip_bb.Max, ImVec2(grip_bb.Min.x, grip_bb.Max.y),
+                                        ImVec2(grip_bb.Max.x, grip_bb.Min.y), ImGui::GetColorU32(col));
+    return changed;
 }
 
 } // namespace ImGuiKit

@@ -7,6 +7,9 @@ Index of this file:
 // [SECTION] Helpers
 // [SECTION] Fill row
 // [SECTION] Aligned group
+// [SECTION] Column
+// [SECTION] Label column
+// [SECTION] Group panel
 // [SECTION] Flow
 
 */
@@ -117,6 +120,19 @@ struct LabelColumn
     Hidden hidden;
 };
 ImVector<LabelColumn> gLabelColumns;
+
+//-----------------------------------------------------------------------------
+// [SECTION] Group panel
+//-----------------------------------------------------------------------------
+
+struct GroupPanel
+{
+    ImVec2 topLeft;      // screen position of the panel, at BeginGroupPanel()
+    ImVec2 minSize;      // the size asked
+    float labelLeft;     // screen x of the label, and its right end
+    float labelRight;
+};
+ImVector<GroupPanel> gGroupPanels;
 
 //-----------------------------------------------------------------------------
 // [SECTION] Flow
@@ -281,6 +297,66 @@ void EndLabelColumn()
     StoreFloat(lc.id, lc.widest);
     lc.hidden.End();
     gLabelColumns.pop_back();
+}
+
+//-----------------------------------------------------------------------------
+// [SECTION] Group panel
+//-----------------------------------------------------------------------------
+
+// The frame is drawn at the end, around the content's group: no clip rects or item spacing to push during the content
+void BeginGroupPanel(const char* label, const ImVec2& size)
+{
+    const ImGuiStyle& style = ImGui::GetStyle();
+    GroupPanel panel;
+    panel.topLeft = ImGui::GetCursorScreenPos();
+    panel.minSize = size;
+    ImGui::BeginGroup();  // the whole panel
+
+    // The label, in the frame's top border
+    const char* label_end = ImGui::FindRenderedTextEnd(label);
+    panel.labelLeft = panel.topLeft.x + style.FramePadding.x * 2.0f;
+    panel.labelRight = panel.labelLeft + ImGui::CalcTextSize(label, label_end).x;
+    ImGui::SetCursorScreenPos(ImVec2(panel.labelLeft, panel.topLeft.y));
+    ImGui::TextUnformatted(label, label_end);
+
+    // The content, inside the frame's padding
+    ImGui::SetCursorScreenPos(ImVec2(panel.topLeft.x + style.FramePadding.x * 2.0f,
+                                     panel.topLeft.y + ImGui::GetTextLineHeight() + style.FramePadding.y));
+    ImGui::BeginGroup();
+    gGroupPanels.push_back(panel);
+}
+
+void EndGroupPanel()
+{
+    IM_ASSERT(!gGroupPanels.empty() && "EndGroupPanel() without BeginGroupPanel()");
+    const ImGuiStyle& style = ImGui::GetStyle();
+    GroupPanel panel = gGroupPanels.back();
+    gGroupPanels.pop_back();
+    ImGui::EndGroup();  // the content
+    ImVec2 content_max = ImGui::GetItemRectMax();
+
+    float right = ImMax(content_max.x + style.FramePadding.x * 2.0f, panel.labelRight + style.FramePadding.x * 2.0f);
+    right = ImMax(right, panel.topLeft.x + panel.minSize.x);
+    float bottom = ImMax(content_max.y + style.FramePadding.y * 2.0f, panel.topLeft.y + panel.minSize.y);
+    ImGui::SetCursorScreenPos(panel.topLeft);
+    ImGui::Dummy(ImVec2(right - panel.topLeft.x, bottom - panel.topLeft.y));  // the panel's whole size
+    ImGui::EndGroup();
+
+    // The frame, from the middle of the label's line, with a gap for the label: drawn three times, clipped
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImRect frame(ImVec2(panel.topLeft.x, panel.topLeft.y + ImGui::GetTextLineHeight() * 0.5f), ImVec2(right, bottom));
+    float gap = style.ItemInnerSpacing.x;
+    ImRect clips[3] = {
+        ImRect(ImVec2(frame.Min.x - 1.0f, frame.Min.y - 1.0f), ImVec2(panel.labelLeft - gap, frame.Max.y + 1.0f)),
+        ImRect(ImVec2(panel.labelRight + gap, frame.Min.y - 1.0f), ImVec2(frame.Max.x + 1.0f, frame.Max.y + 1.0f)),
+        ImRect(ImVec2(panel.labelLeft - gap, frame.Min.y + 1.0f), ImVec2(panel.labelRight + gap, frame.Max.y + 1.0f)),
+    };
+    for (const ImRect& clip : clips)
+    {
+        draw_list->PushClipRect(clip.Min, clip.Max, true);
+        draw_list->AddRect(frame.Min, frame.Max, ImGui::GetColorU32(ImGuiCol_Border), style.FrameRounding);
+        draw_list->PopClipRect();
+    }
 }
 
 //-----------------------------------------------------------------------------

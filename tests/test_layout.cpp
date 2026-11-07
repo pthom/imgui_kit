@@ -232,3 +232,56 @@ TEST_CASE("Fit text: the text itself when it fits, else cut at a word, with an e
     CHECK(std::string(long_text).rfind(fitted_long.substr(0, fitted_long.size() - 3), 0) == 0);  // a prefix
     CHECK(fitted_height <= 2 * line_height + 1);
 }
+
+TEST_CASE("Group panel: the frame holds the content, and is at least the size asked")
+{
+    Bench bench;
+    ImVec2 panel_min, panel_max, content_min, content_max;
+    auto gui = [&] {
+        ImGuiKit::BeginGroupPanel("Image info", ImVec2(300, 0));
+        ImGui::Button("content", ImVec2(120, 40));
+        content_min = ImGui::GetItemRectMin();
+        content_max = ImGui::GetItemRectMax();
+        ImGuiKit::EndGroupPanel();
+        panel_min = ImGui::GetItemRectMin();
+        panel_max = ImGui::GetItemRectMax();
+    };
+    for (int i = 0; i < 2; i++)
+        bench.Frame(600, gui);
+    CHECK(content_min.x > panel_min.x);
+    CHECK(content_min.y > panel_min.y + ImGui::GetTextLineHeight() * 0.5f);  // below the label's line
+    CHECK(content_max.x < panel_max.x);
+    CHECK(content_max.y < panel_max.y);
+    CHECK(panel_max.x - panel_min.x == doctest::Approx(300));
+}
+
+TEST_CASE("Resize handle: a drag on the grip resizes the item, the corner following the mouse")
+{
+    Bench bench;
+    ImVec2 size(100, 50), item_max;
+    auto gui = [&] {
+        ImGui::Button("resizable", size);
+        item_max = ImGui::GetItemRectMax();
+        ImGuiKit::ResizeHandle("##size", &size, ImVec2(40, 40));
+    };
+    bench.Frame(600, gui);
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 grab(item_max.x - 3, item_max.y - 3);  // inside the grip
+    io.AddMousePosEvent(grab.x, grab.y);
+    bench.Frame(600, gui);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+    bench.Frame(600, gui);
+    io.AddMousePosEvent(grab.x + 30, grab.y + 20);
+    bench.Frame(600, gui);
+    CHECK(size.x == doctest::Approx(130));
+    CHECK(size.y == doctest::Approx(70));
+    io.AddMousePosEvent(grab.x - 200, grab.y - 200);  // far up-left: the minimum size holds
+    bench.Frame(600, gui);
+    CHECK(size.x == doctest::Approx(40));
+    CHECK(size.y == doctest::Approx(40));
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    io.AddMousePosEvent(grab.x + 100, grab.y + 100);
+    bench.Frame(600, gui);
+    bench.Frame(600, gui);
+    CHECK(size.x == doctest::Approx(40));  // released: the size no longer follows the mouse
+}
