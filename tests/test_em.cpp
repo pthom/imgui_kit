@@ -45,7 +45,7 @@ TEST_CASE("The demo window runs, its sections open")
 {
     Bench bench;
     bench.Frame([] { ImGuiKit::ShowDemoWindow(); });  // the window exists from here
-    ImGuiWindow* window = ImGui::FindWindowByName("imgui_kit Demo");
+    ImGuiWindow* window = ImGui::FindWindowByName("ImGuiKit Demo");
     REQUIRE(window != nullptr);
     for (const char* section : {"Em units", "Layout", "Widgets"})  // open every header, as a click would
         window->StateStorage.SetInt(window->GetID(section), 1);

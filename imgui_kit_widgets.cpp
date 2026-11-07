@@ -42,7 +42,13 @@ void NewLineIfNoRoom(float width)
 //-----------------------------------------------------------------------------
 
 enum HelpMarkerShown { HelpMarkerShown_Tooltip, HelpMarkerShown_Popup };
-ImVector<int> gHelpMarkersShown;  // what each open BeginHelpMarker() shows, for EndHelpMarker()
+struct HelpMarkerOpen
+{
+    HelpMarkerShown shown;
+    ImGuiStorage* storage = nullptr;  // the marker's window: it keeps whether the tooltip's text was cut
+    ImGuiID cut_key = 0;
+};
+ImVector<HelpMarkerOpen> gHelpMarkersShown;  // what each open BeginHelpMarker() shows, for EndHelpMarker()
 
 void DefaultHelpMarkerTextRenderer(const char* text)
 {
@@ -142,18 +148,35 @@ void DrawIcon(ImDrawList* draw_list, const ImRect& bb, ImGuiKitIcon icon, ImU32 
 // [SECTION] Help marker
 //-----------------------------------------------------------------------------
 
-// The help's window width: `content_width` (0: let the content size it), at most 30 em and the screen's width.
-// A content that wraps to its window's width (Markdown) needs a width given: an auto-sized window offers it none.
-static void SetNextHelpWindowWidth(float content_width)
+constexpr float kHelpWidthEm = 35.0f;      // the default width of a help's text, as Dear ImGui's demo wraps it
+constexpr float kHelpMaxHeight = 0.6f;     // a help's window, at most this fraction of the screen's height
+
+// The help window's size, before it begins. Its width: the asked one, else the text's on one line up to 35 em, else
+// none (the content sizes it); never wider than the screen. Its height: at most 60% of the screen (a popup then
+// scrolls, a tooltip shows its beginning). A content that wraps to its window's width (Markdown) needs a width:
+// an auto-sized window offers it none. Returns the width set, or 0.
+static float SetNextHelpWindowSize(float width, float text_width)
 {
-    if (content_width <= 0.0f)
-        return;
-    float max_width = ImMin(ImGui::GetFontSize() * 30.0f, ImGui::GetMainViewport()->WorkSize.x - ImGui::GetFontSize() * 2.0f);
-    float width = ImMin(content_width + ImGui::GetStyle().WindowPadding.x * 2.0f, max_width);
-    ImGui::SetNextWindowSize(ImVec2(width, 0.0f));
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    float em = ImGui::GetFontSize();
+    float w = 0.0f;
+    if (width > 0.0f)
+        w = width;
+    else if (text_width > 0.0f)
+        w = ImMin(text_width + ImGui::GetStyle().WindowPadding.x * 2.0f, em * kHelpWidthEm);
+    if (w > 0.0f)
+        w = ImMin(w, viewport->WorkSize.x - em * 2.0f);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(w, 0.0f), ImVec2(w > 0.0f ? w : FLT_MAX, viewport->WorkSize.y * kHelpMaxHeight));
+    return w;
 }
 
-static bool BeginHelpMarkerWithWidth(const char* str_id, float content_width)
+// The text wraps at the window's edge when its width is set, else at 35 em
+static void PushHelpTextWrapPos(float window_width)
+{
+    ImGui::PushTextWrapPos(window_width > 0.0f ? 0.0f : ImGui::GetFontSize() * kHelpWidthEm);
+}
+
+static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
 {
     ImVec2 size = HelpMarkerSize();
     NewLineIfNoRoom(size.x);
@@ -166,49 +189,65 @@ static bool BeginHelpMarkerWithWidth(const char* str_id, float content_width)
 
     if (clicked)
         ImGui::OpenPopup("##help_popup");
-    float wrap_width = ImGui::GetFontSize() * 30.0f;
-    SetNextHelpWindowWidth(content_width);
-    if (ImGui::BeginPopup("##help_popup"))
+    if (ImGui::IsPopupOpen("##help_popup"))
     {
-        gHelpMarkersShown.push_back(HelpMarkerShown_Popup);
-        ImGui::PushTextWrapPos(wrap_width);
-        return true;
+        float window_width = SetNextHelpWindowSize(width, text_width);
+        if (ImGui::BeginPopup("##help_popup"))
+        {
+            gHelpMarkersShown.push_back(HelpMarkerOpen{HelpMarkerShown_Popup});
+            PushHelpTextWrapPos(window_width);
+            return true;
+        }
     }
     // A finger has no hover: on a touch screen, only the tap shows the text
     bool touch = ImGui::GetIO().MouseSource == ImGuiMouseSource_TouchScreen;
     if (hovered && !touch)
-        SetNextHelpWindowWidth(content_width);
-    if (hovered && !touch && ImGui::BeginTooltip())
     {
-        gHelpMarkersShown.push_back(HelpMarkerShown_Tooltip);
-        ImGui::PushTextWrapPos(wrap_width);
-        return true;
+        // A tooltip cannot scroll (the mouse cannot reach it): no scrollbar, and when its text was cut on the
+        // previous frame, its first line says how to read the rest
+        HelpMarkerOpen open{HelpMarkerShown_Tooltip, ImGui::GetStateStorage(), ImGui::GetID("##help_tooltip_cut")};
+        bool was_cut = open.storage->GetBool(open.cut_key, false);
+        float window_width = SetNextHelpWindowSize(width, text_width);
+        if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_None, ImGuiWindowFlags_NoScrollbar))
+        {
+            gHelpMarkersShown.push_back(open);
+            if (was_cut)
+            {
+                ImGui::TextDisabled("Click the (i) to read all");
+                ImGui::Separator();
+            }
+            PushHelpTextWrapPos(window_width);
+            return true;
+        }
     }
     ImGui::PopID();
     return false;
+}
+
+bool BeginHelpMarker(const char* str_id, float width_em)
+{
+    return BeginHelpMarkerEx(str_id, width_em * ImGui::GetFontSize(), 0.0f);
 }
 
 void EndHelpMarker()
 {
     IM_ASSERT(!gHelpMarkersShown.empty() && "EndHelpMarker() without a BeginHelpMarker() that returned true");
     ImGui::PopTextWrapPos();
-    if (gHelpMarkersShown.back() == HelpMarkerShown_Popup)
+    const HelpMarkerOpen& open = gHelpMarkersShown.back();
+    if (open.shown == HelpMarkerShown_Popup)
         ImGui::EndPopup();
     else
+    {
+        open.storage->SetBool(open.cut_key, ImGui::GetCurrentWindow()->ScrollMax.y > 0.0f);
         ImGui::EndTooltip();
+    }
     gHelpMarkersShown.pop_back();
     ImGui::PopID();
 }
 
-bool BeginHelpMarker(const char* str_id)
+void HelpMarker(const char* text, float width_em)
 {
-    return BeginHelpMarkerWithWidth(str_id, 0.0f);
-}
-
-void HelpMarker(const char* text)
-{
-    // The text's width on one line: the window takes it, up to 30 em, and the renderer wraps within it
-    if (BeginHelpMarkerWithWidth(text, ImGui::CalcTextSize(text).x))
+    if (BeginHelpMarkerEx(text, width_em * ImGui::GetFontSize(), ImGui::CalcTextSize(text).x))
     {
         gHelpMarkerTextRenderer(text);
         EndHelpMarker();

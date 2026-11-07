@@ -116,12 +116,20 @@ IMGUI_API void   EndFlow();
 // Help marker: a small drawn (i). It shows its text:
 //   - with a mouse: in a tooltip while hovered; a click pins it in a popup, until a click elsewhere or Escape;
 //   - on a touch screen (which has no hover): in a popup, opened by a tap.
+// width_em: the window's width, in em (a parameter named _em is in em; the kit's other sizes are in pixels, as
+// Dear ImGui's); 0 = the text's width on one line, up to 35 em (Dear ImGui's tooltips do not wrap; its demo wraps
+// its help at 35 em). Never wider than the screen. The height: at most 60% of the screen; a
+// longer text scrolls in the popup, and the tooltip says to click to read it all.
+// The text: '\n' starts a line with the default renderer; with a Markdown renderer, Markdown's rules apply (a
+// single '\n' joins the lines of a paragraph, an empty line separates paragraphs).
 // It goes to the next line when the current one has no room for it. Its ID is its text: two markers with the
 // same text in the same ID scope share their popup (use PushID() or BeginHelpMarker() to tell them apart).
-IMGUI_API void   HelpMarker(const char* text);
+IMGUI_API void   HelpMarker(const char* text, float width_em = 0.0f);
 // The same, with any content: draw it between the two calls when BeginHelpMarker() returns true.
+// width_em: 0 = the content sizes the window (its text wraps at 35 em); give a width for a content that wraps to
+// its window (Markdown).
 //     if (ImGuiKit::BeginHelpMarker("##level_help")) { ImGui::Text("..."); ImGuiKit::EndHelpMarker(); }
-IMGUI_API bool   BeginHelpMarker(const char* str_id);
+IMGUI_API bool   BeginHelpMarker(const char* str_id, float width_em = 0.0f);
 IMGUI_API void   EndHelpMarker();
 // The width a help marker takes at the end of a line, with the spacing before it
 IMGUI_API float  HelpMarkerWidth();

@@ -230,7 +230,7 @@ void DemoWidgets()
 void ShowDemoWindow(bool* p_open)
 {
     ImGui::SetNextWindowSize(EmToVec2(36.f, 30.f), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("imgui_kit Demo", p_open))
+    if (!ImGui::Begin("ImGuiKit Demo", p_open))
     {
         ImGui::End();
         return;
@@ -241,7 +241,7 @@ void ShowDemoWindow(bool* p_open)
 
 void ShowDemoContents()
 {
-    ImGui::Text("imgui_kit %s: small, standalone additions to Dear ImGui", IMGUI_KIT_VERSION);
+    ImGui::Text("ImGuiKit %s: small, standalone additions to Dear ImGui", IMGUI_KIT_VERSION);
     ImGui::Separator();
     DemoEmUnits();
     DemoLayout();
