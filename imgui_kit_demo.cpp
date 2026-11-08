@@ -252,7 +252,9 @@ void DemoFlow()
     ImGui::TextWrapped("The buttons stay on a line while they fit. Resize the window: they flow to the next line.");
     static int selected = 0;
     const char* presets[] = { "Coral", "Lavender", "Mint", "Sunflower yellow", "Sky", "Peach", "Forest green",
-                              "Sand", "Honey", "Midnight blue", "Rose", "Turquoise", "Custom" };
+                              "Sand", "Honey", "Midnight blue", "Rose", "Turquoise", "Olive", "Salmon",
+                              "Steel blue", "Plum", "Ivory", "Terracotta", "Sea green", "Mustard", "Slate gray",
+                              "Cherry red", "Teal", "Custom" };  // enough to flow onto several lines in a wide window
     ImGuiKit::BeginFlow("presets");
     for (int i = 0; i < IM_ARRAYSIZE(presets); i++)
     {
@@ -570,13 +572,14 @@ void DemoTouch()
     ImGui::BeginChild("##sideways", ImVec2(0.0f, ImGuiKit::EmSize(5.f)), ImGuiChildFlags_Borders,
                       ImGuiWindowFlags_HorizontalScrollbar);
     static int taps[8] = {};
+    float card_width = ImMax(ImGuiKit::EmSize(6.f), ImGui::GetContentRegionAvail().x * 0.3f);  // 3 per screen: it scrolls
     for (int i = 0; i < IM_ARRAYSIZE(taps); i++)
     {
         if (i > 0)
             ImGui::SameLine();
         char label[32];
         ImFormatString(label, IM_ARRAYSIZE(label), "Card %d\n%d taps###card%d", i + 1, taps[i], i);
-        if (ImGui::Button(label, ImGuiKit::EmToVec2(6.f, 3.f)))
+        if (ImGui::Button(label, ImVec2(card_width, ImGuiKit::EmSize(3.f))))
             taps[i]++;
     }
     ImGui::EndChild();
