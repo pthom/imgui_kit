@@ -221,6 +221,36 @@ struct ImGuiKitHelpMarkerOpen
     ImGuiID cut_key = 0;
 };
 
+// In a browser (SetupEmscripten, SetupEmscriptenKeyboard): what the page reported at the last frame, and the buffers
+// reused at each frame (no allocation once they have grown)
+struct ImGuiKitBrowserState
+{
+    ImGuiMouseSource LastPointerSource = ImGuiMouseSource_Mouse;
+    ImVector<int> FingersDown, FingersNow;  // the fingers' ids at the last frame, at this one
+    // The keyboard: what the page was last told
+    bool KeyboardWant = false;
+    bool KeyboardKeysMode = false;  // the widget is not an InputText
+    ImGuiID KeyboardId = 0;         // the active widget
+    ImVec2 KeyboardPos;
+    float KeyboardLineHeight = 0.f;
+    float KeyboardDisplayW = 0.f;
+    ImGuiID MirrorHash = 0;  // the text last mirrored into the page's field (its hash and length), and its caret
+    int MirrorLen = -1;
+    int MirrorCaret = -1;
+    int FramesWithoutWant = 0;
+    bool DroppedPress[ImGuiMouseButton_COUNT] = {};
+    ImVector<char> Text;    // a piece of the page's answer, zero-terminated (a text typed)
+    ImVector<char> Script;  // a script to send to the page
+};
+
+#ifdef __EMSCRIPTEN__
+// The scripts sent to the page, built in a reused buffer: text appended, a JS string literal appended (quoted and
+// escaped), then the zero that ends it
+void ImGuiKitScriptAppend(ImVector<char>& script, const char* text);
+void ImGuiKitScriptAppendString(ImVector<char>& script, const char* text, int len);
+const char* ImGuiKitScriptEnd(ImVector<char>& script);
+#endif
+
 struct ImGuiKitContext
 {
     ImVector<ImGuiKitFillRow> FillRows;
@@ -233,6 +263,7 @@ struct ImGuiKitContext
     ImVector<char> FitTextBuffer;                       // FitText()'s result, when the text was cut
     bool TouchSetUp = false;                            // a touch setup was called: Touch is in use
     ImGuiTouchContext Touch;
+    ImGuiKitBrowserState Browser;
 };
 
 // The touch layer's steps, which ImGuiTouch::Setup() calls through Dear ImGui's context hooks (the tests call them
