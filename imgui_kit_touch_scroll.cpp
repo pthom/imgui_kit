@@ -161,14 +161,12 @@ namespace
         }
     }
 
-    float Along(ImVec2 v, ImGuiAxis axis) { return axis == ImGuiAxis_X ? v.x : v.y; }
-
     // Scrolls the window by the finger's motion (the content follows the finger). Applied by its next Begin(),
     // which is later in this frame. Returns the part of the motion past the end of the scroll (zero when all of it
     // scrolls).
     float ScrollBy(ImGuiWindow* w, ImGuiAxis axis, float motion)
     {
-        float scroll = Along(w->Scroll, axis), scrollMax = Along(w->ScrollMax, axis);
+        float scroll = w->Scroll[axis], scrollMax = w->ScrollMax[axis];
         float room = (motion > 0.f) ? scroll : scrollMax - scroll;  // how far the content can still go that way
         float absorbed = ImMin(ImFabs(motion), room);
         if (axis == ImGuiAxis_X)
@@ -454,7 +452,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
         }
         if (s.swiping)
         {
-            float motion = Along(delta, s.axis);
+            float motion = delta[s.axis];
             if (s.pull * motion < 0.f)  // the finger comes back: the rubber band gives way before the content scrolls
             {
                 float left = s.pull + motion;
@@ -471,7 +469,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
 
     if (s.inertia.x != 0.f || s.inertia.y != 0.f)
     {
-        float speed = Along(s.inertia, s.axis);
+        float speed = s.inertia[s.axis];
         float past = ScrollBy(s.window, s.axis, speed * dt);
         s.inertia = s.inertia * expf(-kInertiaDecay * dt);
         const float minSpeed = kInertiaMinSpeedEm * g.FontSize;
