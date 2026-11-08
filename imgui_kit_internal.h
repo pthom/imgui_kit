@@ -22,6 +22,14 @@ namespace ImGuiKit
     bool IsInFillRowTail();
 }
 
+struct ImGuiKitContext;
+namespace ImGuiKit
+{
+    // The current Dear ImGui context's kit state (see this file's top), created at its first use: the widgets need no
+    // setup. Freed with the Dear ImGui context.
+    ImGuiKitContext& GetCurrentContext();
+}
+
 //-----------------------------------------------------------------------------
 // The touch layer's state, one per Dear ImGui context (as Dear ImGui's own, in ImGuiContext)
 //-----------------------------------------------------------------------------
@@ -125,6 +133,106 @@ struct ImGuiTouchContext
     ImGuiTouchScrollState Scroll;
     ImGuiTouchPinchState Pinch;
     ImGuiKitWheelSessionState WheelSession;
+};
+
+//-----------------------------------------------------------------------------
+// The kit's state, one per Dear ImGui context: the layout helpers' Begin/End stacks, the help markers', FitText's
+// buffer, and the touch layer's state
+//-----------------------------------------------------------------------------
+
+constexpr float ImGuiKitUnknown = -1.0f;  // a layout value never measured (the helper draws hidden on that frame)
+
+// Hides what follows until EndHidden(), and forgets how far it reached (its overflow adds no scrollbar)
+struct ImGuiKitHidden
+{
+    bool active = false;
+    ImVec2 cursorMaxPos;
+
+    void Begin()
+    {
+        active = true;
+        cursorMaxPos = ImGui::GetCurrentWindow()->DC.CursorMaxPos;
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
+    }
+    void End()
+    {
+        if (!active)
+            return;
+        ImGui::PopStyleVar();
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        // The hidden items still take their height: keep the vertical extent, drop the horizontal one
+        window->DC.CursorMaxPos.x = cursorMaxPos.x;
+        active = false;
+    }
+};
+
+struct ImGuiKitFillRow
+{
+    ImGuiID id;
+    float fillRight = 0.0f;  // the fill item's right edge (screen x), when the tail starts
+    bool tailStarted = false;
+    ImGuiKitHidden hidden;
+};
+
+struct ImGuiKitAlignedGroup
+{
+    ImGuiID id;
+    ImGuiKitHidden hidden;
+};
+
+struct ImGuiKitColumn
+{
+    ImGuiID id;
+    float left;   // screen x, at BeginColumn()
+    float width;  // on the previous frame, or ImGuiKitUnknown
+};
+
+struct ImGuiKitLabelColumn
+{
+    ImGuiID id;
+    float left;           // screen x, at BeginLabelColumn()
+    float alignX;
+    float column;         // the widest label on the previous frame, or ImGuiKitUnknown
+    float widest = 0.0f;  // the widest label on this frame
+    ImGuiKitHidden hidden;
+};
+
+struct ImGuiKitGroupPanel
+{
+    ImVec2 topLeft;      // screen position of the panel, at BeginGroupPanel()
+    ImVec2 minSize;      // the size asked
+    float labelLeft;     // screen x of the label, and its right end
+    float labelRight;
+};
+
+struct ImGuiKitFlow
+{
+    ImGuiID id;
+    float rightEdge;  // screen x: the line's end, fixed at BeginFlow()
+    int index = 0;    // the rank of the next item
+    ImGuiKitHidden hidden;
+};
+
+enum ImGuiKitHelpMarkerShown { ImGuiKitHelpMarkerShown_Tooltip, ImGuiKitHelpMarkerShown_Popup };
+struct ImGuiKitHelpMarkerOpen
+{
+    ImGuiKitHelpMarkerShown shown;
+    ImGuiStorage* storage = nullptr;  // the marker's window: it keeps whether the tooltip's text was cut
+    ImGuiID cut_key = 0;
+};
+
+struct ImGuiKitContext
+{
+    ImVector<ImGuiKitFillRow> FillRows;
+    ImVector<ImGuiKitAlignedGroup> AlignedGroups;
+    ImVector<ImGuiKitColumn> Columns;
+    ImVector<ImGuiKitLabelColumn> LabelColumns;
+    ImVector<ImGuiKitGroupPanel> GroupPanels;
+    ImVector<ImGuiKitFlow> Flows;
+    ImVector<ImGuiKitHelpMarkerOpen> HelpMarkersShown;  // what each open BeginHelpMarker() shows, for EndHelpMarker()
+    ImVector<char> FitTextBuffer;                       // FitText()'s result, when the text was cut
+    bool TouchSetUp = false;                            // a touch setup was called: Touch is in use
+    ImGuiTouchContext Touch;
 };
 
 // The touch layer's steps, which ImGuiTouch::Setup() calls through Dear ImGui's context hooks (the tests call them

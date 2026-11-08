@@ -20,9 +20,9 @@ namespace
 
     // SimulateTouch: the frame's mouse events (queued by the backend, which may tag each of them as a mouse's) become a
     // touch screen's, and so does the source of what follows. When it is turned off, the source goes back to the mouse.
-    void ApplySimulatedTouch(ImGuiContext& g)
+    void ApplySimulatedTouch(ImGuiContext& g, ImGuiTouchContext& tc)
     {
-        if (Ctx().Config.SimulateTouch)
+        if (tc.Config.SimulateTouch)
         {
             for (ImGuiInputEvent& e : g.InputEventsQueue)
             {
@@ -37,9 +37,9 @@ namespace
             }
             g.IO.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
         }
-        else if (Ctx().SimulatedTouch)
+        else if (tc.SimulatedTouch)
             g.IO.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
-        Ctx().SimulatedTouch = Ctx().Config.SimulateTouch;
+        tc.SimulatedTouch = tc.Config.SimulateTouch;
     }
 
     bool HasHooks(ImGuiContext* ctx, ImGuiID owner)
@@ -62,22 +62,13 @@ namespace
 
 namespace ImGuiTouch
 {
-// The state hangs on a Shutdown hook of the Dear ImGui context (its UserData), as the Test Engine's: the hook frees it
-// with the context (see imgui_kit_internal.h's top)
-namespace
-{
-    const ImGuiID kContextHookOwner = ImHashStr("ImGuiTouch_Context");
-}
-
+// The touch state is a part of the kit's (ImGuiKitContext), in use once a touch setup was called
 ImGuiTouchContext* FindCurrentContext()
 {
-    ImGuiContext* ctx = GImGui;
-    if (ctx == nullptr)
+    if (GImGui == nullptr)
         return nullptr;
-    for (ImGuiContextHook& hook : ctx->Hooks)
-        if (hook.Owner == kContextHookOwner && hook.Type == ImGuiContextHookType_Shutdown)
-            return (ImGuiTouchContext*)hook.UserData;
-    return nullptr;
+    ImGuiKitContext& kit = ImGuiKit::GetCurrentContext();
+    return kit.TouchSetUp ? &kit.Touch : nullptr;
 }
 
 ImGuiTouchContext& GetCurrentContext()
@@ -89,21 +80,9 @@ ImGuiTouchContext& GetCurrentContext()
 
 ImGuiTouchContext& CreateCurrentContextIfNeeded()
 {
-    ImGuiContext* ctx = GImGui;
-    IM_ASSERT(ctx != nullptr && "imgui_kit's touch layer needs a Dear ImGui context: call ImGui::CreateContext() first");
-    if (ImGuiTouchContext* state = FindCurrentContext())
-        return *state;
-    ImGuiTouchContext* state = IM_NEW(ImGuiTouchContext)();
-    ImGuiContextHook hook;
-    hook.Type = ImGuiContextHookType_Shutdown;
-    hook.Owner = kContextHookOwner;
-    hook.UserData = state;
-    hook.Callback = [](ImGuiContext*, ImGuiContextHook* h) {
-        IM_DELETE((ImGuiTouchContext*)h->UserData);
-        h->UserData = nullptr;
-    };
-    ImGui::AddContextHook(ctx, &hook);
-    return *state;
+    ImGuiKitContext& kit = ImGuiKit::GetCurrentContext();
+    kit.TouchSetUp = true;
+    return kit.Touch;
 }
 } // namespace ImGuiTouch
 
@@ -117,12 +96,13 @@ void Setup(const ImGuiTouchConfig& config)
     if (HasHooks(ctx, kTouchHooksOwner))
         return;
     AddHook(ctx, kTouchHooksOwner, ImGuiContextHookType_NewFramePre,
-            [](ImGuiContext* g, ImGuiContextHook*) { ApplySimulatedTouch(*g); });
+            [](ImGuiContext* g, ImGuiContextHook*) { ApplySimulatedTouch(*g, Ctx()); });
     AddHook(ctx, kTouchHooksOwner, ImGuiContextHookType_NewFramePost, [](ImGuiContext*, ImGuiContextHook*) {
-        Ctx().WasAnimating = Ctx().Animating;
-        Ctx().Animating = false;
-        UpdateTouchScroll(Ctx().Config.ScrollMode, Ctx().Config.LongPressIsRightClick, Ctx().Config.ThinScrollbars);
-        UpdateTouchPinch(Ctx().Config.PinchMode, Ctx().Config.PinchInterruptsWidgets);
+        ImGuiTouchContext& tc = Ctx();
+        tc.WasAnimating = tc.Animating;
+        tc.Animating = false;
+        UpdateTouchScroll(tc.Config.ScrollMode, tc.Config.LongPressIsRightClick, tc.Config.ThinScrollbars);
+        UpdateTouchPinch(tc.Config.PinchMode, tc.Config.PinchInterruptsWidgets);
     });
     AddHook(ctx, kTouchHooksOwner, ImGuiContextHookType_EndFramePre,
             [](ImGuiContext*, ImGuiContextHook*) { DrawTouchScrollbarGrab(); });
@@ -148,8 +128,9 @@ void RequestAnimation()
 
 bool ConsumeAnimationRequest()
 {
-    bool asked = Ctx().Animating;
-    Ctx().Animating = false;
+    ImGuiTouchContext& tc = Ctx();
+    bool asked = tc.Animating;
+    tc.Animating = false;
     return asked;
 }
 } // namespace ImGuiTouch

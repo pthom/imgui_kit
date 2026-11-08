@@ -225,8 +225,9 @@ namespace
         s.pull = 0.f;  // a content pulled past its end springs back
     }
 
-    // A replayed event. The test engine erases, each frame, the queued events it did not add itself (the backend's):
-    // these ones are ImGui's own, not the backend's, so they are marked as the engine marks its own.
+    // A replayed event: AddedByTestEngine means "not from the backend". The Test Engine, when it drives the app, erases
+    // at each frame the queued events it did not add (the backend's, which would fight its own): the layer's replays
+    // must survive it. The retagging of the mouse's source (SetupEmscripten, SimulateTouch) skips them too.
     void MarkReplayed(int sizeBefore)
     {
         ImGuiContext& g = *GImGui;

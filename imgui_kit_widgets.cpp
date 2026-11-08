@@ -44,19 +44,14 @@ void NewLineIfNoRoom(float width)
 // [SECTION] Help marker
 //-----------------------------------------------------------------------------
 
-enum HelpMarkerShown { HelpMarkerShown_Tooltip, HelpMarkerShown_Popup };
-struct HelpMarkerOpen
-{
-    HelpMarkerShown shown;
-    ImGuiStorage* storage = nullptr;  // the marker's window: it keeps whether the tooltip's text was cut
-    ImGuiID cut_key = 0;
-};
-ImVector<HelpMarkerOpen> gHelpMarkersShown;  // what each open BeginHelpMarker() shows, for EndHelpMarker()
+using HelpMarkerShown = ImGuiKitHelpMarkerShown;
+using HelpMarkerOpen = ImGuiKitHelpMarkerOpen;
 
 void DefaultHelpMarkerTextRenderer(const char* text)
 {
     ImGui::TextUnformatted(text);   // wrapped by the PushTextWrapPos() of BeginHelpMarker()
 }
+// A setting, not state: process-wide as Dear ImGui's allocator functions (an app may set it before CreateContext())
 HelpMarkerTextRenderer gHelpMarkerTextRenderer = DefaultHelpMarkerTextRenderer;
 
 // As high as the line it is on: a text's height on a line of text, a frame's after a framed widget
@@ -197,7 +192,7 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
         float window_width = SetNextHelpWindowSize(width, text_width);
         if (ImGui::BeginPopup("##help_popup"))
         {
-            gHelpMarkersShown.push_back(HelpMarkerOpen{HelpMarkerShown_Popup});
+            GetCurrentContext().HelpMarkersShown.push_back(HelpMarkerOpen{ImGuiKitHelpMarkerShown_Popup});
             PushHelpTextWrapPos(window_width);
             return true;
         }
@@ -208,12 +203,12 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
     {
         // A tooltip cannot scroll (the mouse cannot reach it): no scrollbar, and when its text was cut on the
         // previous frame, its first line says how to read the rest
-        HelpMarkerOpen open{HelpMarkerShown_Tooltip, ImGui::GetStateStorage(), ImGui::GetID("##help_tooltip_cut")};
+        HelpMarkerOpen open{ImGuiKitHelpMarkerShown_Tooltip, ImGui::GetStateStorage(), ImGui::GetID("##help_tooltip_cut")};
         bool was_cut = open.storage->GetBool(open.cut_key, false);
         float window_width = SetNextHelpWindowSize(width, text_width);
         if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_None, ImGuiWindowFlags_NoScrollbar))
         {
-            gHelpMarkersShown.push_back(open);
+            GetCurrentContext().HelpMarkersShown.push_back(open);
             if (was_cut)
             {
                 ImGui::TextDisabled("Click the (i) to read all");
@@ -234,17 +229,17 @@ bool BeginHelpMarker(const char* str_id, float width_em)
 
 void EndHelpMarker()
 {
-    IM_ASSERT(!gHelpMarkersShown.empty() && "EndHelpMarker() without a BeginHelpMarker() that returned true");
+    IM_ASSERT(!GetCurrentContext().HelpMarkersShown.empty() && "EndHelpMarker() without a BeginHelpMarker() that returned true");
     ImGui::PopTextWrapPos();
-    const HelpMarkerOpen& open = gHelpMarkersShown.back();
-    if (open.shown == HelpMarkerShown_Popup)
+    const HelpMarkerOpen& open = GetCurrentContext().HelpMarkersShown.back();
+    if (open.shown == ImGuiKitHelpMarkerShown_Popup)
         ImGui::EndPopup();
     else
     {
         open.storage->SetBool(open.cut_key, ImGui::GetCurrentWindow()->ScrollMax.y > 0.0f);
         ImGui::EndTooltip();
     }
-    gHelpMarkersShown.pop_back();
+    GetCurrentContext().HelpMarkersShown.pop_back();
     ImGui::PopID();
 }
 
@@ -402,7 +397,7 @@ const char* FitText(const char* text, float wrap_width, int max_lines)
     if (ImGui::CalcTextSize(text, nullptr, false, wrap_width).y <= max_height)
         return text;
     // The result is never longer than the text and the ellipsis: the buffer grows to that, and never truncates
-    static ImVector<char> buffer;
+    ImVector<char>& buffer = GetCurrentContext().FitTextBuffer;
     const char* ellipsis = "\xE2\x80\xA6";  // U+2026, 3 bytes
     const int len = (int)strlen(text);
     buffer.resize(len + 4);
