@@ -22,21 +22,21 @@ namespace
         ImGuiWindow* window = g.NavWindow;
         if (!keyboardShown || !ime.WantTextInput || window == nullptr)
         {
-            Internal::GetContext().CaretView = ImGuiTouchCaretView();
+            GetCurrentContext().CaretView = ImGuiTouchCaretView();
             return;
         }
         ImVec2 inContent(ime.InputPos.x + window->Scroll.x, ime.InputPos.y + window->Scroll.y);
-        bool changed = window->ID != Internal::GetContext().CaretView.window || inContent.x != Internal::GetContext().CaretView.inContent.x
-                       || inContent.y != Internal::GetContext().CaretView.inContent.y || visibleTop != Internal::GetContext().CaretView.visible.x
-                       || visibleBottom != Internal::GetContext().CaretView.visible.y;
+        bool changed = window->ID != GetCurrentContext().CaretView.window || inContent.x != GetCurrentContext().CaretView.inContent.x
+                       || inContent.y != GetCurrentContext().CaretView.inContent.y || visibleTop != GetCurrentContext().CaretView.visible.x
+                       || visibleBottom != GetCurrentContext().CaretView.visible.y;
         if (changed)
-            Internal::GetContext().CaretView.framesLeft = 3;  // the layout takes a frame or two to follow a new visible area
-        Internal::GetContext().CaretView.window = window->ID;
-        Internal::GetContext().CaretView.inContent = inContent;
-        Internal::GetContext().CaretView.visible = ImVec2(visibleTop, visibleBottom);
-        if (Internal::GetContext().CaretView.framesLeft == 0)
+            GetCurrentContext().CaretView.framesLeft = 3;  // the layout takes a frame or two to follow a new visible area
+        GetCurrentContext().CaretView.window = window->ID;
+        GetCurrentContext().CaretView.inContent = inContent;
+        GetCurrentContext().CaretView.visible = ImVec2(visibleTop, visibleBottom);
+        if (GetCurrentContext().CaretView.framesLeft == 0)
             return;
-        --Internal::GetContext().CaretView.framesLeft;
+        --GetCurrentContext().CaretView.framesLeft;
         float margin = ime.InputLineHeight * 0.5f;
         float top = ime.InputPos.y - margin, bottom = ime.InputPos.y + ime.InputLineHeight + margin;
         for (ImGuiWindow* w = window; w != nullptr; w = w->ParentWindow)
@@ -66,18 +66,16 @@ namespace
 
 void SetKeyboardInsets(const ImGuiTouchKeyboardInsets& insets)
 {
-    Internal::GetContext().KeyboardInsets = insets;
+    GetCurrentContext().KeyboardInsets = insets;
     if (ImGuiContext* ctx = ImGui::GetCurrentContext())
-        Internal::SetupKeepCaretInView(ctx);
+        SetupKeepCaretInView(ctx);
 }
 
 ImGuiTouchKeyboardInsets GetKeyboardInsets()
 {
-    return Internal::GetContext().KeyboardInsets;
+    return GetCurrentContext().KeyboardInsets;
 }
 
-namespace Internal
-{
 // Before each frame (a NewFramePre hook, installed once): the caret's line stays above the keyboard
 void SetupKeepCaretInView(ImGuiContext* ctx)
 {
@@ -89,10 +87,9 @@ void SetupKeepCaretInView(ImGuiContext* ctx)
     hook.Type = ImGuiContextHookType_NewFramePre;
     hook.Owner = owner;
     hook.Callback = [](ImGuiContext* g, ImGuiContextHook*) {
-        bool shown = Internal::GetContext().KeyboardInsets.Top > 0.f || Internal::GetContext().KeyboardInsets.Bottom > 0.f;
-        KeepCaretInView(*g, shown, Internal::GetContext().KeyboardInsets.Top, g->IO.DisplaySize.y - Internal::GetContext().KeyboardInsets.Bottom);
+        bool shown = GetCurrentContext().KeyboardInsets.Top > 0.f || GetCurrentContext().KeyboardInsets.Bottom > 0.f;
+        KeepCaretInView(*g, shown, GetCurrentContext().KeyboardInsets.Top, g->IO.DisplaySize.y - GetCurrentContext().KeyboardInsets.Bottom);
     };
     ImGui::AddContextHook(ctx, &hook);
 }
-} // namespace Internal
 } // namespace ImGuiTouch

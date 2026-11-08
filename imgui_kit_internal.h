@@ -1,5 +1,15 @@
-// imgui_kit: what its sources share, not part of its API
+// imgui_kit: what its sources share (internal API)
 // https://github.com/pthom/imgui_kit (MIT license)
+//
+// As Dear ImGui's imgui_internal.h: no guarantee of forward compatibility here. Code that includes it may need changes
+// at a new version of the kit.
+//
+// The touch layer's state, ImGuiTouchContext, is created implicitly: Dear ImGui has no slot for an extension's state,
+// so the first ImGuiTouch call made with a Dear ImGui context (GetCurrentContext(), called by Setup(), GetConfig(),
+// AddFingerEvent()...) allocates one, and stores it in the UserData of a context hook it adds (ImGui::AddContextHook,
+// of type Shutdown). The hooks are per context: each Dear ImGui context has its own touch state, found again through its
+// hooks. When the Dear ImGui context is destroyed, ImGui::DestroyContext() calls that hook, which frees the state. The
+// app has no CreateContext() / DestroyContext() of the kit's to call (ImPlot has its own, explicit).
 #pragma once
 #include "imgui_kit.h"
 #include "imgui_internal.h"  // ImRect, ImGuiWindow, ImGuiAxis
@@ -7,11 +17,8 @@
 
 namespace ImGuiKit
 {
-namespace Internal
-{
     // True between FillRowTail() and EndFillRow(): the fill row makes the room, a widget must not wrap
     bool IsInFillRowTail();
-}
 }
 
 //-----------------------------------------------------------------------------
@@ -149,16 +156,14 @@ namespace ImGuiTouch
     // when the second finger lands.
     void UpdateTouchPinch(ImGuiTouchPinchMode mode, bool interruptsWidgets);
 
-namespace Internal
-{
-    // The current Dear ImGui context's touch state, created at its first use, freed with the context
-    ImGuiTouchContext& GetContext();
+    // The current Dear ImGui context's touch state, created implicitly at its first use, freed with the Dear ImGui
+    // context (see this file's top)
+    ImGuiTouchContext& GetCurrentContext();
     // The content moves on its own this frame (the inertia, the bounce, an animation): IsAnimating() is true
     void RequestAnimation();
     void SetupKeepCaretInView(ImGuiContext* ctx);  // the caret kept above the keyboard (imgui_kit_touch_keyboard.cpp)
     // For the tests, which call the steps without the hooks: whether an animation was asked since the last call
     bool ConsumeAnimationRequest();
-}
 }
 
 namespace ImGuiKit

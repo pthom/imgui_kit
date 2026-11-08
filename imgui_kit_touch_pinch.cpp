@@ -39,7 +39,7 @@ namespace
 
 void AddFingerEvent(int id, const ImVec2& pos, bool down)
 {
-    State& s = Internal::GetContext().Pinch;
+    State& s = GetCurrentContext().Pinch;
     bool wasTwo = s.fingers.Size >= 2;
     int index = -1;
     for (int i = 0; i < s.fingers.Size; i++)
@@ -65,7 +65,7 @@ void AddFingerEvent(int id, const ImVec2& pos, bool down)
 void UpdateTouchPinch(ImGuiTouchPinchMode mode, bool interruptsWidgets)
 {
     ImGuiContext& g = *GImGui;
-    State& s = Internal::GetContext().Pinch;
+    State& s = GetCurrentContext().Pinch;
     bool twoFingers = (mode != ImGuiTouchPinchMode_Disabled) && s.fingers.Size >= 2;
     // The pinch's scale (their distance over their distance at the start), the move of their middle since the start
     float pinchScale = 1.f;
@@ -109,7 +109,7 @@ void UpdateTouchPinch(ImGuiTouchPinchMode mode, bool interruptsWidgets)
     }
     if (s.gesture == Gesture::Pinch && twoFingers && mode == ImGuiTouchPinchMode_FontScale)
     {
-        const ImGuiTouchConfig& config = Internal::GetContext().Config;
+        const ImGuiTouchConfig& config = GetCurrentContext().Config;
         ImGui::GetStyle().FontScaleMain = ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
     }
     if (s.gesture != Gesture::None && !twoFingers)

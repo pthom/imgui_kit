@@ -154,7 +154,7 @@ ImGuiID FlowItemKey(const Flow& flow, int index)
 
 } // namespace
 
-bool Internal::IsInFillRowTail()
+bool IsInFillRowTail()
 {
     return !gFillRows.empty() && gFillRows.back().tailStarted;
 }

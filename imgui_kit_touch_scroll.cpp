@@ -296,7 +296,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     if (s.context != &g || g.FrameCount < s.frameCount)
     {
         s = State{};
@@ -505,7 +505,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     // The long press's arc fills while the finger stays still, with no input event either
     if (s.inertia.x != 0.f || s.inertia.y != 0.f || s.overscroll != 0.f || s.overscrollSpeed != 0.f || rippling
         || s.watchingLongPress && !s.longPressArmed)
-        Internal::RequestAnimation();
+        RequestAnimation();
 }
 
 namespace
@@ -546,7 +546,7 @@ namespace
 
 void ApplyTouchOverscroll()
 {
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     ImGuiWindow* w = s.window;
     if (s.overscroll == 0.f || w == nullptr || s.context != GImGui || !w->Active)
         return;
@@ -572,7 +572,7 @@ void ApplyTouchOverscroll()
 bool TouchScrollLetGo(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.pull = 0.f;
@@ -595,7 +595,7 @@ bool TouchScrollLetGo(bool evenAWidget)
 bool TouchScrollRelease(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.watchingLongPress = s.longPressArmed = false;
@@ -620,7 +620,7 @@ bool TouchScrollRelease(bool evenAWidget)
 void DrawTouchScrollbarGrab()
 {
     ImGuiContext& g = *GImGui;
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     ImGuiWindow* w = g.ActiveIdWindow;
     ImGuiAxis axis = ImGuiAxis_None;
     if (s.thinScrollbars && w != nullptr && g.ActiveId != 0)
@@ -673,7 +673,7 @@ void DrawTouchScrollbarGrab()
     drawList->AddRectFilled(thumb.Min, thumb.Max, ImGui::GetColorU32(color), width * 0.5f);
     drawList->PopClipRect();
     if (t < 1.f)
-        Internal::RequestAnimation();
+        RequestAnimation();
 }
 
 // The widget just drawn: its visible part, noted for the press of the next frame. Nothing when the layer did not run
@@ -681,7 +681,7 @@ void DrawTouchScrollbarGrab()
 void SetItemTakesDrags(bool longPressIsRightClick)
 {
     ImGuiContext& g = *GImGui;
-    State& s = Internal::GetContext().Scroll;
+    State& s = GetCurrentContext().Scroll;
     if (s.context != &g || s.frameCount != g.FrameCount)
         return;
     ImGuiWindow* window = g.CurrentWindow;

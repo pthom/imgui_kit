@@ -36,7 +36,7 @@ namespace
 void NewLineIfNoRoom(float width)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (window->DC.IsSameLine && ImGui::GetContentRegionAvail().x < width && !Internal::IsInFillRowTail())
+    if (window->DC.IsSameLine && ImGui::GetContentRegionAvail().x < width && !IsInFillRowTail())
         ImGui::NewLine();
 }
 
@@ -362,7 +362,7 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
         float step = ImMin(1.0f, ImGui::GetIO().DeltaTime * 18.0f);
         pos = (ImFabs(target - pos) < 0.01f) ? target : pos + (target - pos) * step;
         if (pos != target)
-            ImGuiTouch::Internal::RequestAnimation();  // an app that idles keeps drawing meanwhile (IsAnimating())
+            ImGuiTouch::RequestAnimation();  // an app that idles keeps drawing meanwhile (IsAnimating())
         storage->SetFloat(pos_id, pos);
         fill_segment(pos, 0.22f);
     }

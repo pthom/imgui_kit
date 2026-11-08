@@ -742,7 +742,7 @@ void SetupEmscriptenKeyboard()
     hook.Owner = owner;
     hook.Callback = [](ImGuiContext*, ImGuiContextHook*) { UpdateKeyboard(); };
     ImGui::AddContextHook(ctx, &hook);
-    Internal::SetupKeepCaretInView(ctx);  // after the hook above: it reads the insets this one sets
+    SetupKeepCaretInView(ctx);  // after the hook above: it reads the insets this one sets
 }
 
 }  // namespace ImGuiTouch

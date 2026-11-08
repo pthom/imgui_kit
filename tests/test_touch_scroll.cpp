@@ -737,13 +737,13 @@ TEST_CASE("Touch scroll: while the content coasts, the app does not idle; once i
     b.Press(b.linesRect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.Release();
-    ImGuiTouch::Internal::ConsumeAnimationRequest();
+    ImGuiTouch::ConsumeAnimationRequest();
     b.Frame();
-    CHECK(ImGuiTouch::Internal::ConsumeAnimationRequest());
+    CHECK(ImGuiTouch::ConsumeAnimationRequest());
     b.Frames(120);
-    ImGuiTouch::Internal::ConsumeAnimationRequest();
+    ImGuiTouch::ConsumeAnimationRequest();
     b.Frame();
-    CHECK(!ImGuiTouch::Internal::ConsumeAnimationRequest());
+    CHECK(!ImGuiTouch::ConsumeAnimationRequest());
 }
 
 TEST_CASE("Touch scroll: a drag past the start pulls the content, which springs back at the lift")

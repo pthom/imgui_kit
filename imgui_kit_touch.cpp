@@ -16,7 +16,7 @@ namespace
     const ImGuiID kTouchHooksOwner = ImHashStr("ImGuiTouch");
     const ImGuiID kWheelHooksOwner = ImHashStr("ImGuiKit_WheelSession");
 
-    ImGuiTouchContext& Ctx() { return ImGuiTouch::Internal::GetContext(); }
+    ImGuiTouchContext& Ctx() { return ImGuiTouch::GetCurrentContext(); }
 
     // SimulateTouch: the frame's mouse events (queued by the backend, which may tag each of them as a mouse's) become a
     // touch screen's, and so does the source of what follows. When it is turned off, the source goes back to the mouse.
@@ -62,11 +62,9 @@ namespace
 
 namespace ImGuiTouch
 {
-namespace Internal
-{
-// The state hangs on a Shutdown hook of the Dear ImGui context (its UserData), which frees it with the context. The
-// last context's is cached: GetContext() is called many times per frame.
-ImGuiTouchContext& GetContext()
+// The state hangs on a Shutdown hook of the Dear ImGui context (its UserData), which frees it with the context (see
+// imgui_kit_internal.h's top). The last context's is cached: GetCurrentContext() is called many times per frame.
+ImGuiTouchContext& GetCurrentContext()
 {
     static ImGuiContext* sCachedContext = nullptr;
     static ImGuiTouchContext* sCached = nullptr;
@@ -102,7 +100,6 @@ ImGuiTouchContext& GetContext()
     sCached = state;
     return *state;
 }
-} // namespace Internal
 } // namespace ImGuiTouch
 
 namespace ImGuiTouch
@@ -132,8 +129,6 @@ ImGuiTouchConfig& GetConfig() { return Ctx().Config; }
 
 bool IsAnimating() { return Ctx().Animating || Ctx().WasAnimating; }
 
-namespace Internal
-{
 void RequestAnimation() { Ctx().Animating = true; }
 
 bool ConsumeAnimationRequest()
@@ -141,7 +136,6 @@ bool ConsumeAnimationRequest()
     bool asked = Ctx().Animating;
     Ctx().Animating = false;
     return asked;
-}
 }
 } // namespace ImGuiTouch
 

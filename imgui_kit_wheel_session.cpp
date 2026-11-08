@@ -55,15 +55,15 @@ void WheelSessionBeforeNewFrame()
     ImGuiContext* g = GImGui;
     if (g == nullptr)
         return;
-    ImGuiTouch::Internal::GetContext().WheelSession.ownerBeforeNewFrame = ImGui::GetKeyOwnerData(g, ImGuiKey_MouseWheelY)->OwnerNext;
-    ImGuiTouch::Internal::GetContext().WheelSession.ownerFrame = g->FrameCount;
+    ImGuiTouch::GetCurrentContext().WheelSession.ownerBeforeNewFrame = ImGui::GetKeyOwnerData(g, ImGuiKey_MouseWheelY)->OwnerNext;
+    ImGuiTouch::GetCurrentContext().WheelSession.ownerFrame = g->FrameCount;
 }
 
 void UpdateWheelSession(bool enabled)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    State& s = ImGuiTouch::Internal::GetContext().WheelSession;
+    State& s = ImGuiTouch::GetCurrentContext().WheelSession;
     if (s.context != &g || g.FrameCount < s.frameCount)
     {
         s = State{};
