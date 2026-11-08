@@ -30,8 +30,8 @@ jobs:
           version: 5.0.4
       - name: Configure (Emscripten, the touch demo)
         run: emcmake cmake -S . -B build_web -DCMAKE_BUILD_TYPE=Release -DIMGUI_KIT_BUILD_EXAMPLES=ON -DIMGUI_KIT_BUILD_TESTS=OFF
-      - name: Fetch Emscripten's GLFW port once (the parallel compiles would each download it)
-        run: embuilder build contrib.glfw3
+      - name: Fetch Emscripten's GLFW port once, with retries (its GitHub release download is flaky)
+        run: for i in 1 2 3; do embuilder build contrib.glfw3 && break; sleep 10; done; embuilder build contrib.glfw3
       - name: Build
         run: cmake --build build_web -j 4
       - name: The page's files
