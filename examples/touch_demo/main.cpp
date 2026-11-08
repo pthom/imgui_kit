@@ -74,6 +74,7 @@ int main(int, char**)
     ImGuiKit::SetupWheelSession();  // imgui_kit: the wheel stays with the window it scrolls
 #ifdef __EMSCRIPTEN__
     ImGuiTouch::SetupEmscripten();  // imgui_kit: in a browser, which pointer is a finger, and the fingers
+    ImGuiTouch::SetupEmscriptenKeyboard();  // imgui_kit: the phone's keyboard, for the text fields
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -94,10 +95,11 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // The kit's demo, in a window that fills the screen (a phone's page)
+        // The kit's demo, in a window that fills the screen (a phone's page), out of the phone's keyboard
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGuiTouchKeyboardInsets keyboard = ImGuiTouch::GetKeyboardInsets();  // imgui_kit
+        ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + keyboard.Top));
+        ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, viewport->WorkSize.y - keyboard.Top - keyboard.Bottom));
         ImGui::Begin("imgui_kit touch demo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
         ImGui::TextWrapped("Open \"Touch\" below, then try it with a finger. On a desktop: tick \"Simulate a touch "
                            "source\", and the mouse plays a finger.");
