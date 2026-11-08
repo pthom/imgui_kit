@@ -1,8 +1,8 @@
 # imgui_kit
 
-Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): rows that fill, groups that align, labels in a column, a few widgets.
+Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): rows that fill, groups that align, labels in a column, a few widgets, and touch screens.
 
-**Try it online:** [the kit's demo](https://pthom.github.io/imgui_explorer/?lib=imguikit), with its code beside it, in C++ or Python.
+**Try it online:** [the kit's demo](https://pthom.github.io/imgui_explorer/?lib=imguikit), with its code beside it, in C++ or Python. On a phone: [the touch demo](https://pthom.github.io/imgui_kit/).
 
 *Status: early (0.1). The API may still change.*
 
@@ -26,7 +26,14 @@ Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): r
   - *Icon buttons*: plus, minus, zoom in, zoom out, 1:1, fit, drawn with the draw list (no icon font needed).
   - A *segmented switch*: exclusive choices in one frame, such as "Demo | Code". Its corners follow the style's `FrameRounding`.
 
-Coming later, from [Hello ImGui](https://github.com/pthom/hello_imgui): tweakable themes and their editor; touch scrolling and a mouse wheel kept by the window it scrolls.
+- **Input** (`ImGuiTouch`): an app made for the mouse works with a finger. See [Touch screens](#touch-screens).
+  - A *swipe* scrolls any window, with inertia, even from a button: a tap still clicks it.
+  - A *long press* is a right click (the context menus), with a ring that shows when.
+  - A *pinch* scales the font. Two fingers moved together are a right drag (a node editor's pan).
+  - In a browser: which pointer is a finger, and the phone's *keyboard* for the text fields.
+  - A *wheel session*: the mouse wheel stays with the window it scrolls, even when a slider passes under the pointer.
+
+Coming later, from [Hello ImGui](https://github.com/pthom/hello_imgui): tweakable themes and their editor.
 
 ## Use it
 
@@ -66,6 +73,29 @@ ImGuiKit::ShowDemoWindow();                     // all of it, with its code
 
 Define `IMGUI_KIT_USE_STL` for overloads that take `std::string` and `std::vector`.
 
+## Touch screens
+
+One call after `ImGui::CreateContext()`, and each frame goes through it (Dear ImGui's context hooks): nothing to call per frame.
+
+```cpp
+ImGuiTouch::Setup();                    // the swipe, the long press, the pinch
+ImGuiKit::SetupWheelSession();          // the wheel stays with the window it scrolls
+#ifdef __EMSCRIPTEN__
+ImGuiTouch::SetupEmscripten();          // in a browser: which pointer is a finger, and the fingers
+ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fields
+#endif
+```
+
+- *Settings*: `ImGuiTouch::GetConfig()` (`ImGuiTouchConfig`), read at each frame. `SimulateTouch` lets the mouse play a finger, to try it on a desktop.
+- *A widget and its drags*: a finger held still for a moment, then moved, drags the widget under it (a slider, a text selection). A widget that should take the drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after it.
+- *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, down)` for each one, for the pinch: see the [iOS example](examples/ios_touch_demo/main.mm).
+- *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
+- *Idling*: an app that sleeps between events keeps drawing while `ImGuiTouch::IsAnimating()` is true (a fling coasts, a ring grows).
+
+How it works: a touch press is held back until it is known to be a tap or a drag. A tap is then replayed to the widgets; a drag scrolls. So no widget needs to change. The cost per frame is too small to measure, with no allocation. The state lives in the Dear ImGui context (one per context), and the code reads Dear ImGui's internals (`imgui_internal.h`).
+
+The examples (`-DIMGUI_KIT_BUILD_EXAMPLES=ON`): `examples/touch_demo` (GLFW, desktop and web, published at https://pthom.github.io/imgui_kit/) and `examples/ios_touch_demo` (Metal, an iOS app).
+
 ## In Python
 
 Dear ImGui Bundle includes the kit as `imgui_bundle.imgui_kit`, from its next release (after 1.93.0). Each `begin_x()` / `end_x()` pair is also a context manager named `x`:
@@ -90,6 +120,7 @@ Some helpers start as proposals to Dear ImGui. They live here meanwhile:
 
 - Em units: [ocornut/imgui#6145](https://github.com/ocornut/imgui/pull/6145)
 - Aligned groups: [ocornut/imgui#9330](https://github.com/ocornut/imgui/issues/9330)
+- Touch screens: an answer to [ocornut/imgui#3379](https://github.com/ocornut/imgui/issues/3379) (drag to scroll)
 
 ## License
 
