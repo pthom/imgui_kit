@@ -26,12 +26,12 @@ Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): r
   - *Icon buttons*: plus, minus, zoom in, zoom out, 1:1, fit, drawn with the draw list (no icon font needed).
   - A *segmented switch*: exclusive choices in one frame, such as "Demo | Code". Its corners follow the style's `FrameRounding`.
 
-- **Input** (`ImGuiTouch`): an app made for the mouse works with a finger. See [Touch screens](#touch-screens).
+- **Touch screens** (`ImGuiTouch`): an app made for the mouse works with a finger. See [Touch screens](#touch-screens).
   - A *swipe* scrolls any window, with inertia, even from a button: a tap still clicks it.
   - A *long press* is a right click (the context menus), with a ring that shows when.
   - A *pinch* scales the font. Two fingers moved together are a right drag (a node editor's pan).
   - In a browser: which pointer is a finger, and the phone's *keyboard* for the text fields.
-  - A *wheel session*: the mouse wheel stays with the window it scrolls, even when a slider passes under the pointer.
+- **Wheel session**: the mouse wheel keeps scrolling the window it started on, as in a browser. A page scrolled over a plot keeps scrolling, and the plot zooms only with a wheel that starts on it. One call, after `ImGui::CreateContext()`: `ImGuiKit::SetupWheelSession()`.
 
 Coming later, from [Hello ImGui](https://github.com/pthom/hello_imgui): tweakable themes and their editor.
 
@@ -79,7 +79,6 @@ One call after `ImGui::CreateContext()`, and each frame goes through it (Dear Im
 
 ```cpp
 ImGuiTouch::Setup();                    // the swipe, the long press, the pinch
-ImGuiTouch::SetupWheelSession();        // the wheel stays with the window it scrolls
 #ifdef __EMSCRIPTEN__
 ImGuiTouch::SetupEmscripten();          // in a browser: which pointer is a finger, and the fingers
 ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fields

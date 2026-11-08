@@ -36,8 +36,8 @@
     ImGui::GetStyle().FontSizeBase = 17.0f;  // iOS's body text size, in points
     ImGui_ImplMetal_Init(_device);
 
-    ImGuiTouch::Setup();              // imgui_kit: the touch layer (swipe, long press, pinch)
-    ImGuiTouch::SetupWheelSession();  // imgui_kit: the wheel (a trackpad or a mouse on an iPad)
+    ImGuiTouch::Setup();            // imgui_kit: the touch layer (swipe, long press, pinch)
+    ImGuiKit::SetupWheelSession();  // imgui_kit: the wheel (a trackpad or a mouse on an iPad)
 
     // Dear ImGui's links (TextLinkOpenURL) open in Safari
     ImGui::GetPlatformIO().Platform_OpenInShellFn = [](ImGuiContext*, const char* url) {
