@@ -101,7 +101,7 @@ int main(int, char**)
         ImGui::Begin("imgui_kit touch demo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
         ImGui::TextWrapped("Open \"Touch\" below, then try it with a finger. On a desktop: tick \"Simulate a touch "
                            "source\", and the mouse plays a finger.");
-        ImGui::TextLinkOpenURL("The full demo: Dear ImGui Bundle's explorer", "https://imgui-bundle.pages.dev/explorer/");
+        ImGui::TextLinkOpenURL("See the full interactive explorer", "https://pthom.github.io/imgui_explorer/?lib=imguikit");
         ImGuiKit::ShowDemoContents();
         ImGui::End();
 
