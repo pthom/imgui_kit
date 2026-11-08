@@ -533,11 +533,16 @@ void DemoTouch()
     ImGuiKit::EndLabelColumn();
 
     ImGui::BeginChild("##touch_zone", ImVec2(0.0f, ImGuiKit::EmSize(16.f)), ImGuiChildFlags_Borders);
-    ImGui::BulletText("Swipe: a finger that drags this zone scrolls it, with inertia, and a bounce at the end.");
-    ImGui::BulletText("Tap: a click, when the finger lifts.");
-    ImGui::BulletText("Hold, then drag: the widget under the finger takes it (the slider below).");
-    ImGui::BulletText("Long press, then lift: a right click (this zone's context menu).");
-    ImGui::BulletText("Two fingers: a pinch scales the font; moved together, a right drag.");
+    ImGui::Bullet();
+    ImGui::TextWrapped("Swipe: a finger that drags this zone scrolls it, with inertia, and a bounce at the end.");
+    ImGui::Bullet();
+    ImGui::TextWrapped("Tap: a click, when the finger lifts.");
+    ImGui::Bullet();
+    ImGui::TextWrapped("Hold, then drag: the widget under the finger takes it (the slider below).");
+    ImGui::Bullet();
+    ImGui::TextWrapped("Long press, then lift: a right click (this zone's context menu).");
+    ImGui::Bullet();
+    ImGui::TextWrapped("Two fingers: a pinch scales the font; moved together, a right drag.");
     static float value = 0.5f;
     ImGui::SetNextItemWidth(ImGuiKit::EmSize(12.f));
     ImGui::SliderFloat("a short hold, then a drag", &value, 0.0f, 1.0f);
