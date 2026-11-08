@@ -35,6 +35,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard for text fields
 
 The traps:
 - A widget that a finger drags (a canvas, a knob): `ImGuiTouch::SetItemTakesDrags()` right after it. Otherwise a drag scrolls the window, and the widget gets the finger only after a hold.
+- A widget dragged along one axis (a slider): `ImGuiTouch::SetItemTakesDragsAlong(ImGuiTouchAxis_X)` right after it: a drag along that axis moves it, a drag across scrolls the window. Dear ImGui's own sliders and drags do it with no call when the build has `IMGUI_HAS_ITEM_DRAG_AXIS_CALLBACK` (Dear ImGui Bundle's fork); with upstream Dear ImGui, call it after them.
 - A widget that zooms with the wheel: `ImGuiTouch::SetItemTakesPinch(zoom_per_notch, pan_button, delivery)` right after it (`SetRectTakesPinch()` for a rectangle, e.g. a plot), so that a pinch zooms it instead of scaling the font. `delivery`: `ImGuiTouchPinchDelivery_WheelNotches` if the widget reads only the wheel's sign, `ImGuiTouchPinchDelivery_WheelContinuous` if it zooms by the wheel's value.
 - A widget that reads the wheel claims it while hovered: `if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY)) ...`. Otherwise the wheel session gives the wheel to the window that scrolls.
 - In a browser, the canvas must have the id "canvas".
