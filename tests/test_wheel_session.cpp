@@ -37,9 +37,9 @@ struct Bench
     void Frame()
     {
         ImGui_ImplNull_NewFrame();
-        ImGuiKit::WheelSessionBeforeNewFrame();
+        ImGuiTouch::WheelSessionBeforeNewFrame();
         ImGui::NewFrame();
-        ImGuiKit::UpdateWheelSession(sessionEnabled);
+        ImGuiTouch::UpdateWheelSession(sessionEnabled);
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(400.f, 300.f), ImGuiCond_Always);
         ImGui::Begin("Bench", nullptr, ImGuiWindowFlags_NoTitleBar);

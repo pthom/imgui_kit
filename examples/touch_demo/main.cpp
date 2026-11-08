@@ -71,7 +71,7 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGuiTouch::Setup();            // imgui_kit: the touch layer (swipe, long press, pinch)
-    ImGuiKit::SetupWheelSession();  // imgui_kit: the wheel stays with the window it scrolls
+    ImGuiTouch::SetupWheelSession();  // imgui_kit: the wheel stays with the window it scrolls
 #ifdef __EMSCRIPTEN__
     ImGuiTouch::SetupEmscripten();  // imgui_kit: in a browser, which pointer is a finger, and the fingers
     ImGuiTouch::SetupEmscriptenKeyboard();  // imgui_kit: the phone's keyboard, for the text fields

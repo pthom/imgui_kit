@@ -21,7 +21,7 @@ namespace
             config.ScrollMode = ImGuiTouchScrollMode_Always;  // the mouse drives it, as a finger would
             ImGuiTouch::Setup(config);
             ImGuiTouch::Setup(config);  // a second call installs nothing more
-            ImGuiKit::SetupWheelSession();
+            ImGuiTouch::SetupWheelSession();
         }
         ~HookBench() { ImGui_ImplNull_Shutdown(); ImGui::DestroyContext(); }
         void Frame()

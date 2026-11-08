@@ -79,7 +79,7 @@ One call after `ImGui::CreateContext()`, and each frame goes through it (Dear Im
 
 ```cpp
 ImGuiTouch::Setup();                    // the swipe, the long press, the pinch
-ImGuiKit::SetupWheelSession();          // the wheel stays with the window it scrolls
+ImGuiTouch::SetupWheelSession();          // the wheel stays with the window it scrolls
 #ifdef __EMSCRIPTEN__
 ImGuiTouch::SetupEmscripten();          // in a browser: which pointer is a finger, and the fingers
 ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fields
