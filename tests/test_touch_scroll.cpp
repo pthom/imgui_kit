@@ -38,6 +38,9 @@ struct Bench
     bool canvas = false;        // a canvas below the wide child: an item that sums its drags
     bool canvasTakesDrags = false;  // it calls SetItemTakesDrags()
     bool canvasLongPressIsRightClick = true;  // its argument
+    bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
+    ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
+    float canvasZoom = 1.f;
     ImGuiID canvasId = 0;
     ImVec2 canvasDrag;
     ImGuiID buttonId = 0;
@@ -120,6 +123,12 @@ struct Bench
                 canvasDrag += ImGui::GetIO().MouseDelta;
             if (canvasTakesDrags)
                 ImGuiTouch::SetItemTakesDrags(canvasLongPressIsRightClick);
+            if (canvasTakesPinch)
+            {
+                ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton);
+                if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
+                    canvasZoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+            }
         }
         ImVec2 linesPos = ImGui::GetCursorScreenPos();
         for (int i = 0; i < (shortContent ? 2 : 100); ++i)
@@ -795,3 +804,70 @@ TEST_CASE("Touch scroll: a flick that reaches the end overshoots, then springs b
     b.Frames(5);
     CHECK(b.lastVtxY == settled);
 }
+
+TEST_CASE("Touch pinch: on a widget that takes the pinch, it zooms the widget by wheel notches, and not the font")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.Frames(3);
+    ImGui::GetStyle().FontScaleMain = 1.f;
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // the second finger lands, 40 px from the first
+    b.Frame();
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // 54 px: a scale of 1.35, three notches of 10%
+    b.Frames(6);
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+    CHECK(b.canvasZoom == doctest::Approx(1.331f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // back to 40 px: the notches go back
+    b.Frames(6);
+    CHECK(b.canvasZoom == doctest::Approx(1.f));
+    LiftFingers();
+    b.Release();
+    CHECK(b.clicks == 0);
+    CHECK(b.scrollY == 0.f);
+}
+
+TEST_CASE("Touch pinch: outside the widgets that take it, the pinch scales the font")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.Frames(3);
+    ImGui::GetStyle().FontScaleMain = 1.f;
+    b.Press(b.linesRect.GetCenter());
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));  // not on the canvas
+    b.Frame();
+    Fingers(ImVec2(100, 100), ImVec2(250, 100));
+    b.Frames(2);
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);
+    CHECK(b.canvasZoom == 1.f);
+    LiftFingers();
+    b.Release();
+    ImGui::GetStyle().FontScaleMain = 1.f;
+}
+
+TEST_CASE("Touch pinch: two fingers that move together on a widget that takes the pinch drag it with its pan button")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.canvasPanButton = ImGuiMouseButton_Left;  // a plot pans with the left button
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frames(2);
+    Fingers(c - ImVec2(20.f, 12.f), c + ImVec2(20.f, -12.f));  // the two move together, 12 px up
+    b.Frames(3);
+    CHECK(ImGui::GetIO().MouseDown[0]);
+    CHECK(!b.rightDown);
+    b.Drag(ImVec2(0.f, -10.f), 2);  // the first finger is the mouse: the canvas is dragged
+    CHECK(b.canvasDrag.y < -5.f);
+    CHECK(b.scrollY == 0.f);
+    LiftFingers();
+    b.Release();
+    CHECK(!ImGui::GetIO().MouseDown[0]);
+}
+

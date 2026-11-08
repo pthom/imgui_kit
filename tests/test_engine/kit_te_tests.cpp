@@ -44,8 +44,10 @@ namespace
         ImGui::SliderFloat("Slider", &gLab.slider, 0.f, 1.f);
         for (int i = 10; i < 16; i++)
             ImGui::Text("Line %d", i);
-        // An item that zooms with the wheel, with Dear ImGui's idiom: it claims the wheel while hovered
+        // An item that zooms with the wheel, with Dear ImGui's idiom: it claims the wheel while hovered. It takes a
+        // pinch too, as wheel notches of 10%
         ImGui::Button("Zoomable (the wheel zooms it)", ImVec2(-FLT_MIN, 150.f));
+        ImGuiTouch::SetItemTakesPinch(0.1f);
         if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
             gLab.zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
         for (int i = 16; i < 80; i++)
@@ -205,6 +207,34 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->Yield(2);
         IM_CHECK_GT(gLab.zoom, 1.f);
         IM_CHECK_EQ(gLab.scrollY, scrolled);
+    };
+
+    // Two fingers that spread on the zoomable item zoom it, by wheel notches, and the font does not scale. The fingers
+    // come through ImGuiTouch::AddFingerEvent(), as a platform reports them; the first one is the mouse.
+    t = IM_REGISTER_TEST(engine, "touch", "pinch_on_a_widget_zooms_it");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        const float fontScale = ImGui::GetStyle().FontScaleMain;
+        UseFinger(ctx);
+        ImVec2 c = ctx->ItemInfo("Zoomable (the wheel zooms it)").RectClipped.GetCenter();
+        ctx->MouseMoveToPos(c - ImVec2(20.f, 0.f));
+        ctx->MouseDown();
+        ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), true);
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f, 0.f), true);  // 40 px apart
+        ctx->Yield(2);
+        // The layer released the first finger's press, so that the item is hovered: the Test Engine's mouse lifts too
+        // (it sends its button's state at each frame, a platform only its changes)
+        ctx->MouseUp();
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), true);  // 54 px: a scale of 1.35, three notches of 10%
+        ctx->Yield(8);
+        ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), false);
+        ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), false);
+        ctx->Yield(3);
+        IM_CHECK_GT(gLab.zoom, 1.3f);
+        IM_CHECK_LT(gLab.zoom, 1.34f);
+        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, fontScale);
+        IM_CHECK_EQ(gLab.clicks, 0);
     };
 
     // The kit's demo: in its Touch section, a sideways swipe on the row of cards scrolls the row (a child in a child,

@@ -32,6 +32,7 @@ Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): r
   - A *swipe* scrolls any window, with inertia, even from a button: a tap still clicks it.
   - A *long press* is a right click (the context menus), with a ring that shows when.
   - A *pinch* scales the font. Two fingers moved together are a right drag (a node editor's pan).
+  - A widget that zooms (a plot, an image) can take the pinch: it then zooms it, as wheel notches.
   - In a browser: which pointer is a finger, and the phone's *keyboard* for the text fields.
 - **Wheel session**: the mouse wheel keeps scrolling the window it started on, as in a browser. A page scrolled over a plot keeps scrolling, and the plot zooms only with a wheel that starts on it. One call, after `ImGui::CreateContext()`: `ImGuiKit::SetupWheelSession()`.
 
@@ -89,6 +90,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
 
 - *Settings*: `ImGuiTouch::GetConfig()` (`ImGuiTouchConfig`), read at each frame. `SimulateTouch` lets the mouse play a finger, to try it on a desktop.
 - *A widget and its drags*: a finger held still for a moment, then moved, drags the widget under it (a slider, a text selection). A widget that should take the drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after it.
+- *A widget that zooms*: `ImGuiTouch::SetItemTakesPinch(zoom_per_notch, pan_button)` after it (or `SetRectTakesPinch()` for a rectangle, an ImPlot plot): a pinch on it zooms it, as wheel events at the first finger, instead of scaling the font; two fingers moved together drag it with `pan_button`.
 - *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, down)` for each one, for the pinch: see the [iOS example](examples/ios_touch_demo/main.mm).
 - *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
 - *Idling*: an app that sleeps between events keeps drawing while `ImGuiTouch::IsAnimating()` is true (a fling coasts, a ring grows).

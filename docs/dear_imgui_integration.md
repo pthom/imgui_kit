@@ -51,6 +51,7 @@ Most of them are already available in Hello ImGui and Dear ImGui Bundle. This re
 - *Hold, then drag*: the widget under the finger takes the drag (a slider, a text selection).
 - *Long press*: a right click (the context menus), shown by a ring around the finger.
 - *Pinch*: two fingers scale the font. Two fingers moved together are a right drag (a node editor's pan).
+- *A pinch for a widget*: a widget that zooms (a plot, an image) calls `ImGuiTouch::SetItemTakesPinch()` after itself. A pinch on it then zooms it, as wheel events (it zooms as it does with the wheel, no other change), and two fingers moved together drag it with its pan button.
 - *Thin scrollbars* on a touch screen: indicators, since a swipe scrolls anywhere.
 - *The phone's keyboard*: the caret stays above it (`SetKeyboardInsets()`, `GetKeyboardInsets()`).
 
@@ -139,7 +140,7 @@ Two kinds, for both parts. All of them run headless, through Dear ImGui's null b
 
 ### Unit tests: `tests/`
 
-- 26 tests for the swipe, the long press and the pinch (`test_touch_scroll.cpp`), 4 for the setup and the hooks (`test_touch_setup.cpp`), 10 for the wheel session (`test_wheel_session.cpp`).
+- 29 tests for the swipe, the long press and the pinch (`test_touch_scroll.cpp`), 4 for the setup and the hooks (`test_touch_setup.cpp`), 10 for the wheel session (`test_wheel_session.cpp`).
 - They call the layer's steps frame by frame, with events queued by hand (positions, buttons, fingers): each one checks one rule. For example: "a long press on a slider, with a touch source, does not move it", "a flick that reaches the end overshoots, then springs back to the end", "an item whose ownership comes one frame late keeps the wheel when nothing scrolls (fast frames)".
 - Run: `cmake -B build && cmake --build build && ctest --test-dir build`.
 
@@ -154,11 +155,12 @@ The same features, driven as a user would, by [Dear ImGui's Test Engine](https:/
 | touch | `hold_then_drag_moves_a_slider` | a finger held still, then moved, drags the slider; the window does not scroll |
 | touch | `long_press_opens_the_context_menu` | a finger still for half a second, then lifted, opens the context menu |
 | touch | `mouse_drag_does_not_scroll` | the same drag with a mouse moves nothing (the swipe is for fingers) |
+| touch | `pinch_on_a_widget_zooms_it` | two fingers that spread on an item that takes the pinch zoom it, by wheel notches; the font does not scale |
 | wheel | `session_keeps_the_page` | a page scrolled with the wheel keeps scrolling over a zoomable item, which does not zoom; once the session ended, a wheel that starts on the item zooms it |
 | demo | `touch_cards_swipe_sideways` | in the kit's demo, a sideways swipe scrolls the row of cards (a child in a child) |
 
 - *A finger*: the Test Engine has no API for the mouse source, but none is needed. `io.AddMouseSourceEvent()` sets a state, which the next mouse events take, those the Test Engine queues included. The tests set it to `ImGuiMouseSource_TouchScreen` before each gesture.
-- *What each test proves*: without the kit's setups, the swipe, long press, wheel and demo tests fail. The three others pass either way: they check that the layer keeps what already worked (a tap still clicks, a hold hands the press to the slider, a mouse drag does not scroll).
+- *What each test proves*: without the kit's setups, the swipe, long press, pinch, wheel and demo tests fail. The three others pass either way: they check that the layer keeps what already worked (a tap still clicks, a hold hands the press to the slider, a mouse drag does not scroll).
 - *Two programs run them*:
   - `imgui_kit_te_tests`: headless, at full speed (under a second); `ctest` and the CI run it. An argument filters the tests, e.g. `touch`.
   - `imgui_kit_te_tests_visible`: in a window (GLFW + OpenGL3), with the Test Engine's UI, to pick a test and watch it at the chosen speed. `--auto` plays all of them (about 20 s), then exits.
