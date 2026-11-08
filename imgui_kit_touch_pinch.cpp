@@ -10,7 +10,6 @@ namespace ImGuiTouch
 {
 namespace
 {
-    constexpr float kFontScaleMin = 0.5f, kFontScaleMax = 5.f;  // the range of the explorer's "Font scale" slider
     constexpr float kPinchThreshold = 0.12f;  // the distance between the fingers changed by this much: a pinch
     constexpr float kDragSlopFontSizes = 0.6f;  // the fingers' middle moved this far: a drag (the two apart)
 
@@ -109,7 +108,10 @@ void UpdateTouchPinch(ImGuiTouchPinchMode mode, bool interruptsWidgets)
         ButtonEvent(g.IO, ImGuiMouseButton_Right, true);
     }
     if (s.gesture == Gesture::Pinch && twoFingers && mode == ImGuiTouchPinchMode_FontScale)
-        ImGui::GetStyle().FontScaleMain = ImClamp(s.baseScale * pinchScale, kFontScaleMin, kFontScaleMax);
+    {
+        const ImGuiTouchConfig& config = Internal::GetContext().Config;
+        ImGui::GetStyle().FontScaleMain = ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
+    }
     if (s.gesture != Gesture::None && !twoFingers)
     {
         if (s.gesture == Gesture::Drag)

@@ -288,6 +288,9 @@ struct ImGuiTouchConfig
     // Two fingers that pinch scale the font while they stay on the screen; two fingers that move together are a
     // right drag (the pan of a node editor, the box of a plot)
     ImGuiTouchPinchMode PinchMode = ImGuiTouchPinchMode_FontScale;
+    // The pinch's range of style.FontScaleMain
+    float PinchFontScaleMin = 0.5f;
+    float PinchFontScaleMax = 5.0f;
     // When the second finger lands while a widget holds the first one (a slider dragged after a hold, a text
     // selection): the widget keeps its drag and the pinch is ignored (false), or the pinch takes over (true)
     bool PinchInterruptsWidgets = false;
