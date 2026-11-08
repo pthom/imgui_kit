@@ -1,6 +1,6 @@
 # imgui_kit
 
-Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): rows that fill, groups that align, labels in a column, a few widgets, and touch screens.
+Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): rows that fill, groups that align, labels in a column, a few widgets, touch screens, and a mouse wheel that stays with what it scrolls.
 
 **Try it online:** [the kit's demo](https://pthom.github.io/imgui_explorer/?lib=imguikit), with its code beside it, in C++ or Python. On a phone: [the touch demo](https://pthom.github.io/imgui_kit/).
 
@@ -21,11 +21,13 @@ Small, standalone additions to [Dear ImGui](https://github.com/ocornut/imgui): r
   - A *column*: a group that knows its width, so that what is inside can be centered under a knob or a slider.
   - A *label column*: labels on the left, and the widgets after them aligned at the widest label.
   - A *flow*: items on a line while they fit, then on the next one, as words in a paragraph.
+  - A *group panel*: a frame with a label around a group.
 - **Widgets**:
   - A *help marker*: an (i) that shows its text on hover, and on a click or a tap (a touch screen has no hover). Its text can be rendered as Markdown, through a renderer you provide.
   - *Icon buttons*: plus, minus, zoom in, zoom out, 1:1, fit, drawn with the draw list (no icon font needed).
   - A *segmented switch*: exclusive choices in one frame, such as "Demo | Code". Its corners follow the style's `FrameRounding`.
-
+  - *Fit text*: a text cut to a width and a number of lines, with an ellipsis.
+  - A *resize handle*: a corner that resizes a widget.
 - **Touch screens** (`ImGuiTouch`): an app made for the mouse works with a finger. See [Touch screens](#touch-screens).
   - A *swipe* scrolls any window, with inertia, even from a button: a tap still clicks it.
   - A *long press* is a right click (the context menus), with a ring that shows when.
@@ -37,7 +39,7 @@ Coming later, from [Hello ImGui](https://github.com/pthom/hello_imgui): tweakabl
 
 ## Use it
 
-Copy `imgui_kit.h`, `imgui_kit_internal.h` and the `imgui_kit*.cpp` files beside Dear ImGui, and compile them with your project. Leave out `imgui_kit_demo.cpp`, or define `IMGUI_KIT_DISABLE_DEMO`, if you do not want the demo.
+Copy the `imgui_kit*.h` and `imgui_kit*.cpp` files beside Dear ImGui, and compile them with your project. Leave out `imgui_kit_demo.cpp`, or define `IMGUI_KIT_DISABLE_DEMO`, if you do not want the demo.
 
 Or with CMake:
 
@@ -90,6 +92,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
 - *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, down)` for each one, for the pinch: see the [iOS example](examples/ios_touch_demo/main.mm).
 - *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
 - *Idling*: an app that sleeps between events keeps drawing while `ImGuiTouch::IsAnimating()` is true (a fling coasts, a ring grows).
+- *With Hello ImGui* (and Dear ImGui Bundle): nothing to call. The runner sets up the touch layer and the wheel session; their settings are `RunnerParams::touchConfig` and `RunnerParams::wheelSession`.
 
 How it works: a touch press is held back until it is known to be a tap or a drag. A tap is then replayed to the widgets; a drag scrolls. So no widget needs to change. The cost per frame is too small to measure, with no allocation. The state lives in the Dear ImGui context (one per context), and the code reads Dear ImGui's internals (`imgui_internal.h`).
 
@@ -107,6 +110,8 @@ with imgui_kit.label_column("audio"):
     _, volume = imgui.slider_float("##volume", volume, 0.0, 1.0)
 ```
 
+The input: `imgui_kit.touch.setup()` and `imgui_kit.setup_wheel_session()`, once after `imgui.create_context()`. An app run by Hello ImGui (`hello_imgui.run()`, `immapp.run()`) needs neither.
+
 The [book page](https://imgui-bundle.pages.dev/doc/addons/imgui-kit/) and the [API reference](https://imgui-bundle.pages.dev/doc/api/imgui-kit/imgui-kit/) give the rest.
 
 ## Tests
@@ -120,6 +125,7 @@ Some helpers start as proposals to Dear ImGui. They live here meanwhile:
 - Em units: [ocornut/imgui#6145](https://github.com/ocornut/imgui/pull/6145)
 - Aligned groups: [ocornut/imgui#9330](https://github.com/ocornut/imgui/issues/9330)
 - Touch screens: an answer to [ocornut/imgui#3379](https://github.com/ocornut/imgui/issues/3379) (drag to scroll)
+- Wheel session: related to [ocornut/imgui#9587](https://github.com/ocornut/imgui/pull/9587)
 
 ## License
 
