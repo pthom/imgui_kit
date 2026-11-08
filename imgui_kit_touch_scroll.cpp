@@ -347,7 +347,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
                                   && (taker == nullptr || taker->longPressIsRightClick);
             bool touch = (io.MouseSource == ImGuiMouseSource_TouchScreen);
             if (w != nullptr && !w->Collapsed && ImGui::IsMousePosValid()
-                && (w->InnerRect.Contains(io.MousePos) || touch && OnScrollbar(w, io.MousePos))
+                && (w->InnerRect.Contains(io.MousePos) || (touch && OnScrollbar(w, io.MousePos)))
                 && CanScrollSomewhere(w) && taker == nullptr)
             {
                 // A widget active from before (a text input being edited) loses the id, as with a press elsewhere
@@ -398,7 +398,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
             RightClick(io, s.pressPos);
             s.watchingLongPress = s.longPressArmed = false;
         }
-        else if (lifted || moved || s.owning && s.swiping || s.parked || widgetActed)
+        else if (lifted || moved || (s.owning && s.swiping) || s.parked || widgetActed)
             s.watchingLongPress = s.longPressArmed = false;  // the widget under the finger keeps its press
         else if (!s.owning && (float)g.Time - s.pressTime >= kLongPressSeconds)
             s.longPressArmed = true;
@@ -503,7 +503,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     bool rippling = g.Time - s.rippleTime < kHoldRippleSeconds;
     // The long press's arc fills while the finger stays still, with no input event either
     if (s.inertia.x != 0.f || s.inertia.y != 0.f || s.overscroll != 0.f || s.overscrollSpeed != 0.f || rippling
-        || s.watchingLongPress && !s.longPressArmed)
+        || (s.watchingLongPress && !s.longPressArmed))
         RequestAnimation();
 }
 

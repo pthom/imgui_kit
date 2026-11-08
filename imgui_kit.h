@@ -267,8 +267,9 @@ enum ImGuiTouchPinchMode_
 // The parts of the screen hidden by a phone's keyboard: see ImGuiTouch::GetKeyboardInsets()
 struct ImGuiTouchKeyboardInsets
 {
-    float Top = 0.0f;
-    float Bottom = 0.0f;
+    float Top;
+    float Bottom;
+    ImGuiTouchKeyboardInsets(float top = 0.0f, float bottom = 0.0f) : Top(top), Bottom(bottom) {}
 };
 
 // The settings, read at each frame: change them through ImGuiTouch::GetConfig()

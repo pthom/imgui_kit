@@ -216,8 +216,8 @@ enum ImGuiKitHelpMarkerShown { ImGuiKitHelpMarkerShown_Tooltip, ImGuiKitHelpMark
 struct ImGuiKitHelpMarkerOpen
 {
     ImGuiKitHelpMarkerShown shown;
-    ImGuiStorage* storage = nullptr;  // the marker's window: it keeps whether the tooltip's text was cut
-    ImGuiID cut_key = 0;
+    ImGuiStorage* storage;  // the marker's window: it keeps whether the tooltip's text was cut
+    ImGuiID cut_key;
 };
 
 // In a browser (SetupEmscripten, SetupEmscriptenKeyboard): what the page reported at the last frame, and the buffers

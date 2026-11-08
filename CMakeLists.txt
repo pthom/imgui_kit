@@ -10,7 +10,7 @@ set(IMGUI_KIT_FETCH_IMGUI_TAG "v1.93.0-docking" CACHE STRING "The Dear ImGui tag
 option(IMGUI_KIT_BUILD_TESTS "Build the tests (Dear ImGui's null backend, doctest)" ${PROJECT_IS_TOP_LEVEL})
 option(IMGUI_KIT_BUILD_EXAMPLES "Build the examples (the touch demo: GLFW + OpenGL3, desktop or Emscripten)" OFF)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)  # as Dear ImGui
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT TARGET imgui)
@@ -33,6 +33,13 @@ file(GLOB IMGUI_KIT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit*.cpp)  # imgui
 add_library(imgui_kit STATIC ${IMGUI_KIT_SOURCES})
 target_include_directories(imgui_kit PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(imgui_kit PUBLIC imgui)
+if (PROJECT_IS_TOP_LEVEL)  # the kit's own builds (its CI): Dear ImGui's warning level
+    if (MSVC)
+        target_compile_options(imgui_kit PRIVATE /W4)
+    else()
+        target_compile_options(imgui_kit PRIVATE -Wall -Wextra -Wshadow -Wformat)
+    endif()
+endif()
 
 if (IMGUI_KIT_BUILD_TESTS)
     if (NOT IMGUI_KIT_BUILT_IMGUI)

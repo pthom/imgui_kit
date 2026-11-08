@@ -191,7 +191,7 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
         float window_width = SetNextHelpWindowSize(width, text_width);
         if (ImGui::BeginPopup("##help_popup"))
         {
-            GetCurrentContext().HelpMarkersShown.push_back(HelpMarkerOpen{ImGuiKitHelpMarkerShown_Popup});
+            GetCurrentContext().HelpMarkersShown.push_back(HelpMarkerOpen{ImGuiKitHelpMarkerShown_Popup, nullptr, 0});
             PushHelpTextWrapPos(window_width);
             return true;
         }

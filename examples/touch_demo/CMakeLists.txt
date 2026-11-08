@@ -4,6 +4,7 @@ set(imgui_dir ${IMGUI_KIT_IMGUI_DIR})
 add_executable(touch_demo main.cpp ${imgui_dir}/backends/imgui_impl_glfw.cpp ${imgui_dir}/backends/imgui_impl_opengl3.cpp)
 target_include_directories(touch_demo PRIVATE ${imgui_dir}/backends)
 target_link_libraries(touch_demo PRIVATE imgui_kit)
+set_target_properties(touch_demo PROPERTIES CXX_STANDARD 17)  # the GLFW port's emscripten_glfw3.h (the kit: C++11)
 
 if (EMSCRIPTEN)
     # The emscripten-glfw port (contrib.glfw3), as Dear ImGui's example: a better support of high DPI displays
