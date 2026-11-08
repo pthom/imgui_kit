@@ -49,7 +49,7 @@ TEST_CASE("Touch setup: the hooks run the layer: a drag scrolls, the release coa
     int hooks = 0;
     for (const ImGuiContextHook& hook : ImGui::GetCurrentContext()->Hooks)
         hooks += (hook.Type != ImGuiContextHookType_PendingRemoval_);
-    CHECK(hooks == 5);  // touch: NewFramePost, EndFramePre, RenderPost; the wheel session: NewFramePre, NewFramePost
+    CHECK(hooks == 6);  // touch: NewFramePre, NewFramePost, EndFramePre, RenderPost; the wheel session: NewFramePre, NewFramePost
 
     io.AddMousePosEvent(200, 200);
     b.Frame();
@@ -70,4 +70,22 @@ TEST_CASE("Touch setup: the hooks run the layer: a drag scrolls, the release coa
     for (int i = 0; i < 300; i++)
         b.Frame();
     CHECK(!ImGuiTouch::IsAnimating());  // it stopped
+}
+
+TEST_CASE("Touch setup: SimulateTouch tags the mouse's events as a touch screen's, whatever the backend tells")
+{
+    HookBench b;
+    ImGuiIO& io = ImGui::GetIO();
+    b.Frame();
+    ImGuiTouch::GetConfig().SimulateTouch = true;
+    io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);  // a backend that tags each of its events (SDL does)
+    io.AddMousePosEvent(100, 100);
+    b.Frame();
+    CHECK(io.MouseSource == ImGuiMouseSource_TouchScreen);
+
+    ImGuiTouch::GetConfig().SimulateTouch = false;
+    b.Frame();
+    io.AddMousePosEvent(110, 100);
+    b.Frame();
+    CHECK(io.MouseSource == ImGuiMouseSource_Mouse);
 }
