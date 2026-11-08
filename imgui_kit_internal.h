@@ -46,6 +46,7 @@ namespace Internal
 {
     // The content moves on its own this frame (the inertia, the bounce, an animation): IsAnimating() is true
     void RequestAnimation();
+    void SetupKeepCaretInView(ImGuiContext* ctx);  // the caret kept above the keyboard (imgui_kit_touch_keyboard.cpp)
     // For the tests, which call the steps without the hooks: whether an animation was asked since the last call
     bool ConsumeAnimationRequest();
 }

@@ -318,8 +318,12 @@ IMGUI_API void   SetItemTakesDrags(bool long_press_is_right_click = true);
 IMGUI_API void   AddFingerEvent(int id, const ImVec2& pos, bool down);
 
 // The parts of the screen hidden by a phone's keyboard (in Dear ImGui's coordinates): a full-screen window keeps out
-// of them. Zero when no keyboard shows, and outside a browser (SetupEmscriptenKeyboard).
+// of them. Zero when no keyboard shows.
 IMGUI_API ImGuiTouchKeyboardInsets GetKeyboardInsets();
+// A native app tells where its keyboard is (iOS: UIKeyboardWillChangeFrameNotification), and zero when it hides.
+// While a keyboard shows, the windows that hold the text field scroll its caret into view, above the keyboard.
+// In a browser, SetupEmscriptenKeyboard() sets them.
+IMGUI_API void   SetKeyboardInsets(const ImGuiTouchKeyboardInsets& insets);
 
 #ifdef __EMSCRIPTEN__
 // In a browser, with any of Dear ImGui's Emscripten backends: tells Dear ImGui which pointer is a finger (the

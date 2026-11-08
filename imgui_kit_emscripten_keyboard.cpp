@@ -2,6 +2,7 @@
 // https://github.com/pthom/imgui_kit (MIT license)
 #ifdef __EMSCRIPTEN__
 #include "imgui_kit.h"
+#include "imgui_kit_internal.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"  // g.PlatformImeDataPrev, ImGui::GetInputTextState
@@ -502,7 +503,6 @@ R"JS(
     constexpr int kWantGraceFrames = 5;
     int gFramesWithoutWant = 0;
 
-    ImGuiTouchKeyboardInsets gInsets;
 
     void SendKey(ImGuiIO& io, ImGuiKey key)
     {
@@ -565,64 +565,6 @@ R"JS(
         }
     }
 
-    // While the keyboard is shown, the caret's line stays in view, as in native apps once the keyboard shrinks them:
-    // the windows that hold it scroll. Only when the caret moves in its content, or the display changes: the user may
-    // scroll elsewhere meanwhile.
-    struct CaretView
-    {
-        ImGuiID window = 0;
-        ImVec2 inContent = ImVec2(-1.f, -1.f);
-        ImVec2 visible;  // the visible area's top and bottom
-        int framesLeft = 0;
-    };
-    CaretView gCaretView;
-
-    void KeepCaretInView(ImGuiContext& g, bool keyboardShown, float visibleTop, float visibleBottom)
-    {
-        const ImGuiPlatformImeData& ime = g.PlatformImeData;  // the last complete frame's
-        ImGuiWindow* window = g.NavWindow;
-        if (!keyboardShown || !ime.WantTextInput || window == nullptr)
-        {
-            gCaretView = CaretView();
-            return;
-        }
-        ImVec2 inContent(ime.InputPos.x + window->Scroll.x, ime.InputPos.y + window->Scroll.y);
-        bool changed = window->ID != gCaretView.window || inContent.x != gCaretView.inContent.x
-                       || inContent.y != gCaretView.inContent.y || visibleTop != gCaretView.visible.x
-                       || visibleBottom != gCaretView.visible.y;
-        if (changed)
-            gCaretView.framesLeft = 3;  // the layout takes a frame or two to follow a new visible area
-        gCaretView.window = window->ID;
-        gCaretView.inContent = inContent;
-        gCaretView.visible = ImVec2(visibleTop, visibleBottom);
-        if (gCaretView.framesLeft == 0)
-            return;
-        --gCaretView.framesLeft;
-        float margin = ime.InputLineHeight * 0.5f;
-        float top = ime.InputPos.y - margin, bottom = ime.InputPos.y + ime.InputLineHeight + margin;
-        for (ImGuiWindow* w = window; w != nullptr; w = w->ParentWindow)
-        {
-            ImRect clip = w->InnerClipRect;
-            clip.Min.y = ImMax(clip.Min.y, visibleTop);
-            clip.Max.y = ImMin(clip.Max.y, visibleBottom);
-            float delta = (bottom > clip.Max.y) ? bottom - clip.Max.y : (top < clip.Min.y) ? top - clip.Min.y : 0.f;
-            // A window moves the field at most to its own top (a child whose top is under the keyboard cannot show
-            // it): its parents scroll for the rest. A field out of its window's view is not drawn, and Dear ImGui then
-            // wants no text: the keyboard would close.
-            if (delta > 0.f)
-                delta = ImMin(delta, ImMax(0.f, top - w->InnerClipRect.Min.y));
-            // A top-level window that reaches below the keyboard shrinks above it (the app's full-screen window), and
-            // can then scroll that much further than the previous frame's ScrollMax
-            float growth = (w->Flags & ImGuiWindowFlags_ChildWindow) ? 0.f : ImMax(0.f, w->InnerClipRect.Max.y - visibleBottom);
-            float target = ImClamp(w->Scroll.y + delta, 0.f, w->ScrollMax.y + growth);
-            float moved = target - w->Scroll.y;
-            if (moved == 0.f)
-                continue;
-            ImGui::SetScrollY(w, target);
-            top -= moved;
-            bottom -= moved;
-        }
-    }
 }  // namespace
 
 // Before each frame (a NewFramePre hook): tells the page what Dear ImGui wants, feeds Dear ImGui what was typed
@@ -637,14 +579,14 @@ static void UpdateKeyboard()
         emscripten_run_script_string("window.imguiKitKeyboard ? window.imguiKitKeyboard.visibleArea() : ''");
     int visibleTop = 0, visibleBottom = 0;
     bool keyboardShown = visible != nullptr && sscanf(visible, "%d,%d", &visibleTop, &visibleBottom) == 2;
-    gInsets = keyboardShown ? ImGuiTouchKeyboardInsets{ImMax(0.f, (float)visibleTop),
-                                                       ImMax(0.f, io.DisplaySize.y - (float)visibleBottom)}
-                            : ImGuiTouchKeyboardInsets{};
+    // The kit keeps the caret in view from these insets (imgui_kit_touch_keyboard.cpp)
+    SetKeyboardInsets(keyboardShown ? ImGuiTouchKeyboardInsets{ImMax(0.f, (float)visibleTop),
+                                                                ImMax(0.f, io.DisplaySize.y - (float)visibleBottom)}
+                                    : ImGuiTouchKeyboardInsets{});
     if (emscripten_run_script_int("window.imguiKitKeyboard ? window.imguiKitKeyboard.dropTapClicks() : 0"))
         DropClicks(g, true, 0.f);
     else if (keyboardShown)
         DropClicks(g, false, (float)visibleBottom);
-    KeepCaretInView(g, keyboardShown, (float)visibleTop, (float)visibleBottom);
 
     // What ImGui wants, when it changed (the last complete frame's IME data: the cursor's line)
     const ImGuiPlatformImeData& ime = g.PlatformImeDataPrev;
@@ -800,11 +742,7 @@ void SetupEmscriptenKeyboard()
     hook.Owner = owner;
     hook.Callback = [](ImGuiContext*, ImGuiContextHook*) { UpdateKeyboard(); };
     ImGui::AddContextHook(ctx, &hook);
-}
-
-ImGuiTouchKeyboardInsets GetKeyboardInsets()
-{
-    return gInsets;
+    Internal::SetupKeepCaretInView(ctx);  // after the hook above: it reads the insets this one sets
 }
 
 }  // namespace ImGuiTouch

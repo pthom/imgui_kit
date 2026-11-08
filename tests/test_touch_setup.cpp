@@ -89,3 +89,48 @@ TEST_CASE("Touch setup: SimulateTouch tags the mouse's events as a touch screen'
     b.Frame();
     CHECK(io.MouseSource == ImGuiMouseSource_Mouse);
 }
+
+TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
+{
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    ImGui_ImplNull_Init();
+    static char text[64] = "";
+    float fieldBottom = 0.f;
+    // A full-screen window that keeps out of the keyboard, 20 lines, then the field
+    auto frame = [&](bool focus) {
+        ImGui_ImplNull_NewFrame();
+        io.DeltaTime = 1.f / 60.f;
+        ImGui::NewFrame();
+        ImGuiTouchKeyboardInsets keyboard = ImGuiTouch::GetKeyboardInsets();
+        ImGui::SetNextWindowPos(ImVec2(0, keyboard.Top));
+        ImGui::SetNextWindowSize(ImVec2(400, 300 - keyboard.Top - keyboard.Bottom));
+        ImGui::Begin("page", nullptr, ImGuiWindowFlags_NoDecoration);
+        for (int i = 0; i < 12; i++)
+            ImGui::Text("Line %d", i);
+        if (focus)
+            ImGui::SetKeyboardFocusHere();
+        ImGui::InputText("field", text, IM_ARRAYSIZE(text));
+        fieldBottom = ImGui::GetItemRectMax().y;
+        ImGui::End();
+        ImGui::Render();
+    };
+    io.DisplaySize = ImVec2(400, 300);
+    frame(false);
+    frame(true);
+    for (int i = 0; i < 3; i++)  // the focus request, the activation, then WantTextInput
+        frame(false);
+    REQUIRE(io.WantTextInput);
+    CHECK(fieldBottom > 150.f);  // under where the keyboard will be
+
+    ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{0.f, 150.f});  // a keyboard over the bottom half
+    for (int i = 0; i < 6; i++)
+        frame(false);
+    CHECK(io.WantTextInput);       // the field kept the keyboard
+    CHECK(fieldBottom <= 150.f);   // and is above it
+
+    ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{});
+    ImGui_ImplNull_Shutdown();
+    ImGui::DestroyContext();
+}

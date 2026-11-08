@@ -16,7 +16,6 @@
 @interface AppViewController : UIViewController <MTKViewDelegate, UIKeyInput>
 @property (nonatomic, strong) id<MTLDevice> device;
 @property (nonatomic, strong) id<MTLCommandQueue> commandQueue;
-@property (nonatomic) CGFloat keyboardHeight;   // the part of the screen the keyboard hides, in points
 @property (nonatomic, weak) UITouch* mouseTouch; // the first finger: Dear ImGui's mouse
 @end
 
@@ -73,12 +72,13 @@
 {
     CGRect frame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     CGRect inView = [self.view convertRect:frame fromView:nil];
-    self.keyboardHeight = MAX(0.0, CGRectGetMaxY(self.view.bounds) - CGRectGetMinY(inView));
+    float hidden = (float)MAX(0.0, CGRectGetMaxY(self.view.bounds) - CGRectGetMinY(inView));
+    ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{0.0f, hidden});  // imgui_kit: the caret stays above it
 }
 
 -(void)keyboardWillHide:(NSNotification*)notification
 {
-    self.keyboardHeight = 0.0;
+    ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{});  // imgui_kit
 }
 
 -(void)drawInMTKView:(MTKView*)view
@@ -100,7 +100,7 @@
 
     // The kit's demo, in a window that fills the screen, out of the notch and the keyboard
     UIEdgeInsets safe = view.safeAreaInsets;
-    float bottom = (float)MAX(safe.bottom, self.keyboardHeight);
+    float bottom = MAX((float)safe.bottom, ImGuiTouch::GetKeyboardInsets().Bottom);  // imgui_kit
     ImGui::SetNextWindowPos(ImVec2((float)safe.left, (float)safe.top));
     ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x - (float)(safe.left + safe.right),
                                     io.DisplaySize.y - (float)safe.top - bottom));
