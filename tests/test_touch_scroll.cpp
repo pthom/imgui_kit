@@ -41,6 +41,7 @@ struct Bench
     bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
     float canvasZoom = 1.f;
+    ImVec2 canvasWheelPos;  // the mouse when the canvas last zoomed
     ImGuiID canvasId = 0;
     ImVec2 canvasDrag;
     ImGuiID buttonId = 0;
@@ -62,6 +63,7 @@ struct Bench
 
     void Frame()
     {
+        ImGuiTouch::PinchBeforeNewFrame(*GImGui);  // as the hooks do, before ImGui::NewFrame()
         ImGui_ImplNull_NewFrame();
         ImGui::NewFrame();
         // As the hooks do: the layer runs before any widget (it acts on the frame's input before the widgets see it)
@@ -127,7 +129,10 @@ struct Bench
             {
                 ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton);
                 if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
+                {
                     canvasZoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+                    canvasWheelPos = ImGui::GetIO().MousePos;
+                }
             }
         }
         ImVec2 linesPos = ImGui::GetCursorScreenPos();
@@ -820,6 +825,8 @@ TEST_CASE("Touch pinch: on a widget that takes the pinch, it zooms the widget by
     b.Frames(6);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
     CHECK(b.canvasZoom == doctest::Approx(1.331f));
+    CHECK(Near(b.canvasWheelPos.x, c.x + 7.f, 1.f));  // around the fingers' center, not the first finger (c - 20)
+    CHECK(Near(b.canvasWheelPos.y, c.y, 1.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // back to 40 px: the notches go back
     b.Frames(6);
     CHECK(b.canvasZoom == doctest::Approx(1.f));
@@ -863,8 +870,10 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
     b.Frames(3);
     CHECK(ImGui::GetIO().MouseDown[0]);
     CHECK(!b.rightDown);
-    b.Drag(ImVec2(0.f, -10.f), 2);  // the first finger is the mouse: the canvas is dragged
+    Fingers(c - ImVec2(20.f, 22.f), c + ImVec2(20.f, -22.f));  // the fingers move on, 10 px up
+    b.Drag(ImVec2(0.f, -10.f), 2);  // the platform's mouse (the first finger) too: moved to the fingers' center
     CHECK(b.canvasDrag.y < -5.f);
+    CHECK(Near(ImGui::GetIO().MousePos.x, c.x, 1.f));
     CHECK(b.scrollY == 0.f);
     LiftFingers();
     b.Release();
