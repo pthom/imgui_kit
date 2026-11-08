@@ -107,7 +107,7 @@ Each item would replace a workaround in the layer:
 3. `imgui_kit_touch.cpp`: the setup and the hooks.
 4. `imgui_kit_touch_scroll.cpp`: the swipe, the tap, the hold, the long press. Its top comment is the design.
 5. `imgui_kit_touch_pinch.cpp`, `imgui_kit_touch_keyboard.cpp`.
-6. `tests/`: headless tests through the null backend.
+6. `tests/`: headless tests through the null backend. `tests/test_engine/`: the gestures driven by the Test Engine, headless or in a window.
 
 ## The wheel session
 
