@@ -880,3 +880,28 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
     CHECK(!ImGui::GetIO().MouseDown[0]);
 }
 
+TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch reaches the widget in a frame of its own")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frame();
+    float zoom = b.canvasZoom;
+    for (int i = 1; i <= 30; ++i)  // a fast pinch: the spread grows from 40 px to 80 px in 10 frames (7 notches of 10%)
+    {
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f + 4.f * (float)ImMin(i, 10), 0.f));
+        if (i % 2 == 0)  // the platform's mouse (the first finger) moves every other frame: a jitter
+            b.MoveTo(c - ImVec2(20.f, (float)(i % 4) * 0.5f));
+        else
+            b.Frame();
+        CHECK(b.canvasZoom <= zoom * 1.1f * 1.001f);  // at most one notch per frame: two read together zoom once
+        zoom = b.canvasZoom;
+    }
+    LiftFingers();
+    b.Release();
+    CHECK(b.canvasZoom == doctest::Approx(powf(1.1f, 7.f)));
+}

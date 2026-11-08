@@ -227,7 +227,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         // (it sends its button's state at each frame, a platform only its changes)
         ctx->MouseUp();
         ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), true);  // 54 px: a scale of 1.35, three notches of 10%
-        ctx->Yield(8);
+        ctx->Yield(20);  // one notch at a time, each read before the next is sent
         ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), false);
         ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), false);
         ctx->Yield(3);
