@@ -62,42 +62,47 @@ namespace
 
 namespace ImGuiTouch
 {
-// The state hangs on a Shutdown hook of the Dear ImGui context (its UserData), which frees it with the context (see
-// imgui_kit_internal.h's top). The last context's is cached: GetCurrentContext() is called many times per frame.
+// The state hangs on a Shutdown hook of the Dear ImGui context (its UserData), as the Test Engine's: the hook frees it
+// with the context (see imgui_kit_internal.h's top)
+namespace
+{
+    const ImGuiID kContextHookOwner = ImHashStr("ImGuiTouch_Context");
+}
+
+ImGuiTouchContext* FindCurrentContext()
+{
+    ImGuiContext* ctx = GImGui;
+    if (ctx == nullptr)
+        return nullptr;
+    for (ImGuiContextHook& hook : ctx->Hooks)
+        if (hook.Owner == kContextHookOwner && hook.Type == ImGuiContextHookType_Shutdown)
+            return (ImGuiTouchContext*)hook.UserData;
+    return nullptr;
+}
+
 ImGuiTouchContext& GetCurrentContext()
 {
-    static ImGuiContext* sCachedContext = nullptr;
-    static ImGuiTouchContext* sCached = nullptr;
+    ImGuiTouchContext* state = FindCurrentContext();
+    IM_ASSERT(state != nullptr && "imgui_kit's touch layer: call ImGuiTouch::Setup() first (or ImGuiKit::SetupWheelSession())");
+    return *state;
+}
+
+ImGuiTouchContext& CreateCurrentContextIfNeeded()
+{
     ImGuiContext* ctx = GImGui;
     IM_ASSERT(ctx != nullptr && "imgui_kit's touch layer needs a Dear ImGui context: call ImGui::CreateContext() first");
-    if (ctx == sCachedContext)
-        return *sCached;
-    const ImGuiID owner = ImHashStr("ImGuiTouch_Context");
-    ImGuiTouchContext* state = nullptr;
-    for (ImGuiContextHook& hook : ctx->Hooks)
-        if (hook.Owner == owner && hook.Type == ImGuiContextHookType_Shutdown)
-            state = (ImGuiTouchContext*)hook.UserData;
-    if (state == nullptr)
-    {
-        state = IM_NEW(ImGuiTouchContext)();
-        ImGuiContextHook hook;
-        hook.Type = ImGuiContextHookType_Shutdown;
-        hook.Owner = owner;
-        hook.UserData = state;
-        hook.Callback = [](ImGuiContext*, ImGuiContextHook* h) {
-            ImGuiTouchContext* dying = (ImGuiTouchContext*)h->UserData;
-            if (sCached == dying)
-            {
-                sCachedContext = nullptr;
-                sCached = nullptr;
-            }
-            IM_DELETE(dying);
-            h->UserData = nullptr;
-        };
-        ImGui::AddContextHook(ctx, &hook);
-    }
-    sCachedContext = ctx;
-    sCached = state;
+    if (ImGuiTouchContext* state = FindCurrentContext())
+        return *state;
+    ImGuiTouchContext* state = IM_NEW(ImGuiTouchContext)();
+    ImGuiContextHook hook;
+    hook.Type = ImGuiContextHookType_Shutdown;
+    hook.Owner = kContextHookOwner;
+    hook.UserData = state;
+    hook.Callback = [](ImGuiContext*, ImGuiContextHook* h) {
+        IM_DELETE((ImGuiTouchContext*)h->UserData);
+        h->UserData = nullptr;
+    };
+    ImGui::AddContextHook(ctx, &hook);
     return *state;
 }
 } // namespace ImGuiTouch
@@ -106,7 +111,7 @@ namespace ImGuiTouch
 {
 void Setup(const ImGuiTouchConfig& config)
 {
-    Ctx().Config = config;
+    CreateCurrentContextIfNeeded().Config = config;
     ImGuiContext* ctx = ImGui::GetCurrentContext();
     IM_ASSERT(ctx != nullptr && "ImGuiTouch::Setup() needs a context: call ImGui::CreateContext() first");
     if (HasHooks(ctx, kTouchHooksOwner))
@@ -127,9 +132,19 @@ void Setup(const ImGuiTouchConfig& config)
 
 ImGuiTouchConfig& GetConfig() { return Ctx().Config; }
 
-bool IsAnimating() { return Ctx().Animating || Ctx().WasAnimating; }
+// Without the touch layer, nothing records the animations: the kit's widgets animate all the same (an app that draws
+// every frame), and IsAnimating() says false
+bool IsAnimating()
+{
+    ImGuiTouchContext* state = FindCurrentContext();
+    return state != nullptr && (state->Animating || state->WasAnimating);
+}
 
-void RequestAnimation() { Ctx().Animating = true; }
+void RequestAnimation()
+{
+    if (ImGuiTouchContext* state = FindCurrentContext())
+        state->Animating = true;
+}
 
 bool ConsumeAnimationRequest()
 {
@@ -143,7 +158,7 @@ namespace ImGuiKit
 {
 void SetupWheelSession(bool enabled)
 {
-    Ctx().WheelSessionEnabled = enabled;
+    ImGuiTouch::CreateCurrentContextIfNeeded().WheelSessionEnabled = enabled;
     ImGuiContext* ctx = ImGui::GetCurrentContext();
     IM_ASSERT(ctx != nullptr && "ImGuiKit::SetupWheelSession() needs a context: call ImGui::CreateContext() first");
     if (HasHooks(ctx, kWheelHooksOwner))

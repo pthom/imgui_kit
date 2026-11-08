@@ -16,6 +16,7 @@ struct Bench
     Bench()
     {
         ImGui::CreateContext();
+        ImGuiTouch::CreateCurrentContextIfNeeded();  // the steps are called directly, without the setups
         ImGui_ImplNull_Init();
     }
     ~Bench()

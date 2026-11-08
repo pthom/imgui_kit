@@ -301,7 +301,9 @@ struct ImGuiTouchConfig
 
 namespace ImGuiTouch
 {
-// Installs the touch layer in the current context, once (a second call only changes the config)
+// Installs the touch layer in the current Dear ImGui context, once (a second call only changes the config); it creates
+// the layer's state, freed with the context. Call it first: the other ImGuiTouch functions assert without it, except
+// IsAnimating(), SetItemTakesDrags() and GetKeyboardInsets(), which do nothing (or return zero) then.
 IMGUI_API void   Setup(const ImGuiTouchConfig& config = ImGuiTouchConfig());
 IMGUI_API ImGuiTouchConfig& GetConfig();
 
@@ -331,7 +333,7 @@ IMGUI_API void   SetKeyboardInsets(const ImGuiTouchKeyboardInsets& insets);
 #ifdef __EMSCRIPTEN__
 // In a browser, with any of Dear ImGui's Emscripten backends: tells Dear ImGui which pointer is a finger (the
 // browser's pointer events), relays the fingers to AddFingerEvent() (the pinch), and sets ImGuiConfigFlags_IsTouchScreen
-// on a touch screen. Call once, after the backend's init. The canvas must have the id "canvas".
+// on a touch screen. Call once, after the backend's init and ImGuiTouch::Setup(). The canvas must have the id "canvas".
 // Also: Dear ImGui's links (TextLinkOpenURL) open on a phone (in the same tab: a phone's browser refuses new tabs
 // there), and the phone's own long press (text selection, its menu) is turned off on the canvas.
 IMGUI_API void   SetupEmscripten();

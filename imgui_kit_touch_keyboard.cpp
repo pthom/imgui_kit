@@ -66,14 +66,16 @@ namespace
 
 void SetKeyboardInsets(const ImGuiTouchKeyboardInsets& insets)
 {
-    GetCurrentContext().KeyboardInsets = insets;
+    CreateCurrentContextIfNeeded().KeyboardInsets = insets;  // a native app may report its keyboard before Setup()
     if (ImGuiContext* ctx = ImGui::GetCurrentContext())
         SetupKeepCaretInView(ctx);
 }
 
 ImGuiTouchKeyboardInsets GetKeyboardInsets()
 {
-    return GetCurrentContext().KeyboardInsets;
+    ImGuiTouchKeyboardInsets none;  // no keyboard reported yet: an app reads its insets at each frame
+    ImGuiTouchContext* state = FindCurrentContext();
+    return state ? state->KeyboardInsets : none;
 }
 
 // Before each frame (a NewFramePre hook, installed once): the caret's line stays above the keyboard

@@ -681,7 +681,10 @@ void DrawTouchScrollbarGrab()
 void SetItemTakesDrags(bool longPressIsRightClick)
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Scroll;
+    ImGuiTouchContext* touch = FindCurrentContext();  // none without the touch layer: the widget just draws
+    if (touch == nullptr)
+        return;
+    State& s = touch->Scroll;
     if (s.context != &g || s.frameCount != g.FrameCount)
         return;
     ImGuiWindow* window = g.CurrentWindow;

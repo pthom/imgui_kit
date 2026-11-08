@@ -4,12 +4,13 @@
 // As Dear ImGui's imgui_internal.h: no guarantee of forward compatibility here. Code that includes it may need changes
 // at a new version of the kit.
 //
-// The touch layer's state, ImGuiTouchContext, is created implicitly: Dear ImGui has no slot for an extension's state,
-// so the first ImGuiTouch call made with a Dear ImGui context (GetCurrentContext(), called by Setup(), GetConfig(),
-// AddFingerEvent()...) allocates one, and stores it in the UserData of a context hook it adds (ImGui::AddContextHook,
-// of type Shutdown). The hooks are per context: each Dear ImGui context has its own touch state, found again through its
-// hooks. When the Dear ImGui context is destroyed, ImGui::DestroyContext() calls that hook, which frees the state. The
-// app has no CreateContext() / DestroyContext() of the kit's to call (ImPlot has its own, explicit).
+// The touch layer's state, ImGuiTouchContext: Dear ImGui has no slot for an extension's state, so the setups
+// (ImGuiTouch::Setup(), ImGuiKit::SetupWheelSession(), ImGuiTouch::SetKeyboardInsets()) allocate one for the current Dear
+// ImGui context, and store it in the UserData of a context hook they add (ImGui::AddContextHook, of type Shutdown), as
+// the Test Engine stores its own. The hooks are per context: each Dear ImGui context has its own touch state, found
+// again through its hooks (no global: GImGui may be thread-local). ImGui::DestroyContext() calls that hook, which frees
+// the state. The setups play the role of ImPlot's CreateContext(); the kit has no DestroyContext() to call. The other
+// ImGuiTouch functions assert that a setup was called.
 #pragma once
 #include "imgui_kit.h"
 #include "imgui_internal.h"  // ImRect, ImGuiWindow, ImGuiAxis
@@ -156,9 +157,11 @@ namespace ImGuiTouch
     // when the second finger lands.
     void UpdateTouchPinch(ImGuiTouchPinchMode mode, bool interruptsWidgets);
 
-    // The current Dear ImGui context's touch state, created implicitly at its first use, freed with the Dear ImGui
-    // context (see this file's top)
+    // The current Dear ImGui context's touch state (see this file's top): created by the setups, freed with the Dear
+    // ImGui context. GetCurrentContext() asserts that a setup was called; FindCurrentContext() returns nullptr.
     ImGuiTouchContext& GetCurrentContext();
+    ImGuiTouchContext* FindCurrentContext();
+    ImGuiTouchContext& CreateCurrentContextIfNeeded();
     // The content moves on its own this frame (the inertia, the bounce, an animation): IsAnimating() is true
     void RequestAnimation();
     void SetupKeepCaretInView(ImGuiContext* ctx);  // the caret kept above the keyboard (imgui_kit_touch_keyboard.cpp)
