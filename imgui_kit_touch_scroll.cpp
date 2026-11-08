@@ -51,56 +51,16 @@ namespace
     constexpr float kInertiaDecay = 2.f;        // speed *= exp(-decay * dt) after the release (iOS: 0.998 per ms)
     constexpr float kInertiaMinSpeedEm = 3.f;   // font sizes per second: below this, a release starts no inertia, and the inertia ends
     constexpr float kFlickWindow = 0.05f;       // s: the lift speed is the finger's motion over this long before the lift
-    constexpr int kFlickSamples = 16;           // enough for the window at 240 fps
+    constexpr int kFlickSamples = ImGuiTouchFlickSamples; // enough for the window at 240 fps
     constexpr float kRubberBandResistance = 0.55f;  // iOS: a drag of d past the end moves the content by (1 - 1 / (d * c / size + 1)) * size
     constexpr float kThinScrollbarFontSizes = 0.3f;  // the scroll bars' width on a touch screen (iOS: about 3 pt)
     constexpr float kHeldScrollbarFontSizes = 0.8f;  // a bar held by a finger widens to this, over the content (iOS too)
     constexpr float kHeldScrollbarGrowSeconds = 0.15f;
     constexpr float kBounceOmega = 12.f;        // 1/s: the content past its end springs back as a critically damped spring (settled in about 0.4 s)
 
-    struct Sample
-    {
-        float time;
-        ImVec2 pos;
-    };
 
-    struct State
-    {
-        ImGuiContext* context = nullptr;  // the state belongs to one context (its windows): a new one starts afresh
-        int frameCount = -1;              // (a new context may reuse the address of a destroyed one: its frames restart)
-        bool owning = false;            // the sentinel holds the active id: a press, not released nor handed over yet
-        bool swiping = false;           // the finger moved past the slop
-        bool parked = false;            // the sentinel holds the active id for a pinch: nothing until the fingers lift
-        ImGuiWindow* window = nullptr;  // the pressed window, then the one that scrolls
-        ImGuiAxis axis = ImGuiAxis_None;
-        ImVec2 pressPos;
-        Sample samples[kFlickSamples];  // the finger's recent positions, a ring: the lift speed comes from them
-        int nbSamples = 0, nextSample = 0;
-        ImVec2 inertia;                 // px/s, after the release
-        float pull = 0.f;               // px: how far the finger dragged past the end of the scroll (the rubber band)
-        float overscroll = 0.f;         // px: the content is drawn this far past its end, along the axis (positive: toward the start)
-        float overscrollSpeed = 0.f;    // px/s, while it springs back
-        int replayedPresses = 0;        // presses queued by the layer, which it must not claim
-        bool watchingLongPress = false; // a touch press, still so far: a long press when it stays
-        bool longPressArmed = false;    // it stayed: a right click when it lifts, unless it moves (a ring shows it)
-        bool thinScrollbars = false;    // this frame: thin bars on a touch screen
-        ImGuiID heldBar = 0;            // the scroll bar held by a finger, since heldBarTime: it widens
-        float heldBarTime = 0.f;
-        double lastReplayTime = -1e9;   // the previous replayed press: the next one pairs with it (a double tap)
-        double rippleTime = -1e9;       // when the hold handed the press over: a ring around the finger, briefly
-        ImVec2 ripplePos;
-        ImVec2 lastReplayPos;
-        int lastReplayCount = 0;
-        float pressTime = 0.f;
-        struct DragTaker
-        {
-            ImGuiID window;  // the widget's window
-            ImRect rect;     // its visible part, on the screen
-            bool longPressIsRightClick;
-        };
-        std::vector<DragTaker> takers, previousTakers;  // SetItemTakesDrags(): this frame's, the last frame's
-    };
-    State gState;
+    using Sample = ImGuiTouchScrollSample;
+    using State = ImGuiTouchScrollState;
 
     ImGuiID SentinelId() { return ImHashStr("##ImGuiTouch_Scroll"); }
 
@@ -336,7 +296,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    State& s = gState;
+    State& s = Internal::GetContext().Scroll;
     if (s.context != &g || g.FrameCount < s.frameCount)
     {
         s = State{};
@@ -586,7 +546,7 @@ namespace
 
 void ApplyTouchOverscroll()
 {
-    State& s = gState;
+    State& s = Internal::GetContext().Scroll;
     ImGuiWindow* w = s.window;
     if (s.overscroll == 0.f || w == nullptr || s.context != GImGui || !w->Active)
         return;
@@ -612,7 +572,7 @@ void ApplyTouchOverscroll()
 bool TouchScrollLetGo(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = gState;
+    State& s = Internal::GetContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.pull = 0.f;
@@ -635,7 +595,7 @@ bool TouchScrollLetGo(bool evenAWidget)
 bool TouchScrollRelease(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = gState;
+    State& s = Internal::GetContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.watchingLongPress = s.longPressArmed = false;
@@ -660,7 +620,7 @@ bool TouchScrollRelease(bool evenAWidget)
 void DrawTouchScrollbarGrab()
 {
     ImGuiContext& g = *GImGui;
-    State& s = gState;
+    State& s = Internal::GetContext().Scroll;
     ImGuiWindow* w = g.ActiveIdWindow;
     ImGuiAxis axis = ImGuiAxis_None;
     if (s.thinScrollbars && w != nullptr && g.ActiveId != 0)
@@ -721,13 +681,14 @@ void DrawTouchScrollbarGrab()
 void SetItemTakesDrags(bool longPressIsRightClick)
 {
     ImGuiContext& g = *GImGui;
-    if (gState.context != &g || gState.frameCount != g.FrameCount)
+    State& s = Internal::GetContext().Scroll;
+    if (s.context != &g || s.frameCount != g.FrameCount)
         return;
     ImGuiWindow* window = g.CurrentWindow;
     ImRect rect = g.LastItemData.Rect;
     rect.ClipWith(window->ClipRect);
     if (rect.GetWidth() > 0.f && rect.GetHeight() > 0.f)
-        gState.takers.push_back({window->ID, rect, longPressIsRightClick});
+        s.takers.push_back({window->ID, rect, longPressIsRightClick});
 }
 
 }  // namespace ImGuiTouch

@@ -49,7 +49,8 @@ TEST_CASE("Touch setup: the hooks run the layer: a drag scrolls, the release coa
     int hooks = 0;
     for (const ImGuiContextHook& hook : ImGui::GetCurrentContext()->Hooks)
         hooks += (hook.Type != ImGuiContextHookType_PendingRemoval_);
-    CHECK(hooks == 6);  // touch: NewFramePre, NewFramePost, EndFramePre, RenderPost; the wheel session: NewFramePre, NewFramePost
+    CHECK(hooks == 7);  // touch: NewFramePre, NewFramePost, EndFramePre, RenderPost; the wheel session: NewFramePre,
+                        // NewFramePost; the touch state: Shutdown (it frees the state with the context)
 
     io.AddMousePosEvent(200, 200);
     b.Frame();
@@ -133,4 +134,27 @@ TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
     ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{});
     ImGui_ImplNull_Shutdown();
     ImGui::DestroyContext();
+}
+
+TEST_CASE("Touch context: each Dear ImGui context has its own touch state, freed with it")
+{
+    ImGuiContext* a = ImGui::CreateContext();
+    ImGuiTouch::GetConfig().ScrollMode = ImGuiTouchScrollMode_Always;
+    ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{0.f, 100.f});
+
+    ImGuiContext* b = ImGui::CreateContext();
+    ImGui::SetCurrentContext(b);
+    CHECK(ImGuiTouch::GetConfig().ScrollMode == ImGuiTouchScrollMode_Auto);  // b starts afresh
+    CHECK(ImGuiTouch::GetKeyboardInsets().Bottom == 0.f);
+    ImGuiTouch::GetConfig().ScrollMode = ImGuiTouchScrollMode_Disabled;
+    ImGui::DestroyContext(b);
+
+    ImGui::SetCurrentContext(a);
+    CHECK(ImGuiTouch::GetConfig().ScrollMode == ImGuiTouchScrollMode_Always);  // a kept its own
+    CHECK(ImGuiTouch::GetKeyboardInsets().Bottom == 100.f);
+    ImGui::DestroyContext(a);
+
+    ImGuiContext* c = ImGui::CreateContext();  // may reuse a destroyed context's address: it still starts afresh
+    CHECK(ImGuiTouch::GetConfig().ScrollMode == ImGuiTouchScrollMode_Auto);
+    ImGui::DestroyContext(c);
 }
