@@ -38,6 +38,8 @@ struct Bench
     bool canvas = false;        // a canvas below the wide child: an item that sums its drags
     bool canvasTakesDrags = false;  // it calls SetItemTakesDrags()
     bool canvasLongPressIsRightClick = true;  // its argument
+    int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDragsAlong(axis) instead
+    bool wideContent = false;  // the window's content is wider than it: it scrolls sideways too
     bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
     ImGuiTouchPinchDelivery canvasDelivery = ImGuiTouchPinchDelivery_WheelNotches;
@@ -74,7 +76,7 @@ struct Bench
             doubleClicks++;
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(400.f, 300.f), ImGuiCond_Always);
-        ImGui::Begin("Bench", nullptr, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Bench", nullptr, ImGuiWindowFlags_NoTitleBar | (wideContent ? ImGuiWindowFlags_HorizontalScrollbar : 0));
         benchWindow = ImGui::GetCurrentWindow();
         scrollY = ImGui::GetScrollY();
         scrollMaxY = ImGui::GetScrollMaxY();
@@ -126,6 +128,8 @@ struct Bench
                 canvasDrag += ImGui::GetIO().MouseDelta;
             if (canvasTakesDrags)
                 ImGuiTouch::SetItemTakesDrags(canvasLongPressIsRightClick);
+            if (canvasDragAxis >= 0)
+                ImGuiTouch::SetItemTakesDragsAlong(canvasDragAxis, canvasLongPressIsRightClick);
             if (canvasTakesPinch)
             {
                 ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton, canvasDelivery);
@@ -136,6 +140,8 @@ struct Bench
                 }
             }
         }
+        if (wideContent)
+            ImGui::Dummy(ImVec2(800.f, 1.f));  // twice the window's width
         ImVec2 linesPos = ImGui::GetCursorScreenPos();
         for (int i = 0; i < (shortContent ? 2 : 100); ++i)
             ImGui::Text("Line %d", i);
@@ -938,5 +944,43 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
     CHECK(biggestStep < 1.08f);  // small steps: no jump at the start, no notch of 10%
     CHECK(framesZoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
                                  // fingers' center only every half line, and a move holds the wheel back a frame
+}
+
+TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways drag, even where the page scrolls sideways")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasDragAxis = ImGuiTouchAxis_X;  // a slider
+    b.wideContent = true;                 // the page scrolls both ways
+    b.Frames(3);
+    REQUIRE(b.benchWindow->ScrollMax.x > 0.f);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    b.Drag(ImVec2(40.f, 0.f), 4);  // sideways: the canvas's axis
+    b.Frames(2);
+    CHECK(b.canvasDrag.x > 20.f);  // the canvas was dragged (from past the slop)
+    CHECK(b.benchWindow->Scroll.x == 0.f);  // the page did not scroll
+    b.ReleaseStill();
+
+    b.canvasDrag = ImVec2(0.f, 0.f);
+    b.Press(c);
+    b.Drag(ImVec2(0.f, -40.f), 4);  // vertical: not its axis, the page scrolls
+    b.ReleaseStill();
+    CHECK(b.scrollY > 20.f);
+    CHECK(b.canvasDrag.y == 0.f);
+}
+
+TEST_CASE("Touch scroll: without SetItemTakesDragsAlong, a sideways drag on a widget scrolls a page that scrolls sideways")
+{
+    Bench b;
+    b.canvas = true;
+    b.wideContent = true;
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    b.Drag(ImVec2(-40.f, 0.f), 4);
+    b.ReleaseStill();
+    CHECK(b.benchWindow->Scroll.x > 20.f);
+    CHECK(b.canvasDrag.x == 0.f);
 }
 

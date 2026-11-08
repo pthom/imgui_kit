@@ -263,4 +263,32 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         IM_CHECK_GT(row->Scroll.x, 50.f);
         ctx->ItemClose("Touch");
     };
+
+    // The same row: a sideways drag that starts on its slider moves the slider (SetItemTakesDragsAlong), and the row
+    // does not scroll
+    t = IM_REGISTER_TEST(engine, "demo", "touch_row_slider_takes_sideways_drag");
+    t->GuiFunc = [](ImGuiTestContext*) {
+        ImGui::SetNextWindowPos(ImVec2(500.f, 20.f), ImGuiCond_Appearing);
+        ImGuiKit::ShowDemoWindow();
+    };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->SetRef("//ImGuiKit Demo");
+        ctx->ItemOpen("Touch");
+        ctx->Yield(2);
+        ImGuiWindow* demo = ctx->GetWindowByRef("//ImGuiKit Demo");
+        ImGuiWindow* zone = FindWindowNamed(ctx, "##touch_zone");
+        ImGuiWindow* row = FindWindowNamed(ctx, "##sideways");
+        IM_CHECK(demo != nullptr && zone != nullptr && row != nullptr);
+        ctx->ScrollToY(demo->ID, demo->Scroll.y + zone->Pos.y - demo->InnerRect.Min.y);
+        ctx->ScrollToY(zone->ID, zone->ScrollMax.y);
+        ctx->ScrollToX(row->ID, 0.f);
+        ctx->SleepNoSkip(1.f, 1.f / 60.f);
+        // The slider is the row's first item, on its first line
+        ImVec2 slider = row->InnerRect.Min + ImVec2(ctx->UiContext->FontSize * 2.f, ctx->UiContext->FontSize * 0.8f);
+        // Towards the left: the row would scroll (its content follows the finger), the slider takes it instead
+        Swipe(ctx, slider, slider - ImVec2(80.f, 0.f));
+        ctx->Yield(10);
+        IM_CHECK_EQ(row->Scroll.x, 0.f);
+        ctx->ItemClose("Touch");
+    };
 }
