@@ -83,6 +83,25 @@ TEST_CASE("Aligned group: right-aligned from the second frame")
     CHECK(group_right == doctest::Approx(region_right));
 }
 
+TEST_CASE("Aligned group: on a whole pixel, and still from frame to frame, when its content snaps to whole pixels")
+{
+    Bench bench;
+    float group_left = 0;
+    auto gui = [&] {
+        ImGuiKit::BeginAlignedGroup("g", 0.5f);
+        ImGui::BeginChild("child", ImVec2(101, 40));  // the room minus 101 is odd: a centered group falls on a half pixel
+        ImGui::EndChild();
+        ImGuiKit::EndAlignedGroup();
+        group_left = ImGui::GetItemRectMin().x;
+    };
+    for (int i = 0; i < 3; i++)
+        bench.Frame(400, gui);
+    float left_before = group_left;
+    bench.Frame(400, gui);
+    CHECK(group_left == left_before);
+    CHECK(group_left == ImTrunc(group_left));
+}
+
 TEST_CASE("Column: an aligned group inside it is centered in the column, not on the line")
 {
     Bench bench;
