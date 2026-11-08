@@ -40,6 +40,7 @@ struct Bench
     bool canvasLongPressIsRightClick = true;  // its argument
     bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
+    ImGuiTouchPinchDelivery canvasDelivery = ImGuiTouchPinchDelivery_WheelNotches;
     float canvasZoom = 1.f;
     ImVec2 canvasWheelPos;  // the mouse when the canvas last zoomed
     ImGuiID canvasId = 0;
@@ -127,7 +128,7 @@ struct Bench
                 ImGuiTouch::SetItemTakesDrags(canvasLongPressIsRightClick);
             if (canvasTakesPinch)
             {
-                ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton);
+                ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton, canvasDelivery);
                 if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
                 {
                     canvasZoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
@@ -905,3 +906,37 @@ TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch r
     b.Release();
     CHECK(b.canvasZoom == doctest::Approx(powf(1.1f, 7.f)));
 }
+
+TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amount at each frame, and follows the fingers")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.canvasDelivery = ImGuiTouchPinchDelivery_WheelContinuous;  // the canvas zooms by 1.1 ^ wheel
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frame();
+    float zoom = b.canvasZoom, biggestStep = 1.f;
+    int framesZoomed = 0;
+    for (int i = 1; i <= 30; ++i)  // the spread grows from 40 px to 80 px in 20 frames: a scale of 2
+    {
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f + 2.f * (float)ImMin(i, 20), 0.f));
+        if (i % 2 == 0)  // the platform's mouse (the first finger) moves every other frame
+            b.MoveTo(c - ImVec2(20.f, (float)(i % 4) * 0.5f));
+        else
+            b.Frame();
+        biggestStep = ImMax(biggestStep, b.canvasZoom / zoom);
+        framesZoomed += (b.canvasZoom != zoom) ? 1 : 0;
+        zoom = b.canvasZoom;
+    }
+    LiftFingers();
+    b.Release();
+    // The zoom starts where the pinch is recognized (a spread of 1.15, past the 12% threshold): 2 / 1.15
+    CHECK(b.canvasZoom == doctest::Approx(2.f / 1.15f).epsilon(0.005));
+    CHECK(biggestStep < 1.08f);  // small steps: no jump at the start, no notch of 10%
+    CHECK(framesZoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
+                                 // fingers' center only every half line, and a move holds the wheel back a frame
+}
+

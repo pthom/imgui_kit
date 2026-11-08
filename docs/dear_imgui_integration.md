@@ -51,7 +51,7 @@ Most of them are already available in Hello ImGui and Dear ImGui Bundle. This re
 - *Hold, then drag*: the widget under the finger takes the drag (a slider, a text selection).
 - *Long press*: a right click (the context menus), shown by a ring around the finger.
 - *Pinch*: two fingers scale the font. Two fingers moved together are a right drag (a node editor's pan).
-- *A pinch for a widget*: a widget that zooms (a plot, an image) calls `ImGuiTouch::SetItemTakesPinch()` after itself. A pinch on it then zooms it, as wheel events (it zooms as it does with the wheel, no other change), and two fingers moved together drag it with its pan button.
+- *A pinch for a widget*: a widget that zooms (a plot, an image) calls `ImGuiTouch::SetItemTakesPinch()` after itself. A pinch on it then zooms it, as wheel events (it zooms as it does with the wheel, no other change): whole notches for a widget that reads only the wheel's sign (ImPlot), the exact value at each frame for one that uses it (an image viewer), and two fingers moved together drag it with its pan button.
 - *Thin scrollbars* on a touch screen: indicators, since a swipe scrolls anywhere.
 - *The phone's keyboard*: the caret stays above it (`SetKeyboardInsets()`, `GetKeyboardInsets()`).
 
