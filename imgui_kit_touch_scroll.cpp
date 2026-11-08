@@ -6,8 +6,6 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include <cmath>
-#include <vector>
 
 // The swipe, and the delayed press of the mobile toolkits, as a layer above the backends and below the widgets.
 // It runs right after ImGui::NewFrame(), before any widget:
@@ -306,7 +304,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     s.frameCount = g.FrameCount;
     const ImGuiID id = SentinelId();
     s.previousTakers.swap(s.takers);
-    s.takers.clear();
+    s.takers.resize(0);
 
     // Thin bars on a touch screen: indicators, not controls. At each frame, before any window: a theme applied later,
     // or a pinch (the font size), would change them
@@ -475,7 +473,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     {
         float speed = Along(s.inertia, s.axis);
         float past = ScrollBy(s.window, s.axis, speed * dt);
-        s.inertia = s.inertia * std::exp(-kInertiaDecay * dt);
+        s.inertia = s.inertia * expf(-kInertiaDecay * dt);
         const float minSpeed = kInertiaMinSpeedEm * g.FontSize;
         if (past != 0.f)  // the end: the content overshoots at the speed it had, then springs back
         {
@@ -692,7 +690,10 @@ void SetItemTakesDrags(bool longPressIsRightClick)
     ImRect rect = g.LastItemData.Rect;
     rect.ClipWith(window->ClipRect);
     if (rect.GetWidth() > 0.f && rect.GetHeight() > 0.f)
-        s.takers.push_back({window->ID, rect, longPressIsRightClick});
+    {
+        State::DragTaker taker = {window->ID, rect, longPressIsRightClick};
+        s.takers.push_back(taker);
+    }
 }
 
 }  // namespace ImGuiTouch

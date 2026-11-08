@@ -14,7 +14,6 @@
 #pragma once
 #include "imgui_kit.h"
 #include "imgui_internal.h"  // ImRect, ImGuiWindow, ImGuiAxis
-#include <vector>
 
 namespace ImGuiKit
 {
@@ -76,7 +75,7 @@ struct ImGuiTouchScrollState
         ImRect rect;     // its visible part, on the screen
         bool longPressIsRightClick;
     };
-    std::vector<DragTaker> takers, previousTakers;  // SetItemTakesDrags(): this frame's, the last frame's
+    ImVector<DragTaker> takers, previousTakers;  // SetItemTakesDrags(): this frame's, the last frame's
 };
 
 enum class ImGuiTouchPinchGesture { None, Undecided, Pinch, DragStarting, Drag };

@@ -19,7 +19,6 @@ Index of this file:
 #include "imgui_kit.h"
 #include "imgui_kit_internal.h"
 #include "imgui_internal.h"
-#include <cmath>
 #include <string.h>  // memcpy, strlen
 
 namespace ImGuiKit
