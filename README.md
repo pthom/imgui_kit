@@ -76,6 +76,8 @@ ImGuiKit::ShowDemoWindow();                     // all of it, with its code
 
 Define `IMGUI_KIT_USE_STL` for overloads that take `std::string` and `std::vector`.
 
+For AI assistants: [llms.txt](llms.txt) (also at https://pthom.github.io/imgui_kit/llms.txt): where the API is, how to set the kit up, and its traps.
+
 ## Touch screens
 
 One call after `ImGui::CreateContext()`, and each frame goes through it (Dear ImGui's context hooks): nothing to call per frame.

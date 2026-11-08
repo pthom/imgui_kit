@@ -1,0 +1,49 @@
+# imgui_kit, for AI assistants
+
+imgui_kit adds small, standalone helpers to Dear ImGui (C++, 1.93 or later, docking or master; MIT): layout helpers, a few widgets, em units, a touch layer for phones and tablets, and a mouse wheel that stays with the window it scrolls. Repository: https://github.com/pthom/imgui_kit
+
+## Where the truth is
+
+- `imgui_kit.h`: the whole API, one header, by `[SECTION]`: Em units, Layout, Widgets, Wheel session, Enums, Touch (ImGuiTouch). Each function has its doc comment there. Read it to check that a name exists and how to call it.
+- `imgui_kit_demo.cpp`: a section per helper (its `IMGUI_DEMO_MARKER`), the usual way to call each one.
+- Live, with its code beside it: https://pthom.github.io/imgui_explorer/?lib=imguikit (a section: `&demo=Layout%2FFill%20row`).
+- `docs/dear_imgui_integration.md`: how the touch layer and the wheel session work inside, and what they read from Dear ImGui's internals.
+
+## Build
+
+Copy `imgui_kit*.h` and `imgui_kit*.cpp` beside Dear ImGui (leave out `imgui_kit_demo.cpp`, or define `IMGUI_KIT_DISABLE_DEMO`), or with CMake: `add_subdirectory(imgui_kit)` then link `imgui_kit` (it uses an existing `imgui` target). C++11, no STL in the core.
+
+## Layout and widgets (namespace ImGuiKit)
+
+- Sizes in em, which follow the font: `EmSize()`, `EmToVec2(w, h)`. Prefer them to pixels.
+- Begin/End pairs: `BeginFillRow` / `FillRowTail` / `EndFillRow` (a widget fills the line, the items after the tail stay on the right), `BeginLabelColumn` / `Label` / `EndLabelColumn`, `BeginAlignedGroup` (right or centered), `BeginColumn`, `BeginGroupPanel`, `BeginFlow` (items that wrap).
+- The layout helpers measure their parts on the previous frame: the first frame draws them hidden. Call them at each frame, with a stable id.
+- Widgets: `HelpMarker` (an (i): a tooltip on hover, a popup on a click or a tap), `IconButton`, `SegmentedSwitch`, `FitText`, `ResizeHandle`.
+
+## Touch screens and the wheel (namespace ImGuiTouch, and ImGuiKit::SetupWheelSession)
+
+Set up once, after `ImGui::CreateContext()`; each then runs at each frame through Dear ImGui's context hooks (nothing to call per frame):
+
+```cpp
+ImGuiTouch::Setup();                    // swipe, long press, pinch
+ImGuiKit::SetupWheelSession();          // the wheel stays with the window it scrolls
+#ifdef __EMSCRIPTEN__
+ImGuiTouch::SetupEmscripten();          // after the backend's init: the browser's fingers and pointer type
+ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard for text fields
+#endif
+```
+
+The traps:
+- A widget that a finger drags (a canvas, a knob): `ImGuiTouch::SetItemTakesDrags()` right after it. Otherwise a drag scrolls the window, and the widget gets the finger only after a hold.
+- A widget that zooms with the wheel: `ImGuiTouch::SetItemTakesPinch(zoom_per_notch, pan_button, delivery)` right after it (`SetRectTakesPinch()` for a rectangle, e.g. a plot), so that a pinch zooms it instead of scaling the font. `delivery`: `ImGuiTouchPinchDelivery_WheelNotches` if the widget reads only the wheel's sign, `ImGuiTouchPinchDelivery_WheelContinuous` if it zooms by the wheel's value.
+- A widget that reads the wheel claims it while hovered: `if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY)) ...`. Otherwise the wheel session gives the wheel to the window that scrolls.
+- In a browser, the canvas must have the id "canvas".
+- A native app (iOS, Android) reports each finger with `ImGuiTouch::AddFingerEvent(id, pos, down)` (for the pinch), and its keyboard with `ImGuiTouch::SetKeyboardInsets()`: see `examples/ios_touch_demo/main.mm`.
+- An app that sleeps when idle keeps drawing while `ImGuiTouch::IsAnimating()` is true.
+- To try it on a desktop: `ImGuiTouch::GetConfig().SimulateTouch = true` (the mouse plays a finger).
+- With Dear ImGui's Test Engine: set the kit up before `ImGuiTestEngine_Start()` (hooks run in the order they were added).
+- Hello ImGui sets all of this up itself: its settings are `RunnerParams::touchConfig` and `RunnerParams::wheelSession`.
+
+## Python
+
+Dear ImGui Bundle binds the kit as `imgui_bundle.imgui_kit` (snake_case names; each Begin/End pair is also a context manager, e.g. `with imgui_kit.fill_row("id") as row:`). Its guide for AI assistants: https://imgui-bundle.pages.dev/llms.txt, and the kit's API in plain text: https://imgui-bundle.pages.dev/llms/api/imgui_kit.txt
