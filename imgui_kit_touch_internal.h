@@ -1,5 +1,6 @@
 // imgui_kit: the touch layer's internals (ImGuiTouch: the swipe, the pinch, the keyboard, the browser)
 // https://github.com/pthom/imgui_kit (MIT license)
+// How this could fit in Dear ImGui: docs/dear_imgui_integration.md
 //
 // As Dear ImGui's imgui_internal.h: no guarantee of forward compatibility here. Code that includes it may need changes
 // at a new version of the kit.

@@ -1,5 +1,6 @@
 // imgui_kit: the wheel session (ImGuiKit::SetupWheelSession)
 // https://github.com/pthom/imgui_kit (MIT license)
+// How this could fit in Dear ImGui: docs/dear_imgui_integration.md
 #include "imgui_kit.h"
 #include "imgui_kit_internal.h"
 
