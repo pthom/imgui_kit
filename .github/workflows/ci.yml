@@ -13,8 +13,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Configure (Dear ImGui fetched, its docking branch)
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: GLFW's dependencies (the visible Test Engine tests)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xorg-dev libwayland-dev libxkbcommon-dev libgl-dev
+      - name: Configure (Dear ImGui and its Test Engine fetched)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIMGUI_KIT_BUILD_TEST_ENGINE_TESTS=ON
       - name: Build
         run: cmake --build build --config Release -j 4
       - name: Test

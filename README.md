@@ -118,6 +118,14 @@ The [book page](https://imgui-bundle.pages.dev/doc/addons/imgui-kit/) and the [A
 
 `cmake -B build && cmake --build build && ctest --test-dir build`: the tests run headless, through Dear ImGui's null backend.
 
+The touch layer and the wheel session also have tests driven by [Dear ImGui's Test Engine](https://github.com/ocornut/imgui_test_engine), as a user would drive them: `-DIMGUI_KIT_BUILD_TEST_ENGINE_TESTS=ON` fetches it. Two programs run them:
+- `imgui_kit_te_tests`: headless, at full speed (`ctest` runs it). An argument filters the tests by name or group, e.g. `touch`.
+- `imgui_kit_te_tests_visible`: in a window, with the Test Engine's UI, to pick a test and watch it at the chosen speed. `--auto` runs all of them, then exits.
+
+The Test Engine has its own license (free for open source projects: see its `LICENSE.txt`), distinct from the kit's MIT license. It is used for these tests only: the kit does not need it.
+
+Combined with the Test Engine, the kit's setups go before `ImGuiTestEngine_Start()`: the engine draws each test's GUI from its own context hook, which must run after the kit's.
+
 ## Proposed upstream
 
 Some helpers start as proposals to Dear ImGui. They live here meanwhile:

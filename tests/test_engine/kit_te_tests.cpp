@@ -1,0 +1,236 @@
+// imgui_kit's tests with Dear ImGui's Test Engine: the touch layer and the wheel session, driven as a user would.
+// The Test Engine moves its mouse; the tests give it a touch screen's source, so that it plays a finger.
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "kit_te_tests.h"
+#include "imgui_kit.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "imgui_te_context.h"
+#include "imgui_te_engine.h"
+#include <math.h>
+#include <string.h>
+
+namespace
+{
+    // The lab: a window of lines, with a button, a slider, an item that zooms with the wheel, and a context menu
+    const char* kLab = "Touch lab";
+    const ImVec2 kLabPos(20.f, 20.f);  // the window is pinned there
+
+    struct Lab
+    {
+        int clicks = 0;
+        float slider = 0.5f;
+        float zoom = 1.f;
+        bool menuShown = false;
+        bool resetScroll = true;
+        float scrollY = 0.f;
+    };
+    Lab gLab;
+
+    void LabGui()
+    {
+        ImGui::SetNextWindowPos(kLabPos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(420.f, 420.f), ImGuiCond_Always);
+        ImGui::Begin(kLab, nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+        if (gLab.resetScroll)
+        {
+            ImGui::SetScrollY(0.f);
+            gLab.resetScroll = false;
+        }
+        for (int i = 0; i < 10; i++)
+            ImGui::Text("Line %d", i);
+        if (ImGui::Button("Button"))
+            gLab.clicks++;
+        ImGui::SliderFloat("Slider", &gLab.slider, 0.f, 1.f);
+        for (int i = 10; i < 16; i++)
+            ImGui::Text("Line %d", i);
+        // An item that zooms with the wheel, with Dear ImGui's idiom: it claims the wheel while hovered
+        ImGui::Button("Zoomable (the wheel zooms it)", ImVec2(-FLT_MIN, 150.f));
+        if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
+            gLab.zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+        for (int i = 16; i < 80; i++)
+            ImGui::Text("Line %d", i);
+        if (ImGui::BeginPopupContextWindow("##menu"))
+        {
+            gLab.menuShown = true;
+            ImGui::TextUnformatted("The context menu");
+            ImGui::EndPopup();
+        }
+        gLab.scrollY = ImGui::GetScrollY();
+        ImGui::End();
+    }
+
+    // The mouse source is a state, not an event: io.AddMouseSourceEvent() sets the source that the next mouse events
+    // take, those the Test Engine queues included. It is set again before each gesture: on Windows, the GLFW backend
+    // sets it from the real mouse's messages (the visible program).
+    void UseFinger(ImGuiTestContext* ctx) { ctx->UiContext->IO.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen); }
+    void UseMouse(ImGuiTestContext* ctx) { ctx->UiContext->IO.AddMouseSourceEvent(ImGuiMouseSource_Mouse); }
+
+    // Each test starts from the same lab: what moves on its own stops (a fling, a bounce), then the scroll and the
+    // values go back to their start
+    void ResetLab(ImGuiTestContext* ctx)
+    {
+        ctx->PopupCloseAll();
+        ctx->SleepNoSkip(2.f, 1.f / 60.f);
+        gLab = Lab();
+        ctx->Yield(2);
+        ctx->SetRef(kLab);
+    }
+
+    // A point of the lab, from its top-left corner
+    ImVec2 LabPos(float x, float y) { return kLabPos + ImVec2(x, y); }
+
+    // A finger pressed at `from`, moved to `to`, lifted
+    void Swipe(ImGuiTestContext* ctx, ImVec2 from, ImVec2 to)
+    {
+        UseFinger(ctx);
+        ctx->MouseMoveToPos(from);
+        ctx->MouseDown();
+        ctx->MouseMoveToPos(to);
+        ctx->MouseUp();
+    }
+
+    ImGuiWindow* FindWindowNamed(ImGuiTestContext* ctx, const char* part)
+    {
+        for (ImGuiWindow* window : ctx->UiContext->Windows)
+            if (strstr(window->Name, part) != nullptr)
+                return window;
+        return nullptr;
+    }
+}  // namespace
+
+void KitTestsSetup()
+{
+    ImGuiTouch::Setup();
+    ImGuiKit::SetupWheelSession();
+}
+
+void KitTestsRegister(ImGuiTestEngine* engine)
+{
+    ImGuiTest* t = nullptr;
+
+    // A swipe that starts on a button scrolls the window, and does not click the button
+    t = IM_REGISTER_TEST(engine, "touch", "swipe_from_a_button_scrolls");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        ImVec2 button = ctx->ItemInfo("Button").RectFull.GetCenter();
+        Swipe(ctx, button, button - ImVec2(0.f, 150.f));
+        ctx->Yield(10);
+        IM_CHECK_GT(gLab.scrollY, 100.f);
+        IM_CHECK_EQ(gLab.clicks, 0);
+    };
+
+    // A tap clicks the button (the touch layer replays it, a few frames later)
+    t = IM_REGISTER_TEST(engine, "touch", "tap_clicks");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        UseFinger(ctx);
+        ctx->MouseMove("Button");
+        ctx->MouseDown();
+        ctx->MouseUp();
+        ctx->Yield(5);
+        IM_CHECK_EQ(gLab.clicks, 1);
+        IM_CHECK_EQ(gLab.scrollY, 0.f);
+    };
+
+    // A finger held still, then moved, drags the slider under it, and the window does not scroll
+    t = IM_REGISTER_TEST(engine, "touch", "hold_then_drag_moves_a_slider");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        UseFinger(ctx);
+        ImVec2 slider = ctx->ItemInfo("Slider").RectFull.GetCenter();
+        ctx->MouseMoveToPos(slider);
+        ctx->MouseDown();
+        ctx->SleepNoSkip(0.3f, 1.f / 60.f);  // past the hold (0.15 s), before the long press (0.5 s)
+        ctx->MouseMoveToPos(slider + ImVec2(60.f, 0.f));
+        ctx->MouseUp();
+        ctx->Yield(3);
+        IM_CHECK_GT(gLab.slider, 0.6f);
+        IM_CHECK_EQ(gLab.scrollY, 0.f);
+    };
+
+    // A finger still for half a second, then lifted, is a right click: the context menu opens
+    t = IM_REGISTER_TEST(engine, "touch", "long_press_opens_the_context_menu");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        UseFinger(ctx);
+        ctx->MouseMoveToPos(LabPos(200.f, 330.f));  // on the lines
+        ctx->MouseDown();
+        ctx->SleepNoSkip(0.7f, 1.f / 60.f);
+        ctx->MouseUp();
+        ctx->Yield(5);
+        IM_CHECK(gLab.menuShown);
+        ctx->PopupCloseAll();
+    };
+
+    // The same drag with a mouse moves nothing: the swipe is for fingers (ImGuiTouchScrollMode_Auto)
+    t = IM_REGISTER_TEST(engine, "touch", "mouse_drag_does_not_scroll");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        UseMouse(ctx);
+        ImVec2 from = LabPos(200.f, 330.f);
+        ctx->MouseMoveToPos(from);
+        ctx->MouseDown();
+        ctx->MouseMoveToPos(from - ImVec2(0.f, 150.f));
+        ctx->MouseUp();
+        ctx->Yield(10);
+        IM_CHECK_EQ(gLab.scrollY, 0.f);
+    };
+
+    // A wheel that scrolls the page keeps scrolling it when the zoomable item comes under the still mouse: the item
+    // does not zoom. Once the session ended, a wheel that starts on the item zooms it.
+    t = IM_REGISTER_TEST(engine, "wheel", "session_keeps_the_page");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        UseMouse(ctx);
+        ImGuiTestItemInfo zoomable = ctx->ItemInfo("Zoomable (the wheel zooms it)");
+        ctx->MouseMoveToPos(ImVec2(zoomable.RectFull.GetCenter().x, zoomable.RectFull.Min.y - 30.f));
+        for (int i = 0; i < 4; i++)
+        {
+            ctx->MouseWheelY(-1.f);
+            ctx->Yield(2);
+        }
+        IM_CHECK_GT(gLab.scrollY, 0.f);
+        IM_CHECK_EQ(gLab.zoom, 1.f);
+        ctx->SleepNoSkip(1.f, 1.f / 60.f);  // the session ends (0.7 s)
+        ctx->MouseMoveToPos(ctx->ItemInfo("Zoomable (the wheel zooms it)").RectFull.GetCenter());
+        const float scrolled = gLab.scrollY;
+        ctx->MouseWheelY(1.f);
+        ctx->Yield(2);
+        IM_CHECK_GT(gLab.zoom, 1.f);
+        IM_CHECK_EQ(gLab.scrollY, scrolled);
+    };
+
+    // The kit's demo: in its Touch section, a sideways swipe on the row of cards scrolls the row (a child in a child,
+    // which the test reaches through their windows)
+    t = IM_REGISTER_TEST(engine, "demo", "touch_cards_swipe_sideways");
+    t->GuiFunc = [](ImGuiTestContext*) {
+        ImGui::SetNextWindowPos(ImVec2(500.f, 20.f), ImGuiCond_Appearing);
+        ImGuiKit::ShowDemoWindow();
+    };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->SetRef("//ImGuiKit Demo");
+        ctx->ItemOpen("Touch");
+        ctx->Yield(2);
+        ImGuiWindow* demo = ctx->GetWindowByRef("//ImGuiKit Demo");
+        ImGuiWindow* zone = FindWindowNamed(ctx, "##touch_zone");
+        ImGuiWindow* row = FindWindowNamed(ctx, "##sideways");
+        IM_CHECK(demo != nullptr && zone != nullptr && row != nullptr);
+        // The zone in the demo's view, then the row in the zone's (both scroll)
+        ctx->ScrollToY(demo->ID, demo->Scroll.y + zone->Pos.y - demo->InnerRect.Min.y);
+        ctx->ScrollToY(zone->ID, zone->ScrollMax.y);
+        ctx->Yield(2);
+        IM_CHECK_EQ(row->Scroll.x, 0.f);
+        ImVec2 center = row->InnerRect.GetCenter();
+        Swipe(ctx, center, center - ImVec2(120.f, 0.f));
+        ctx->Yield(10);
+        IM_CHECK_GT(row->Scroll.x, 50.f);
+        ctx->ItemClose("Touch");
+    };
+}

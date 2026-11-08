@@ -9,6 +9,7 @@ set(IMGUI_KIT_IMGUI_DIR "" CACHE PATH "A Dear ImGui folder, used when no target 
 set(IMGUI_KIT_FETCH_IMGUI_TAG "v1.93.0-docking" CACHE STRING "The Dear ImGui tag fetched when no folder is given")
 option(IMGUI_KIT_BUILD_TESTS "Build the tests (Dear ImGui's null backend, doctest)" ${PROJECT_IS_TOP_LEVEL})
 option(IMGUI_KIT_BUILD_EXAMPLES "Build the examples (the touch demo: GLFW + OpenGL3, desktop or Emscripten)" OFF)
+option(IMGUI_KIT_BUILD_TEST_ENGINE_TESTS "Build the tests driven by Dear ImGui's Test Engine (headless, and visible)" OFF)
 
 set(CMAKE_CXX_STANDARD 11)  # as Dear ImGui
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,6 +52,14 @@ if (IMGUI_KIT_BUILD_TESTS)
     target_include_directories(imgui_kit_tests PRIVATE tests ${IMGUI_KIT_IMGUI_DIR}/backends)
     target_link_libraries(imgui_kit_tests PRIVATE imgui_kit)
     add_test(NAME imgui_kit_tests COMMAND imgui_kit_tests)
+endif()
+
+if (IMGUI_KIT_BUILD_TEST_ENGINE_TESTS)
+    if (NOT IMGUI_KIT_BUILT_IMGUI)
+        message(FATAL_ERROR "imgui_kit's Test Engine tests build Dear ImGui with the Test Engine's hooks: give IMGUI_KIT_IMGUI_DIR, or no `imgui` target")
+    endif()
+    enable_testing()
+    add_subdirectory(tests/test_engine)
 endif()
 
 if (IMGUI_KIT_BUILD_EXAMPLES)
