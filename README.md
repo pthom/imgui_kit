@@ -98,7 +98,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
   - `ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(button)`: two fingers moved together drag it with that button (a plot pans with the left one). It combines with the wheel. The `SetRect...` variants take a rectangle (an ImPlot plot).
 - *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, phase)` for each one (began, moved, ended, cancelled), for the pinch and so that a touch the system takes over ends without a click: see the [iOS example](examples/ios_touch_demo/main.mm).
 - *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
-- *Idling*: an app that sleeps between events keeps drawing while `ImGuiTouch::IsAnimating()` is true (a fling coasts, a ring grows).
+- *Idling*: an app that sleeps between events keeps drawing while `ImGuiKit::IsAnimating()` is true: the touch layer's motion (a fling coasts, a ring grows; `ImGuiTouch::IsAnimating()` alone) and the kit's widgets' (a segmented switch slides). A widget of yours that animates calls `ImGuiKit::RequestAnimation()`.
 - *With Hello ImGui* (and Dear ImGui Bundle): nothing to call. The runner sets up the touch layer and the wheel session; their settings are `RunnerParams::touchConfig` and `RunnerParams::wheelSession`.
 
 ### What each backend reports

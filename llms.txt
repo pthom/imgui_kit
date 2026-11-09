@@ -41,7 +41,7 @@ The traps:
 - In a browser, the canvas must have the id "canvas".
 - Which backends report fingers, the touch source and the keyboard, and what to add for the others: the README, "What each backend reports". In short: a browser (with the kit's Emscripten setup) is complete; SDL, Win32 and Android report the touch source but no fingers (no pinch); GLFW on Linux and macOS cannot tell a finger.
 - A native app (iOS, Android) reports each finger with `ImGuiTouch::AddFingerEvent(id, pos, phase)` (for the pinch; `ImGuiTouchPhase_Cancelled` when the system takes the touch over), and its keyboard with `ImGuiTouch::SetKeyboardInsets()`: see `examples/ios_touch_demo/main.mm`.
-- An app that sleeps when idle keeps drawing while `ImGuiTouch::IsAnimating()` is true.
+- An app that sleeps when idle keeps drawing while `ImGuiKit::IsAnimating()` is true (the touch layer's motion and the kit's widgets'; `ImGuiTouch::IsAnimating()` is the touch layer's alone). A widget of yours that animates calls `ImGuiKit::RequestAnimation()` at each frame of its animation.
 - To try it on a desktop: `ImGuiTouch::GetConfig().SimulateTouch = true` (the mouse plays a finger).
 - With Dear ImGui's Test Engine: set the kit up before `ImGuiTestEngine_Start()` (hooks run in the order they were added).
 - Hello ImGui sets all of this up itself: its settings are `RunnerParams::touchConfig` and `RunnerParams::wheelSession`.

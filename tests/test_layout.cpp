@@ -205,6 +205,26 @@ TEST_CASE("Help marker, icon button, segmented switch: they draw, and the switch
     CHECK(changed);
 }
 
+TEST_CASE("Segmented switch: its slide makes ImGuiKit::IsAnimating() true, without the touch layer, until it lands")
+{
+    Bench bench;
+    int current = 0;
+    auto gui = [&] {
+        const char* labels[] = { "A", "B" };
+        ImGuiKit::SegmentedSwitch("##s", &current, labels, 2);
+    };
+    for (int i = 0; i < 3; i++)
+        bench.Frame(400, gui);
+    CHECK(!ImGuiKit::IsAnimating());
+    current = 1;  // the fill slides to the second segment
+    bench.Frame(400, gui);
+    CHECK(ImGuiKit::IsAnimating());
+    CHECK(!ImGuiTouch::IsAnimating());  // not the touch layer's
+    for (int i = 0; i < 120; i++)
+        bench.Frame(400, gui);
+    CHECK(!ImGuiKit::IsAnimating());  // it landed
+}
+
 TEST_CASE("Fill row: a help marker in the tail stays on the line, and the tail ends at the right edge")
 {
     Bench bench;
