@@ -24,8 +24,8 @@ Index of this file:
 // [SECTION] Header mess
 //-----------------------------------------------------------------------------
 
-#define IMGUI_KIT_VERSION       "0.1.0"
-#define IMGUI_KIT_VERSION_NUM   100     // major * 10000 + minor * 100 + patch
+#define IMGUI_KIT_VERSION       "0.5.0"
+#define IMGUI_KIT_VERSION_NUM   500     // major * 10000 + minor * 100 + patch
 
 #include "imgui.h"
 
@@ -198,7 +198,8 @@ IMGUI_API void   EndHelpMarker();
 // The width a help marker takes at the end of a line, with the spacing before it
 IMGUI_API float  HelpMarkerWidth();
 // How HelpMarker() draws its text. By default: wrapped plain text. An app can install a richer renderer
-// (Dear ImGui Bundle installs one that renders Markdown). nullptr restores the default.
+// (Dear ImGui Bundle installs one that renders Markdown). nullptr restores the default. Per Dear ImGui context (as
+// its PlatformIO callbacks): call it after ImGui::CreateContext().
 typedef void (*HelpMarkerTextRenderer)(const char* text);
 IMGUI_API void   SetHelpMarkerTextRenderer(HelpMarkerTextRenderer renderer);
 

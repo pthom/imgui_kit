@@ -20,6 +20,9 @@ jobs:
       - name: GLFW's dependencies (the visible Test Engine tests)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xorg-dev libwayland-dev libxkbcommon-dev libgl-dev
+      - name: The embedded JavaScript (its copy in the C++ is current, its syntax holds)
+        if: runner.os == 'Linux'
+        run: python3 tools/embed_js.py --check && node --check imgui_kit_emscripten_keyboard.js
       - name: Configure (Dear ImGui and its Test Engine fetched)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DIMGUI_KIT_BUILD_TEST_ENGINE_TESTS=ON
       - name: Build

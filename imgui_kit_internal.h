@@ -162,6 +162,7 @@ struct ImGuiKitContext
     bool WheelSessionEnabled = true;                    // SetupWheelSession(enabled)
     ImGuiKitWheelSessionState WheelSession;
     int AnimationFrame = -1;                            // the last frame a widget asked to animate (RequestAnimation)
+    ImGuiKit::HelpMarkerTextRenderer HelpMarkerRenderer = nullptr;  // SetHelpMarkerTextRenderer(); null: plain text
     bool TouchSetUp = false;                            // an input setup was called: Touch is in use
     ImGuiTouchContext Touch;
 };

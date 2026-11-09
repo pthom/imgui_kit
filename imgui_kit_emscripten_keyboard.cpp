@@ -37,7 +37,13 @@ namespace
     // the browser scrolls to the right place. The focus happens inside touch handlers only (a focus from a frame
     // shows no keyboard on iOS). The field's keys never reach the backends (stopPropagation at the field, which is
     // outside the canvas). The field counts in UTF-16 units, ImGui's caret in bytes: converted here.
+    // The script is imgui_kit_emscripten_keyboard.js, copied here by tools/embed_js.py (edit the .js, run the script).
+    // <embedded file="imgui_kit_emscripten_keyboard.js" sha1="399d2be84a7707fbc3047dbaba9d4b8ef54f3851">
     const char* kScript = R"JS(
+// imgui_kit: the phone's virtual keyboard in a browser: the page's side (the hidden field, the keyboard button).
+// https://github.com/pthom/imgui_kit (MIT license)
+// Embedded into imgui_kit_emscripten_keyboard.cpp by tools/embed_js.py: edit this file, then run the script.
+
 if (!window.imguiKitKeyboard) {
   const K = window.imguiKitKeyboard = {want: 0, id: 0, dismissed: 0, x: 0, y: 0, h: 0, displayW: 0, mirror: '',
                                          mirrorCaret: 0, edits: [], caret: -1, keys: [],
@@ -60,11 +66,10 @@ if (!window.imguiKitKeyboard) {
     + 'border-radius:10px;border:1px solid #999;background:#333;color:#eee;';
   document.body.appendChild(input); document.body.appendChild(button);
   // A debug overlay on the page (the url with 'kbddebug'): the field's events, to see what a phone sends. Only in a
-  // build with IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG: the log holds what is typed, and a link could turn it on.
-)JS"
-#ifdef IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG
-R"JS(
-  const debug = location.search.includes('kbddebug') || location.hash.includes('kbddebug');
+  // build with IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG (window.imguiKitKeyboardDebugBuild, set by the C++ before this
+  // script runs): the log holds what is typed, and a link could turn it on.
+  const debugBuild = !!window.imguiKitKeyboardDebugBuild;
+  const debug = debugBuild && (location.search.includes('kbddebug') || location.hash.includes('kbddebug'));
   let logEl = null;
   if (debug) {
     logEl = document.createElement('div');
@@ -75,14 +80,7 @@ R"JS(
   }
   // The log also in the page's server output, as 404 requests "/kbdlog?<line>" (the url with 'kbddebug', or 'kbdlog'
   // without the overlay): to follow a phone from the computer that serves the page
-  const serverLog = debug || location.search.includes('kbdlog');
-)JS"
-#else
-R"JS(
-  const debug = false, serverLog = false, logEl = null;
-)JS"
-#endif
-R"JS(
+  const serverLog = debug || (debugBuild && location.search.includes('kbdlog'));
   const log = (m) => {
     if (!logEl && !serverLog) return;
     m = new Date().toISOString().slice(14, 23) + ' ' + m;
@@ -442,6 +440,7 @@ R"JS(
   K.drainAction = () => K.actions.length ? K.actions.shift() : '';
 }
 )JS";
+    // </embedded>
 
     // A key, by its name in the browser (KeyboardEvent.key): `len` bytes of `name`
     ImGuiKey KeyFromName(const char* name, int len)
@@ -749,6 +748,9 @@ void SetupEmscriptenKeyboard()
     IM_ASSERT(ctx != nullptr
               && "ImGuiTouch::SetupEmscriptenKeyboard() needs a context: call ImGui::CreateContext() first");
     CreateCurrentContextIfNeeded();  // the page's state (ImGuiTouchContext::Browser)
+#ifdef IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG
+    emscripten_run_script("window.imguiKitKeyboardDebugBuild = true;");
+#endif
     emscripten_run_script(kScript);
     const ImGuiID owner = ImHashStr("ImGuiTouch_EmscriptenKeyboard");
     for (const ImGuiContextHook& hook : ctx->Hooks)

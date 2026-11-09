@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)  # PROJECT_IS_TOP_LEVEL
-project(imgui_kit VERSION 0.1.0 LANGUAGES CXX)
+project(imgui_kit VERSION 0.5.0 LANGUAGES CXX)
 
 # imgui_kit needs Dear ImGui. Four ways, in this order:
 #   - a target named `imgui` or `imgui::imgui` already exists (your project, or a library that brings Dear ImGui): used;

@@ -50,8 +50,6 @@ void DefaultHelpMarkerTextRenderer(const char* text)
 {
     ImGui::TextUnformatted(text);   // wrapped by the PushTextWrapPos() of BeginHelpMarker()
 }
-// A setting, not state: process-wide as Dear ImGui's allocator functions (an app may set it before CreateContext())
-HelpMarkerTextRenderer gHelpMarkerTextRenderer = DefaultHelpMarkerTextRenderer;
 
 // As high as the line it is on: a text's height on a line of text, a frame's after a framed widget
 ImVec2 HelpMarkerSize()
@@ -254,7 +252,8 @@ void HelpMarker(const char* text, float width_em)
 {
     if (BeginHelpMarkerEx(text, width_em * ImGui::GetFontSize(), ImGui::CalcTextSize(text).x))
     {
-        gHelpMarkerTextRenderer(text);
+        HelpMarkerTextRenderer renderer = GetCurrentContext().HelpMarkerRenderer;
+        (renderer ? renderer : DefaultHelpMarkerTextRenderer)(text);
         EndHelpMarker();
     }
 }
@@ -266,7 +265,7 @@ float HelpMarkerWidth()
 
 void SetHelpMarkerTextRenderer(HelpMarkerTextRenderer renderer)
 {
-    gHelpMarkerTextRenderer = renderer ? renderer : DefaultHelpMarkerTextRenderer;
+    GetCurrentContext().HelpMarkerRenderer = renderer;
 }
 
 //-----------------------------------------------------------------------------
