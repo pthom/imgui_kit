@@ -618,7 +618,7 @@ void DemoTouch()
     ImGui::Checkbox("is a right click", &config.LongPressIsRightClick);
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
-    ImGui::SliderFloat("##long_press", &config.LongPressSeconds, 0.2f, 1.5f, "%.2f s");
+    ImGui::SliderFloat("##long_press", &config.LongPressSeconds, 0.3f, 2.f, "%.2f s");
     ImGuiKit::Label("Scroll bars");
     ImGui::Checkbox("thin", &config.ThinScrollbars);
     ImGuiKit::EndLabelColumn();
