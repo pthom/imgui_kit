@@ -115,18 +115,19 @@ namespace
         b.FingersDown.swap(b.FingersNow);
     }
 
-    // Dear ImGui's links (TextLinkOpenURL): a new tab with a mouse. On a touch screen, the page itself goes there: a
-    // popup blocker refuses a new tab outside the touch's own handler, and Dear ImGui learns of a tap frames later.
-    // The browser's back button returns. Web addresses only: a javascript: url would run script in the page.
+    // Dear ImGui's links (TextLinkOpenURL): a new tab, with a finger as with a mouse. Dear ImGui learns of a tap two or
+    // three frames after the lift, outside the touch's own handler: the browsers still allow a new tab that soon
+    // after a tap (Safari for a few hundred milliseconds, Chrome for seconds; checked on 2026-11-09). When one refuses
+    // (a page stalled for a second, an in-app browser), the page itself goes there, and the back button returns.
+    // Web addresses only: a javascript: url would run script in the page.
     bool OpenUrl(ImGuiContext*, const char* url)
     {
         if (ImStrnicmp(url, "http://", 7) != 0 && ImStrnicmp(url, "https://", 8) != 0 && ImStrnicmp(url, "mailto:", 7) != 0)
             return false;
         ImVector<char>& script = ImGuiTouch::GetCurrentContext().Browser.Script;
         script.resize(0);
-        ImGuiTouchScriptAppend(script, "(u => { if (window.imguiKitPointerType === 1) window.location.assign(u);"
-                                     " else { const w = window.open(u); if (w) w.opener = null;"
-                                     " else window.location.assign(u); } })(");
+        ImGuiTouchScriptAppend(script, "(u => { const w = window.open(u); if (w) w.opener = null;"
+                                     " else window.location.assign(u); })(");
         ImGuiTouchScriptAppendString(script, url, (int)strlen(url));
         ImGuiTouchScriptAppend(script, ")");
         emscripten_run_script(ImGuiTouchScriptEnd(script));
