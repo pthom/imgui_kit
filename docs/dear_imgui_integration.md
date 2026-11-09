@@ -65,8 +65,8 @@ The answer to the mouse-down point in #3379 ([2025-06-05](https://github.com/oco
 - The finger lifts before the slop: a tap. The press and the release are replayed through the input queue, and the widget gets a normal click, two frames later.
 - The finger stays still past a delay: the press is handed over (a replayed release and press while the finger is down). The widget activates, and the finger drives its drag.
 - So no widget needs down-then-up logic, and no widget changes.
-- A widget that wants a finger's drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after itself.
-- A widget dragged along one axis (a slider) calls `ImGuiTouch::SetItemTakesDragsAlong(axis)`: once the finger passed the slop, a drag along that axis goes to it (the press replayed at the touch point), a drag across scrolls the window, as iOS does with a slider in a scroll view.
+- A widget that wants a finger's drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after itself (`ImGuiTouchAxis_Any`, the default).
+- A widget dragged along one axis (a slider) calls `ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_X)` (or `_Y`): once the finger passed the slop, a drag along that axis goes to it (the press replayed at the touch point), a drag across scrolls the window, as iOS does with a slider in a scroll view.
 
 ### The hooks
 
@@ -94,8 +94,8 @@ Each item would replace a workaround in the layer:
 | Owning a press before the widgets | a sentinel active id | perhaps the `ImGuiWindowBgClickFlags` [mentioned in #3379](https://github.com/ocornut/imgui/issues/3379#issuecomment-6420664530) |
 | Telling a replayed event from a backend's | `AddedByTestEngine` (the Test Engine erases events without it, so the replays need it) | a generic "not from the backend" flag                                         |
 | A per-context slot for an extension | a `Shutdown` hook's `UserData`, found by scanning the hooks (as the Test Engine does) | a user-data slot in `ImGuiContext`                                            |
-| Knowing which widgets a finger drags along an axis (sliders, drags) | `SetItemTakesDragsAlong()` after each one; in Dear ImGui Bundle's fork, a callback that Dear ImGui's draggable widgets call ([`ItemDragAxisCallback`](https://github.com/pthom/imgui/blob/imgui_bundle/imgui_internal.h): about 20 lines, a generic commit), which the kit listens to | that callback, upstream: then every app's sliders take a finger's drag along their axis |
-| Several fingers from the backend | `ImGuiTouch::AddFingerEvent(id, pos, down)` | an `io.AddTouchPointEvent()`                                                  |
+| Knowing which widgets a finger drags along an axis (sliders, drags) | `SetItemTakesDrags(ImGuiTouchAxis_X)` after each one; in Dear ImGui Bundle's fork, a callback that Dear ImGui's draggable widgets call ([`ItemDragAxisCallback`](https://github.com/pthom/imgui/blob/imgui_bundle/imgui_internal.h): about 20 lines, a generic commit), which the kit listens to | that callback, upstream: then every app's sliders take a finger's drag along their axis |
+| Several fingers from the backend | `ImGuiTouch::AddFingerEvent(id, pos, phase)` | an `io.AddTouchPointEvent()`                                                  |
 | Running before the hooks that draw a GUI (the Test Engine draws its tests from a `NewFramePost` hook) | the kit is set up before `ImGuiTestEngine_Start()`: hooks run in the order they were added | an order, or a priority, for context hooks |
 
 ### Cost
@@ -160,7 +160,7 @@ The same features, driven as a user would, by [Dear ImGui's Test Engine](https:/
 | touch | `pinch_on_a_widget_zooms_it` | two fingers that spread on an item that takes the pinch zoom it, by wheel notches; the font does not scale |
 | wheel | `session_keeps_the_page` | a page scrolled with the wheel keeps scrolling over a zoomable item, which does not zoom; once the session ended, a wheel that starts on the item zooms it |
 | demo | `touch_cards_swipe_sideways` | in the kit's demo, a sideways swipe scrolls the row of cards (a child in a child) |
-| demo | `touch_row_slider_takes_sideways_drag` | in the same row, a sideways drag on its slider moves the slider, and the row does not scroll (`SetItemTakesDragsAlong`) |
+| demo | `touch_row_slider_takes_sideways_drag` | in the same row, a sideways drag on its slider moves the slider, and the row does not scroll (`SetItemTakesDrags(ImGuiTouchAxis_X)`) |
 
 - *A finger*: the Test Engine has no API for the mouse source, but none is needed. `io.AddMouseSourceEvent()` sets a state, which the next mouse events take, those the Test Engine queues included. The tests set it to `ImGuiMouseSource_TouchScreen` before each gesture.
 - *What each test proves*: without the kit's setups, the swipe, long press, pinch, wheel and demo tests fail. The three others pass either way: they check that the layer keeps what already worked (a tap still clicks, a hold hands the press to the slider, a mouse drag does not scroll).

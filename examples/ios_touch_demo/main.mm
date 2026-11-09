@@ -139,7 +139,11 @@
         CGPoint p = [touch locationInView:self.view];
         bool down = touch.phase != UITouchPhaseEnded && touch.phase != UITouchPhaseCancelled;
         int id = (int)(touch.hash & 0x7fffffff);  // stable while the finger is down
-        ImGuiTouch::AddFingerEvent(id, ImVec2((float)p.x, (float)p.y), down);  // imgui_kit
+        ImGuiTouchPhase phase = touch.phase == UITouchPhaseBegan ? ImGuiTouchPhase_Began
+                              : touch.phase == UITouchPhaseEnded ? ImGuiTouchPhase_Ended
+                              : touch.phase == UITouchPhaseCancelled ? ImGuiTouchPhase_Cancelled
+                              : ImGuiTouchPhase_Moved;  // moved, stationary
+        ImGuiTouch::AddFingerEvent(id, ImVec2((float)p.x, (float)p.y), phase);  // imgui_kit
 
         if (self.mouseTouch == nil && down)
             self.mouseTouch = touch;

@@ -220,16 +220,16 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ImVec2 c = ctx->ItemInfo("Zoomable (the wheel zooms it)").RectClipped.GetCenter();
         ctx->MouseMoveToPos(c - ImVec2(20.f, 0.f));
         ctx->MouseDown();
-        ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), true);
-        ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f, 0.f), true);  // 40 px apart
+        ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);  // 40 px apart
         ctx->Yield(2);
         // The layer released the first finger's press, so that the item is hovered: the Test Engine's mouse lifts too
         // (it sends its button's state at each frame, a platform only its changes)
         ctx->MouseUp();
-        ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), true);  // 54 px: a scale of 1.35, three notches of 10%
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), ImGuiTouchPhase_Moved);  // 54 px: a scale of 1.35, three notches of 10%
         ctx->Yield(20);  // one notch at a time, each read before the next is sent
-        ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), false);
-        ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), false);
+        ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
+        ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ctx->Yield(3);
         IM_CHECK_GT(gLab.zoom, 1.3f);
         IM_CHECK_LT(gLab.zoom, 1.34f);
@@ -264,7 +264,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->ItemClose("Touch");
     };
 
-    // The same row: a sideways drag that starts on its slider moves the slider (SetItemTakesDragsAlong), and the row
+    // The same row: a sideways drag that starts on its slider moves the slider (SetItemTakesDrags(ImGuiTouchAxis_X)), and the row
     // does not scroll
     t = IM_REGISTER_TEST(engine, "demo", "touch_row_slider_takes_sideways_drag");
     t->GuiFunc = [](ImGuiTestContext*) {

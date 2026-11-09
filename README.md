@@ -91,12 +91,32 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
 ```
 
 - *Settings*: `ImGuiTouch::GetConfig()` (`ImGuiTouchConfig`), read at each frame. `SimulateTouch` lets the mouse play a finger, to try it on a desktop.
-- *A widget and its drags*: a finger held still for a moment, then moved, drags the widget under it (a text selection). A widget that should take the drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after it. A slider calls `ImGuiTouch::SetItemTakesDragsAlong(ImGuiTouchAxis_X)`: a drag along its axis moves it at once, a drag across scrolls the window, as on iOS. With a Dear ImGui that tells the kit about its draggable widgets (`ImGuiContext::ItemDragAxisCallback`, in Dear ImGui Bundle's fork), its sliders and drags do this with no call.
+- *A widget and its drags*: a finger held still for a moment, then moved, drags the widget under it (a text selection). A widget that should take the drags at once (a plot, a canvas) calls `ImGuiTouch::SetItemTakesDrags()` after it. A slider calls `ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_X)`: a drag along its axis moves it at once, a drag across scrolls the window, as on iOS. With a Dear ImGui that tells the kit about its draggable widgets (`ImGuiContext::ItemDragAxisCallback`, in Dear ImGui Bundle's fork), its sliders and drags do this with no call.
 - *A widget that zooms*: `ImGuiTouch::SetItemTakesPinch(zoom_per_notch, pan_button)` after it (or `SetRectTakesPinch()` for a rectangle, an ImPlot plot): a pinch on it zooms it, as wheel events at the fingers' center (whole notches, or the wheel's exact value at each frame for a widget that uses it: `ImGuiTouchPinchDelivery`), instead of scaling the font; two fingers moved together drag it with `pan_button`.
-- *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, down)` for each one, for the pinch: see the [iOS example](examples/ios_touch_demo/main.mm).
+- *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, phase)` for each one (began, moved, ended, cancelled), for the pinch and so that a touch the system takes over ends without a click: see the [iOS example](examples/ios_touch_demo/main.mm).
 - *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
 - *Idling*: an app that sleeps between events keeps drawing while `ImGuiTouch::IsAnimating()` is true (a fling coasts, a ring grows).
 - *With Hello ImGui* (and Dear ImGui Bundle): nothing to call. The runner sets up the touch layer and the wheel session; their settings are `RunnerParams::touchConfig` and `RunnerParams::wheelSession`.
+
+### What each backend reports
+
+The touch layer needs four things from the platform. Checked in each backend's source (Dear ImGui 1.93, Nov 2026):
+- *Finger or mouse*: `io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen)` for a finger's mouse events. Without it, a swipe does not scroll (unless `ScrollMode_Always`) and a long press is no right click.
+- *Touch screen*: `io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen` (the thin scroll bars).
+- *The fingers*: `ImGuiTouch::AddFingerEvent()` for each finger, with its phase. Without them: no pinch, no two-finger drag, and a touch the system takes over can end as a click.
+- *The keyboard* (phones): `ImGuiTouch::SetKeyboardInsets()`. Without it, a text field can hide under the keyboard.
+
+| Platform and backend | Finger or mouse | Touch screen | Fingers | Keyboard | To add |
+|---|---|---|---|---|---|
+| A browser, any of Dear ImGui's Emscripten backends, with `SetupEmscripten()` and `SetupEmscriptenKeyboard()` | yes | yes | yes, cancel included | yes | nothing |
+| iOS, the kit's example (Metal, its own `UITouch` code) | yes | yes | yes, cancel included | yes | nothing: an app copies its touch and keyboard code |
+| SDL2, SDL3 (a desktop touch screen; iOS and Android through SDL) | yes | no | no | no | SDL's finger events to `AddFingerEvent()` (down, motion, up; SDL3 also has canceled), the flag, and on a phone the keyboard's area |
+| Win32, and GLFW on Windows | yes (`GetMessageExtraInfo()`) | no | no | - | `WM_POINTER` messages to `AddFingerEvent()` (their canceled flag), the flag |
+| Android (`imgui_impl_android`) | yes (the tool type) | no | no: the first pointer only, as the mouse | no | each pointer of an `AMotionEvent` to `AddFingerEvent()` (`ACTION_CANCEL` too), the flag, the keyboard's area |
+| GLFW on Linux and macOS | no: GLFW does not tell a finger from a mouse | no | no | - | not possible through GLFW: `ScrollMode_Always` lets the mouse swipe |
+| macOS (`imgui_impl_osx`) | mouse and pen | - | - | - | a Mac has no touch screen |
+
+Hello ImGui (and Dear ImGui Bundle): in a browser, its runners call both Emscripten setups (complete). Its native runners (GLFW, SDL, on the desktop, iOS and Android) use the backends above, and forward no fingers yet: a swipe and a long press work where the backend tells a finger, a pinch does not.
 
 How it works: a touch press is held back until it is known to be a tap or a drag. A tap is then replayed to the widgets; a drag scrolls. So no widget needs to change. The cost per frame is too small to measure, with no allocation. The state lives in the Dear ImGui context (one per context), and the code reads Dear ImGui's internals (`imgui_internal.h`).
 

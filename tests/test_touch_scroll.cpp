@@ -32,13 +32,12 @@ struct Bench
     bool itemPopupOpen = false, windowPopupOpen = false;  // the context menus (right clicks) of the button and the window
     bool rightDown = false;  // io.MouseDown[1], as of the last frame
     int rightClicks = 0;     // the right clicks seen by the widgets
-    ImGuiTouchPinchMode pinchMode = ImGuiTouchPinchMode_FontScale;
-    bool pinchInterrupts = false;
+    bool pinchScalesFont = true;
     bool shortContent = false;  // the window's lines fit: nothing to scroll (the child still scrolls)
     bool canvas = false;        // a canvas below the wide child: an item that sums its drags
     bool canvasTakesDrags = false;  // it calls SetItemTakesDrags()
     bool canvasLongPressIsRightClick = true;  // its argument
-    int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDragsAlong(axis) instead
+    int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDrags(axis) instead
     bool wideContent = false;  // the window's content is wider than it: it scrolls sideways too
     bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
@@ -70,8 +69,9 @@ struct Bench
         ImGui_ImplNull_NewFrame();
         ImGui::NewFrame();
         // As the hooks do: the layer runs before any widget (it acts on the frame's input before the widgets see it)
+        ImGuiTouch::ApplyFingerCancel();
         ImGuiTouch::UpdateTouchScroll(mode, longPressIsRightClick, thinScrollbars);
-        ImGuiTouch::UpdateTouchPinch(pinchMode, pinchInterrupts);
+        ImGuiTouch::UpdateTouchPinch(pinchScalesFont);
         if (ImGui::GetIO().MouseClickedCount[ImGuiMouseButton_Left] == 2)
             doubleClicks++;
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
@@ -127,9 +127,9 @@ struct Bench
             if (ImGui::IsItemActive())
                 canvasDrag += ImGui::GetIO().MouseDelta;
             if (canvasTakesDrags)
-                ImGuiTouch::SetItemTakesDrags(canvasLongPressIsRightClick);
+                ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_Any, canvasLongPressIsRightClick);
             if (canvasDragAxis >= 0)
-                ImGuiTouch::SetItemTakesDragsAlong(canvasDragAxis, canvasLongPressIsRightClick);
+                ImGuiTouch::SetItemTakesDrags(canvasDragAxis, canvasLongPressIsRightClick);
             if (canvasTakesPinch)
             {
                 ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton, canvasDelivery);
@@ -365,13 +365,42 @@ TEST_CASE("Touch scroll: on a touch screen, the release of a handover is not a l
 // Two fingers on the screen (ids 1 and 2), as a platform reports them; their lift
 void Fingers(ImVec2 a, ImVec2 b)
 {
-    ImGuiTouch::AddFingerEvent(1, a, true);
-    ImGuiTouch::AddFingerEvent(2, b, true);
+    ImGuiTouch::AddFingerEvent(1, a, ImGuiTouchPhase_Moved);
+    ImGuiTouch::AddFingerEvent(2, b, ImGuiTouchPhase_Moved);
 }
 void LiftFingers()
 {
-    ImGuiTouch::AddFingerEvent(1, ImVec2(0, 0), false);
-    ImGuiTouch::AddFingerEvent(2, ImVec2(0, 0), false);
+    ImGuiTouch::AddFingerEvent(1, ImVec2(0, 0), ImGuiTouchPhase_Ended);
+    ImGuiTouch::AddFingerEvent(2, ImVec2(0, 0), ImGuiTouchPhase_Ended);
+}
+
+TEST_CASE("Touch: a cancelled finger ends its press with no click, on a button and on the swipe")
+{
+    Bench b;
+    b.Frames(3);
+    const ImVec2 p = b.buttonRect.GetCenter();
+    b.Press(p);
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Began);
+    b.Frames(20);  // held: the button has the press
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Cancelled);
+    b.Release();   // the platform's mouse lifts too
+    CHECK(b.clicks == 0);
+
+    // A tap (a short press) that the system cancels: no click either
+    b.Press(p);
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Began);
+    b.Frame();
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Cancelled);
+    b.Release();
+    CHECK(b.clicks == 0);
+
+    // And an ended finger still clicks
+    b.Press(p);
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Began);
+    b.Frame();
+    ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Ended);
+    b.Release();
+    CHECK(b.clicks == 1);
 }
 
 TEST_CASE("Touch pinch: two fingers scale the font, and take the press from the swipe layer")
@@ -422,7 +451,7 @@ TEST_CASE("Touch pinch: two fingers that move together are a right drag, the lef
     CHECK(b.clicks == 0);
 }
 
-TEST_CASE("Touch pinch: a widget that holds the press keeps it, unless the pinch interrupts widgets")
+TEST_CASE("Touch pinch: a widget that holds the press keeps it")
 {
     Bench b;
     b.Frames(3);
@@ -436,21 +465,6 @@ TEST_CASE("Touch pinch: a widget that holds the press keeps it, unless the pinch
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);  // the slider keeps its drag
     b.Drag(ImVec2(60.f, 0.f), 5);
     CHECK(b.slider > 0.6f);
-    LiftFingers();
-    b.Release();
-
-    b.pinchInterrupts = true;
-    b.slider = 0.5f;
-    b.Press(b.sliderRect.GetCenter());
-    b.Frames(20);
-    float held = b.slider;  // the press moved the grab to the finger
-    Fingers(ImVec2(100, 100), ImVec2(200, 100));
-    b.Frame();
-    Fingers(ImVec2(100, 100), ImVec2(250, 100));  // a scale of 1.5
-    b.Frames(2);
-    CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);  // the pinch took over
-    b.Drag(ImVec2(60.f, 0.f), 5);
-    CHECK(b.slider == held);  // the slider lost the drag
     LiftFingers();
     b.Release();
     ImGui::GetStyle().FontScaleMain = 1.f;
@@ -676,6 +690,37 @@ TEST_CASE("Touch scroll: thin scroll bars on a touch screen, when asked")
     b.Frames(2);
     CHECK(ImGui::GetStyle().ScrollbarSize < themeSize);
     CHECK(ImGui::GetStyle().ScrollbarSize >= 1.f);
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+}
+
+TEST_CASE("Touch scroll: thin scroll bars turned off give the theme's bars back, a theme applied meanwhile included")
+{
+    Bench b;
+    b.Frames(2);
+    ImGuiStyle& style = ImGui::GetStyle();
+    const float themeSize = style.ScrollbarSize, themeRounding = style.ScrollbarRounding;
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+    b.thinScrollbars = true;
+    b.Frames(2);
+    CHECK(style.ScrollbarSize < themeSize);
+    b.thinScrollbars = false;
+    b.Frames(2);
+    CHECK(style.ScrollbarSize == themeSize);
+    CHECK(style.ScrollbarRounding == themeRounding);
+
+    // A theme applied while the bars are thin: its values come back
+    b.thinScrollbars = true;
+    b.Frames(2);
+    style.ScrollbarSize = 20.f;
+    style.ScrollbarRounding = 2.f;
+    b.Frames(2);
+    CHECK(style.ScrollbarSize < 20.f);
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;  // no longer a touch screen: the same
+    b.Frames(2);
+    CHECK(style.ScrollbarSize == 20.f);
+    CHECK(style.ScrollbarRounding == 2.f);
+    style.ScrollbarSize = themeSize;
+    style.ScrollbarRounding = themeRounding;
 }
 
 TEST_CASE("Touch scroll: a thin scroll bar held by a finger widens over the content")
@@ -862,6 +907,36 @@ TEST_CASE("Touch pinch: outside the widgets that take it, the pinch scales the f
     ImGui::GetStyle().FontScaleMain = 1.f;
 }
 
+TEST_CASE("Touch pinch: without PinchScalesFont, a pinch outside the widgets leaves the font, and a widget still zooms")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasTakesPinch = true;
+    b.pinchScalesFont = false;
+    b.Frames(3);
+    ImGui::GetStyle().FontScaleMain = 1.f;
+    b.Press(b.linesRect.GetCenter());
+    Fingers(ImVec2(100, 100), ImVec2(200, 100));  // not on the canvas
+    b.Frame();
+    Fingers(ImVec2(100, 100), ImVec2(250, 100));
+    b.Frames(2);
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+    LiftFingers();
+    b.Release();
+    b.Frames(2);
+
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frame();
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // a scale of 1.35, three notches of 10%
+    b.Frames(6);
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+    CHECK(b.canvasZoom == doctest::Approx(1.331f));
+    LiftFingers();
+    b.Release();
+}
+
 TEST_CASE("Touch pinch: two fingers that move together on a widget that takes the pinch drag it with its pan button")
 {
     Bench b;
@@ -970,7 +1045,7 @@ TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways d
     CHECK(b.canvasDrag.y == 0.f);
 }
 
-TEST_CASE("Touch scroll: without SetItemTakesDragsAlong, a sideways drag on a widget scrolls a page that scrolls sideways")
+TEST_CASE("Touch scroll: without SetItemTakesDrags(X), a sideways drag on a widget scrolls a page that scrolls sideways")
 {
     Bench b;
     b.canvas = true;
