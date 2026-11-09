@@ -968,6 +968,74 @@ TEST_CASE("Touch pinch: a widget that reads the data zooms and pans at once, fro
     CHECK(b.canvasDrag.x == 0.f);  // the first finger's press did not drag the canvas
 }
 
+TEST_CASE("Touch pinch: a third finger takes the place of one that lifts, and the scale goes on without a jump")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasPinchData = true;
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);
+    ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);  // 40 px apart
+    b.Frame();
+    ImGuiTouch::AddFingerEvent(3, c + ImVec2(0.f, 30.f), ImGuiTouchPhase_Began);  // a third, resting below
+    b.Frame();
+    ImGuiTouch::AddFingerEvent(2, c + ImVec2(40.f, 0.f), ImGuiTouchPhase_Moved);  // 60 px: a scale of 1.5
+    b.Frames(2);
+    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));
+    ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Ended);  // the first lifts: the pair is now 2 and 3
+    b.Frame();
+    CHECK(b.canvasPinch.Active);
+    CHECK(b.canvasPinch.ScaleDelta == doctest::Approx(1.f));  // no jump
+    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));      // continuous
+    // The new pair spreads: 2 at (c + 40, 0), 3 at (c + 0, 30): 50 px; 3 moves to (c + 0, 60): 72 px, a scale of 1.44
+    ImGuiTouch::AddFingerEvent(3, c + ImVec2(0.f, 60.f), ImGuiTouchPhase_Moved);
+    b.Frame();
+    CHECK(b.canvasPinch.ScaleDelta == doctest::Approx(72.11f / 50.f).epsilon(0.01));
+    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f * 72.11f / 50.f).epsilon(0.01));
+    ImGuiTouch::AddFingerEvent(2, c, ImGuiTouchPhase_Ended);
+    ImGuiTouch::AddFingerEvent(3, c, ImGuiTouchPhase_Ended);
+    b.Release();
+}
+
+TEST_CASE("Touch scroll: a release at an invalid position (a backend that lost the pointer) starts no fling")
+{
+    Bench b;
+    b.Frames(3);
+    b.Press(b.linesRect.GetCenter());
+    b.Drag(ImVec2(0.f, -40.f), 4);  // a swipe up, fast
+    const float dragged = b.scrollY;
+    CHECK(dragged > 0.f);
+    ImGui::GetIO().AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+    ImGui::GetIO().AddMouseButtonEvent(0, false);
+    b.Frames(34);
+    CHECK(b.scrollY == dragged);  // nothing coasted
+    // Without the guard, the lift speed is infinite: the overscroll goes to infinity, then NaN, the content is
+    // drawn there and the bounce never ends
+    CHECK(ImGuiTouch::GetCurrentContext().Scroll.overscroll == 0.f);
+    ImGuiTouch::ConsumeAnimationRequest();  // (the bench has no hook that clears the flag at each frame)
+    b.Frame();
+    CHECK(!ImGuiTouch::ConsumeAnimationRequest());
+}
+
+TEST_CASE("Touch scroll: the long press watch ends when the layer turns off (the source becomes a mouse)")
+{
+    Bench b;
+    b.mode = ImGuiTouchScrollMode_Auto;
+    b.Source(ImGuiMouseSource_TouchScreen);
+    b.Frames(3);
+    b.Press(b.buttonRect.GetCenter());
+    b.Frames(2);
+    CHECK(ImGuiTouch::GetCurrentContext().Scroll.watchingLongPress);
+    b.Source(ImGuiMouseSource_Mouse);  // a mouse takes over while the finger is down (the source tags the next event)
+    const ImVec2 p = b.buttonRect.GetCenter();
+    ImGui::GetIO().AddMousePosEvent(p.x + 1.f, p.y);  // a move below the slop: the watch would stay, but for the mouse
+    b.Frames(2);
+    CHECK(!ImGuiTouch::GetCurrentContext().Scroll.watchingLongPress);
+    b.Release();
+}
+
 TEST_CASE("Touch pinch: the data's Kind is Pan for two fingers that move together, and a cancel ends the gesture")
 {
     Bench b;

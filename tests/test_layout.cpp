@@ -225,6 +225,121 @@ TEST_CASE("Segmented switch: its slide makes ImGuiKit::IsAnimating() true, witho
     CHECK(!ImGuiKit::IsAnimating());  // it landed
 }
 
+TEST_CASE("Layout storage: a helper and a tree node with the same label do not share their state")
+{
+    Bench bench;
+    bool tree_open = false;
+    float button_right = 0.f, line_right = 0.f;
+    auto gui = [&] {
+        ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+        tree_open = ImGui::TreeNode("Settings");  // closed; its flag lives in the storage under GetID("Settings")
+        if (tree_open)
+            ImGui::TreePop();
+        line_right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+        ImGuiKit::BeginAlignedGroup("Settings", 1.0f);  // the same label: its width must not share the tree's slot
+        ImGui::Button("Apply");
+        button_right = ImGui::GetItemRectMax().x;
+        ImGuiKit::EndAlignedGroup();
+    };
+    for (int i = 0; i < 3; i++)
+        bench.Frame(400, gui);
+    CHECK(!tree_open);                                     // the group's width did not open the tree
+    CHECK(button_right == doctest::Approx(line_right).epsilon(0.01));  // the group is right-aligned from its own width
+}
+
+TEST_CASE("Hidden first frame: an item drawn hidden while it is measured is not hovered, the next frame it is")
+{
+    Bench bench;
+    ImVec2 button_min, button_max;
+    bool hovered = false;
+    const char* group_id = "warmup";
+    auto gui = [&] {
+        ImGuiKit::BeginAlignedGroup(group_id, 0.0f);
+        ImGui::Button("Apply");
+        button_min = ImGui::GetItemRectMin();
+        button_max = ImGui::GetItemRectMax();
+        hovered = ImGui::IsItemHovered();
+        ImGuiKit::EndAlignedGroup();
+    };
+    bench.Frame(400, gui);  // the position of a left-aligned group's button: the same for any id
+    ImGui::GetIO().AddMousePosEvent((button_min.x + button_max.x) * 0.5f, (button_min.y + button_max.y) * 0.5f);
+    bench.Frame(400, gui);
+    CHECK(hovered);
+    group_id = "fresh";       // never measured: hidden on its first frame
+    bench.Frame(400, gui);
+    CHECK(!hovered);          // the mouse is on it, and it takes no input
+    bench.Frame(400, gui);
+    CHECK(hovered);
+}
+
+TEST_CASE("Group panel: two panels with items of the same label have distinct IDs")
+{
+    Bench bench;
+    ImGuiID first = 0, second = 0;
+    auto gui = [&] {
+        ImGuiKit::BeginGroupPanel("Image info");
+        ImGui::Button("Reset");
+        first = ImGui::GetItemID();
+        ImGuiKit::EndGroupPanel();
+        ImGuiKit::BeginGroupPanel("Display");
+        ImGui::Button("Reset");
+        second = ImGui::GetItemID();
+        ImGuiKit::EndGroupPanel();
+    };
+    bench.Frame(400, gui);
+    CHECK(first != 0);
+    CHECK(first != second);
+}
+
+TEST_CASE("Label column: a label that grows past the last frame's widest does not spill left of the column")
+{
+    Bench bench;
+    const char* label = "Volume";
+    float column_left = 0.f, label_left = 0.f;
+    auto gui = [&] {
+        column_left = ImGui::GetCursorScreenPos().x;
+        ImGuiKit::BeginLabelColumn("audio", 1.0f);  // right-aligned labels
+        ImGuiKit::Label(label);
+        label_left = ImGui::GetItemRectMin().x;
+        static float v = 0.5f;
+        ImGui::SetNextItemWidth(100.f);
+        ImGui::SliderFloat("##v", &v, 0.f, 1.f);
+        ImGuiKit::EndLabelColumn();
+    };
+    for (int i = 0; i < 2; i++)
+        bench.Frame(400, gui);
+    label = "A much longer label than before";  // grows on this frame
+    bench.Frame(400, gui);
+    CHECK(label_left >= column_left);  // it does not spill left of the column on the frame it grew
+}
+
+TEST_CASE("Flow: an item added since the last frame starts a line for its first frame, instead of overflowing")
+{
+    Bench bench;
+    int count = 3;
+    float last_min_x = 0.f, last_max_x = 0.f, first_y = 0.f, last_y = 0.f, right_edge = 0.f;
+    auto gui = [&] {
+        right_edge = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+        ImGuiKit::BeginFlow("tags");
+        for (int i = 0; i < count; i++)
+        {
+            ImGuiKit::FlowNext();
+            ImGui::Button(i == 3 ? "A new, rather wide tag" : "Tag");
+            if (i == 0) first_y = ImGui::GetItemRectMin().y;
+            last_min_x = ImGui::GetItemRectMin().x;
+            last_max_x = ImGui::GetItemRectMax().x;
+            last_y = ImGui::GetItemRectMin().y;
+        }
+        ImGuiKit::EndFlow();
+    };
+    for (int i = 0; i < 2; i++)
+        bench.Frame(250, gui);
+    count = 4;
+    bench.Frame(250, gui);           // the new item's first frame: on a line of its own
+    CHECK(last_y > first_y);
+    CHECK(last_max_x <= right_edge);  // it does not stick out
+}
+
 TEST_CASE("Fill row: a help marker in the tail stays on the line, and the tail ends at the right edge")
 {
     Bench bench;

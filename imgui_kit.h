@@ -72,7 +72,7 @@ IMGUI_API float  PixelSizeToEm(float pixel_size);
 // Dear ImGui sizes an item when it is called, before the items that follow it exist. Most helpers below measure
 // what they need on the previous frame (kept in the window's state storage, under their str_id: keep it stable), so
 // a row can know the width of its end, or a group its own width, before drawing them. Each helper says what its
-// first frame does.
+// first frame does; what is hidden then takes no input either.
 
 // Fill row: the next item takes the line's width, minus the items after FillRowTail().
 //
@@ -149,7 +149,8 @@ IMGUI_API void   EndLabelColumn();
 //     | Size: 640 x 480       |
 //     +-----------------------+
 //
-// No measurement: it draws its frame around its content in the same frame.
+// No measurement: it draws its frame around its content in the same frame. The label is an ID scope: two panels may
+// hold items with the same labels.
 IMGUI_API void   BeginGroupPanel(const char* label, const ImVec2& size = ImVec2(0, 0));
 IMGUI_API void   EndGroupPanel();
 

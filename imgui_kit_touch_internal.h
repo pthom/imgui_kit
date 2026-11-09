@@ -77,8 +77,9 @@ struct ImGuiTouchPinchState
 {
     ImVector<ImGuiTouchFinger> fingers;  // the fingers down, in the order they landed
     bool cancelled = false;     // a finger was cancelled since the last frame: its press ends with no click
-    float startDistance = 0.f;  // between the first two fingers, when the second one landed
+    float startDistance = 0.f;  // between the first two fingers, when the second one landed (or the pair changed)
     ImVec2 startCenter;         // their middle, then
+    float scaleBase = 1.f;      // the scale reached when the pair last changed: the scale is scaleBase * distance / startDistance
     ImGuiTouchPinchGesture gesture = ImGuiTouchPinchGesture::None;
     float baseScale = 1.f;  // style.FontScaleMain when the pinch began
     // A widget that claims two fingers (ItemPinch, the adapters): the claims of one item, or of one rectangle, merge
