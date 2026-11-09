@@ -122,6 +122,7 @@ void Setup(const ImGuiTouchConfig& config)
             [](ImGuiContext*, ImGuiContextHook*) { ApplyTouchOverscroll(); });
 }
 
+bool IsInstalled() { return FindCurrentContext() != nullptr; }
 ImGuiTouchConfig& GetConfig() { return Ctx().Config; }
 
 // Without the touch layer, nothing records the animations: the kit's widgets animate all the same (an app that draws

@@ -44,7 +44,8 @@ struct ImGuiTouchScrollState
     bool watchingLongPress = false; // a touch press, still so far: a long press when it stays
     bool longPressArmed = false;    // it stayed: a right click when it lifts, unless it moves (a ring shows it)
     bool thinScrollbars = false;    // this frame: thin bars on a touch screen
-    bool mouseInUse = false;        // the last pointer that moved or pressed was a mouse (a touch laptop's): no thin bars
+    bool mouseInUse = false;        // the last pointer that moved or pressed was a mouse (a touch laptop's): the
+                                    // theme's bars
     // While the bars are thin: the style's own values, put back when they stop, and the values written last
     bool barsWritten = false;
     float themeBarSize = 0.f, themeBarRounding = 0.f;

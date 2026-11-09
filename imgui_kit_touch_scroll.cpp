@@ -47,10 +47,6 @@ namespace
     // Two taps closer than this in time and in distance are a double click (ImGui's 0.3 s and 6 px suit a mouse)
     constexpr float kDoubleTapSeconds = 0.4f;
     constexpr float kDoubleTapFontSizes = 1.5f;
-    constexpr float kHoldSeconds = 0.15f;        // a finger still for this long hands the press to the widget under it
-                                                 // (iOS: 150 ms)
-    constexpr float kLongPressSeconds = 0.5f;    // a finger still for this long arms a right click, at the lift (iOS:
-                                                 // about 500 ms)
     constexpr float kLongPressArcDelay = 0.15f;  // s: the long press's arc shows after this, so that a tap does not
                                                  // flash it
     constexpr float kLongPressRingRadius = 3.f;  // font sizes: the long press's ring, past a fingertip
@@ -109,7 +105,8 @@ namespace
             return;
         }
         // The arc shows after a short delay: a tap does not flash it
-        float t = ((float)g.Time - s.pressTime - kLongPressArcDelay) / (kLongPressSeconds - kLongPressArcDelay);
+        const float longPress = ImMax(GetCurrentContext().Config.LongPressSeconds, kLongPressArcDelay + 0.01f);
+        float t = ((float)g.Time - s.pressTime - kLongPressArcDelay) / (longPress - kLongPressArcDelay);
         if (t <= 0.f)
             return;
         draw_list->AddCircle(g.IO.MousePos, radius, ImGui::GetColorU32(ImGuiCol_Text, 0.08f), 0, thickness);
@@ -124,6 +121,13 @@ namespace
         return (ImFabs(fromPress.x) > ImFabs(fromPress.y)) ? ImGuiAxis_X : ImGuiAxis_Y;
     }
 
+    // Whether a window's flags let a pointer scroll it (Dear ImGui's rule, in FindBestWheelingWindow):
+    // NoScrollWithMouse refuses, unless NoMouseInputs is set too (the window then passes everything to its parent)
+    bool ScrollsWithPointer(const ImGuiWindow* w)
+    {
+        return !(w->Flags & ImGuiWindowFlags_NoScrollWithMouse) || (w->Flags & ImGuiWindowFlags_NoMouseInputs);
+    }
+
     // The window to scroll on this axis, as ImGui's wheel chooses it (FindBestWheelingWindow): the pressed one, or
     // the first parent that can scroll that way. A child at the end of its scroll keeps the swipe, like the wheel.
     ImGuiWindow* ScrollTarget(ImGuiWindow* w, ImGuiAxis axis)
@@ -131,9 +135,7 @@ namespace
         for (; w->Flags & ImGuiWindowFlags_ChildWindow; w = w->ParentWindow)
         {
             bool canScroll = (axis == ImGuiAxis_X) ? (w->ScrollMax.x != 0.f) : (w->ScrollMax.y != 0.f);
-            bool inputsDisabled = (w->Flags & ImGuiWindowFlags_NoScrollWithMouse)
-                                  && !(w->Flags & ImGuiWindowFlags_NoMouseInputs);
-            if (canScroll && !inputsDisabled)
+            if (canScroll && ScrollsWithPointer(w))
                 break;
         }
         return w;
@@ -167,8 +169,7 @@ namespace
     {
         for (;; w = w->ParentWindow)
         {
-            bool canScroll = (w->ScrollMax.x != 0.f || w->ScrollMax.y != 0.f)
-                             && !(w->Flags & ImGuiWindowFlags_NoScrollWithMouse);
+            bool canScroll = (w->ScrollMax.x != 0.f || w->ScrollMax.y != 0.f) && ScrollsWithPointer(w);
             if (canScroll)
                 return true;
             if (!(w->Flags & ImGuiWindowFlags_ChildWindow))
@@ -445,7 +446,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
         }
         else if (lifted || moved || (s.owning && s.swiping) || s.parked || widgetActed)
             s.watchingLongPress = s.longPressArmed = false;  // the widget under the finger keeps its press
-        else if (!s.owning && (float)g.Time - s.pressTime >= kLongPressSeconds)
+        else if (!s.owning && (float)g.Time - s.pressTime >= GetCurrentContext().Config.LongPressSeconds)
             s.longPressArmed = true;
     }
 
@@ -489,7 +490,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
                     EndPress(s);
                 }
             }
-            else if (io.MouseDownDuration[ImGuiMouseButton_Left] >= kHoldSeconds)
+            else if (io.MouseDownDuration[ImGuiMouseButton_Left] >= GetCurrentContext().Config.HoldSeconds)
             {
                 // The hold: the widget under the finger gets the press, and the finger's drag from now on
                 ImGui::ClearActiveID();

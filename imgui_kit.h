@@ -325,7 +325,7 @@ enum ImGuiTouchPinchDelivery_
 // What two fingers do, as the layer decides it once per gesture (ImGuiTouchPinch::Kind)
 enum ImGuiTouchPinchKind_
 {
-    ImGuiTouchPinchKind_Undecided,  // until their distance changed by 12%, or their middle moved by 0.6 em
+    ImGuiTouchPinchKind_Undecided,  // until their distance changed a little, or their middle moved a little
     ImGuiTouchPinchKind_Pinch,      // they spread or close
     ImGuiTouchPinchKind_Pan,        // they move together
 };
@@ -384,10 +384,14 @@ struct ImGuiTouchConfig
     // The swipe: a finger that drags a window's content scrolls it, with inertia, even from a button: a tap still
     // clicks it (when the finger lifts), and a short hold then a drag goes to the widget (a slider, a text selection).
     ImGuiTouchScrollMode ScrollMode = ImGuiTouchScrollMode_Auto;
-    // On a touch screen (never with a mouse): a finger still for half a second, then lifted, is a right click (the
+    // A finger still for this long hands its press to the widget under it, which then gets the drag (iOS: 150 ms).
+    // Zero: the widget gets the press at once, and a swipe scrolls only from where no widget is.
+    float HoldSeconds = 0.15f;
+    // On a touch screen (never with a mouse): a finger still for LongPressSeconds, then lifted, is a right click (the
     // context menus); a ring around the finger shows when the lift will right click. The release reaches no widget:
     // a long press on a button is not a click. A move after the ring cancels it: the widget keeps its press.
     bool LongPressIsRightClick = true;
+    float LongPressSeconds = 0.5f;  // iOS: about 500 ms
     // On a touch screen (ImGuiConfigFlags_IsTouchScreen): thin scroll bars (0.3 em, rounded), indicators rather than
     // controls, since a swipe scrolls anywhere. Applied at each frame (after a theme, a pinch). A hold on a bar hands
     // its thumb over, drawn wider while held (as on iOS). While the pointer in use is a mouse (io.MouseSource: a touch
@@ -428,6 +432,7 @@ namespace ImGuiTouch
 // replaces the config. Its state is freed with the context. The functions a reusable widget calls (they say so) do
 // nothing without it; the others assert.
 IMGUI_API void   Setup(const ImGuiTouchConfig& config = ImGuiTouchConfig());
+IMGUI_API bool   IsInstalled();  // true once a setup was called in the current context
 IMGUI_API ImGuiTouchConfig& GetConfig();
 
 // True while the touch layer moves something on its own (a fling's inertia, the bounce, a long press's ring): an app

@@ -599,6 +599,34 @@ TEST_CASE("Touch scroll: a long press is a right click when the finger lifts, a 
     CHECK(b.clicks == 2);
 }
 
+TEST_CASE("Touch scroll: the hold's and the long press's delays come from the config")
+{
+    Bench b;
+    b.Frames(3);
+    ImGuiTouchConfig& config = ImGuiTouch::GetConfig();
+    b.Press(b.buttonRect.GetCenter());
+    b.Frames(15);  // 0.25 s: past the default hold, the button has the press
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+    b.Release();
+    config.HoldSeconds = 1.f;
+    b.Press(b.buttonRect.GetCenter());
+    b.Frames(15);  // not yet: the layer still holds it
+    CHECK(ImGui::GetCurrentContext()->ActiveId != b.buttonId);
+    b.Frames(50);  // 1.08 s: now
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+    b.Release();
+    config.HoldSeconds = 0.15f;
+
+    config.LongPressSeconds = 2.f;
+    const int rightClicks = b.rightClicks;  // the hold of one second above lifted after the long press: one
+    b.Press(b.buttonRect.GetCenter());
+    b.Frames(40);  // 0.66 s: a long press by default, not with this setting
+    b.Release();
+    CHECK(!b.itemPopupOpen);
+    CHECK(b.rightClicks == rightClicks);
+    config.LongPressSeconds = 0.5f;
+}
+
 TEST_CASE("Touch scroll: a widget that takes the drags may keep a still finger past the long press")
 {
     {

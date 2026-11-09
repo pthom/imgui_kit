@@ -19,7 +19,6 @@ Index of this file:
 
 #include "imgui_kit.h"
 #include "imgui_internal.h"     // ImGui::DemoMarker()
-#include "imgui_kit_internal.h"  // ImGuiTouch::FindCurrentContext()
 
 #ifndef IMGUI_KIT_DISABLE_DEMO
 
@@ -563,7 +562,7 @@ ImGuiTouch::SetupEmscripten();  // in a browser: which pointer is a finger, the 
 // Without the touch layer (an app that shows this demo without ImGuiTouch::Setup()), a note instead of the section
 bool HasTouchLayer()
 {
-    if (ImGuiTouch::FindCurrentContext() != nullptr)
+    if (ImGuiTouch::IsInstalled())
         return true;
     ImGui::TextWrapped("This application did not set up the touch layer: ImGuiTouch::Setup(), once after "
                        "ImGui::CreateContext() (Hello ImGui does it).");
