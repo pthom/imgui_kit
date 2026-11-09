@@ -24,12 +24,9 @@ Index of this file:
 
 #define IMGUI_DEMO_MARKER(section)  do { ImGui::DemoMarker("imgui_kit_demo.cpp", __LINE__, section); } while (0)
 
-namespace
-{
-
 // After a label, a widget too wide for the rest of the line goes under it: a narrow window (a phone) keeps its rows
 // on screen
-void NextLineIfTooWide(float widget_width)
+static void NextLineIfTooWide(float widget_width)
 {
     if (widget_width > ImGui::GetContentRegionAvail().x)
         ImGui::NewLine();
@@ -41,7 +38,7 @@ void NextLineIfTooWide(float widget_width)
 
 // The theme and the frame rounding apply to the whole application; "App" restores the colors it had.
 // The font size applies to the demo.
-void DemoToolbar(float* font_size)
+static void DemoToolbar(float* font_size)
 {
     IMGUI_DEMO_MARKER("Toolbar");
     static ImVec4 app_colors[ImGuiCol_COUNT];
@@ -100,7 +97,7 @@ void DemoToolbar(float* font_size)
 // [SECTION] Em units
 //-----------------------------------------------------------------------------
 
-void DemoEmUnits()
+static void DemoEmUnits()
 {
     IMGUI_DEMO_MARKER("Em units");
     if (!ImGui::CollapsingHeader("Em units"))
@@ -122,7 +119,7 @@ void DemoEmUnits()
 // [SECTION] Layout
 //-----------------------------------------------------------------------------
 
-void DemoFillRow()
+static void DemoFillRow()
 {
     IMGUI_DEMO_MARKER("Layout/Fill row");
     if (!ImGui::TreeNode("Fill row"))
@@ -150,7 +147,7 @@ void DemoFillRow()
     ImGui::TreePop();
 }
 
-void DemoAlignedGroup()
+static void DemoAlignedGroup()
 {
     IMGUI_DEMO_MARKER("Layout/Aligned group");
     if (!ImGui::TreeNode("Aligned group"))
@@ -174,7 +171,7 @@ void DemoAlignedGroup()
     ImGui::TreePop();
 }
 
-void DemoColumn()
+static void DemoColumn()
 {
     IMGUI_DEMO_MARKER("Layout/Column");
     if (!ImGui::TreeNode("Column"))
@@ -203,7 +200,7 @@ void DemoColumn()
     ImGui::TreePop();
 }
 
-void DemoLabelColumn()
+static void DemoLabelColumn()
 {
     IMGUI_DEMO_MARKER("Layout/Label column");
     if (!ImGui::TreeNode("Label column"))
@@ -230,7 +227,7 @@ void DemoLabelColumn()
     ImGui::TreePop();
 }
 
-void DemoGroupPanel()
+static void DemoGroupPanel()
 {
     IMGUI_DEMO_MARKER("Layout/Group panel");
     if (!ImGui::TreeNode("Group panel"))
@@ -257,7 +254,7 @@ void DemoGroupPanel()
     ImGui::TreePop();
 }
 
-void DemoFlow()
+static void DemoFlow()
 {
     IMGUI_DEMO_MARKER("Layout/Flow");
     if (!ImGui::TreeNode("Flow"))
@@ -284,7 +281,7 @@ void DemoFlow()
     ImGui::TreePop();
 }
 
-void DemoLayout()
+static void DemoLayout()
 {
     IMGUI_DEMO_MARKER("Layout");
     if (!ImGui::CollapsingHeader("Layout"))
@@ -302,7 +299,7 @@ void DemoLayout()
 // [SECTION] Widgets
 //-----------------------------------------------------------------------------
 
-void DemoHelpMarker()
+static void DemoHelpMarker()
 {
     IMGUI_DEMO_MARKER("Widgets/Help marker");
     if (!ImGui::TreeNode("Help marker"))
@@ -327,7 +324,7 @@ void DemoHelpMarker()
     ImGui::TreePop();
 }
 
-void DemoIconButton()
+static void DemoIconButton()
 {
     IMGUI_DEMO_MARKER("Widgets/Icon button");
     if (!ImGui::TreeNode("Icon button"))
@@ -351,7 +348,7 @@ void DemoIconButton()
     ImGui::TreePop();
 }
 
-void DemoSegmentedSwitch()
+static void DemoSegmentedSwitch()
 {
     IMGUI_DEMO_MARKER("Widgets/Segmented switch");
     if (!ImGui::TreeNode("Segmented switch"))
@@ -375,7 +372,7 @@ void DemoSegmentedSwitch()
     ImGui::TreePop();
 }
 
-void DemoFitText()
+static void DemoFitText()
 {
     IMGUI_DEMO_MARKER("Widgets/Fit text");
     if (!ImGui::TreeNode("Fit text"))
@@ -406,7 +403,7 @@ void DemoFitText()
     ImGui::TreePop();
 }
 
-void DemoResizeHandle()
+static void DemoResizeHandle()
 {
     IMGUI_DEMO_MARKER("Widgets/Resize handle");
     if (!ImGui::TreeNode("Resize handle"))
@@ -426,7 +423,7 @@ void DemoResizeHandle()
     ImGui::TreePop();
 }
 
-void DemoWidgets()
+static void DemoWidgets()
 {
     IMGUI_DEMO_MARKER("Widgets");
     if (!ImGui::CollapsingHeader("Widgets"))
@@ -445,28 +442,37 @@ void DemoWidgets()
 // A canvas that zooms and pans, as a map or an image viewer does. With a mouse: the wheel zooms (it claims the wheel
 // while hovered: ImGui::SetItemKeyOwner), a drag pans. With fingers: one finger pans at once
 // (ImGuiTouch::SetItemTakesDrags), two fingers zoom and pan at once (ImGuiTouch::ItemPinch: the gesture's data)
-void ZoomableCanvas(const char* str_id, ImVec2 size)
+// The canvas's view: its zoom, and where the content's origin is, from the canvas's corner, in pixels
+struct CanvasView
 {
-    static float zoom = 1.0f;
-    static ImVec2 offset(0.0f, 0.0f);  // where the content's origin is, from the canvas's corner, in pixels
+    float zoom = 1.0f;
+    ImVec2 offset = ImVec2(0.0f, 0.0f);
+};
+
+// Zoom by `factor` around a point of the screen (relative to the canvas's corner): the content under it stays there
+static void ZoomCanvasAround(CanvasView* view, ImVec2 point, float factor)
+{
+    float new_zoom = ImClamp(view->zoom * factor, 0.25f, 8.0f);
+    view->offset.x = point.x - (point.x - view->offset.x) * new_zoom / view->zoom;
+    view->offset.y = point.y - (point.y - view->offset.y) * new_zoom / view->zoom;
+    view->zoom = new_zoom;
+}
+
+static void ZoomableCanvas(const char* str_id, ImVec2 size)
+{
+    static CanvasView view;
+    float& zoom = view.zoom;
+    ImVec2& offset = view.offset;
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 p0 = ImGui::GetCursorScreenPos();
     ImVec2 p1(p0.x + size.x, p0.y + size.y);
-    // Zoom by `factor` around a point of the screen: the content under it stays there
-    auto zoom_around = [&](ImVec2 point, float factor) {
-        float new_zoom = ImClamp(zoom * factor, 0.25f, 8.0f);
-        float px = point.x - p0.x, py = point.y - p0.y;
-        offset.x = px - (px - offset.x) * new_zoom / zoom;
-        offset.y = py - (py - offset.y) * new_zoom / zoom;
-        zoom = new_zoom;
-    };
 
     ImGui::InvisibleButton(str_id, size);
     ImGuiTouch::SetItemTakesDrags();
     ImGuiTouchPinch pinch = ImGuiTouch::ItemPinch();
     if (pinch.Active)
     {
-        zoom_around(pinch.Center, pinch.ScaleDelta);
+        ZoomCanvasAround(&view, ImVec2(pinch.Center.x - p0.x, pinch.Center.y - p0.y), pinch.ScaleDelta);
         offset.x += pinch.CenterDelta.x;
         offset.y += pinch.CenterDelta.y;
     }
@@ -476,7 +482,7 @@ void ZoomableCanvas(const char* str_id, ImVec2 size)
         offset.y += io.MouseDelta.y;
     }
     if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && io.MouseWheel != 0.0f)
-        zoom_around(io.MousePos, ImPow(1.1f, io.MouseWheel));
+        ZoomCanvasAround(&view, ImVec2(io.MousePos.x - p0.x, io.MousePos.y - p0.y), ImPow(1.1f, io.MouseWheel));
 
     // The gesture, as the canvas sees it: a dot under one finger (or the mouse); for two fingers, a ring at their
     // middle that follows their spread, and the layer's decision (pinch or pan). It fades once they lift.
@@ -560,7 +566,7 @@ ImGuiTouch::SetupEmscripten();  // in a browser: which pointer is a finger, the 
 
 // The settings change the application's touch layer, live. "Simulate a touch source" lets the mouse play a finger.
 // Without the touch layer (an app that shows this demo without ImGuiTouch::Setup()), a note instead of the section
-bool HasTouchLayer()
+static bool HasTouchLayer()
 {
     if (ImGuiTouch::IsInstalled())
         return true;
@@ -569,7 +575,7 @@ bool HasTouchLayer()
     return false;
 }
 
-void DemoTouch()
+static void DemoTouch()
 {
     IMGUI_DEMO_MARKER("Touch");
     if (!ImGui::CollapsingHeader("Touch"))
@@ -695,7 +701,7 @@ void DemoTouch()
 //-----------------------------------------------------------------------------
 
 // The phone's keyboard, in a browser: the fields of all kinds, one of them in a child that scrolls
-void DemoTouchKeyboard()
+static void DemoTouchKeyboard()
 {
     IMGUI_DEMO_MARKER("Touch keyboard");
     if (!ImGui::CollapsingHeader("Touch keyboard"))
@@ -721,8 +727,6 @@ void DemoTouchKeyboard()
         ImGui::Text("Content below the field (%d)", i);
     ImGui::EndChild();
 }
-
-} // namespace
 
 //-----------------------------------------------------------------------------
 // [SECTION] Demo window

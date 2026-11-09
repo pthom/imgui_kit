@@ -14,7 +14,7 @@
 #include "imgui_kit.h"
 #include "imgui_internal.h"  // ImRect, ImGuiWindow, ImGuiAxis
 
-constexpr int ImGuiTouchFlickSamples = 16;  // the swipe's recent positions of the finger: enough for 0.05 s at 240 fps
+#define IMGUI_TOUCH_FLICK_SAMPLES 16  // the swipe's recent positions of the finger: enough for 0.05 s at 240 fps
 
 struct ImGuiTouchScrollSample
 {
@@ -32,7 +32,7 @@ struct ImGuiTouchScrollState
     ImGuiWindow* window = nullptr;  // the pressed window, then the one that scrolls
     ImGuiAxis axis = ImGuiAxis_None;
     ImVec2 pressPos;
-    ImGuiTouchScrollSample samples[ImGuiTouchFlickSamples];  // the finger's recent positions, a ring: the lift speed
+    ImGuiTouchScrollSample samples[IMGUI_TOUCH_FLICK_SAMPLES];  // the finger's recent positions, a ring: the lift speed
                                                              // comes from them
     int nbSamples = 0, nextSample = 0;
     ImVec2 inertia;                 // px/s, after the release
@@ -69,7 +69,15 @@ struct ImGuiTouchScrollState
     ImGuiAxis takerAxis = ImGuiAxis_None;  // the press landed on a widget that takes the drags along this axis
 };
 
-enum class ImGuiTouchPinchGesture { None, Undecided, Pinch, DragStarting, Drag };
+typedef int ImGuiTouchPinchGesture;  // -> enum ImGuiTouchPinchGesture_
+enum ImGuiTouchPinchGesture_
+{
+    ImGuiTouchPinchGesture_None,
+    ImGuiTouchPinchGesture_Undecided,
+    ImGuiTouchPinchGesture_Pinch,
+    ImGuiTouchPinchGesture_DragStarting,  // decided; the button goes down at the next frame
+    ImGuiTouchPinchGesture_Drag,
+};
 
 struct ImGuiTouchFinger
 {
@@ -85,7 +93,7 @@ struct ImGuiTouchPinchState
     ImVec2 startCenter;         // their middle, then
     float scaleBase = 1.0f;      // the scale reached when the pair last changed: the scale is
                                 // scaleBase * distance / startDistance
-    ImGuiTouchPinchGesture gesture = ImGuiTouchPinchGesture::None;
+    ImGuiTouchPinchGesture gesture = ImGuiTouchPinchGesture_None;
     float baseScale = 1.0f;  // style.FontScaleMain when the pinch began
     // A widget that claims two fingers (ItemPinch, the adapters): the claims of one item, or of one rectangle, merge
     struct PinchTaker

@@ -57,7 +57,7 @@ struct ImGuiKitWheelSessionState
 // The kit's state, one per Dear ImGui context
 //-----------------------------------------------------------------------------
 
-constexpr float ImGuiKitUnknown = -1.0f;  // a layout value never measured (the helper draws hidden on that frame)
+#define IMGUI_KIT_UNKNOWN (-1.0f)  // a layout value never measured (the helper draws hidden on that frame)
 
 // Hides what follows until End(): invisible, and taking no input (a hidden button is not clicked, a hidden marker
 // shows no tooltip); it forgets how far they reached (their overflow adds no scrollbar)

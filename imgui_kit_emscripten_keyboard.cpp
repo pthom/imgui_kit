@@ -18,8 +18,6 @@
 // on the widget itself. What is typed in the field goes to ImGui each frame (characters, and the special keys).
 namespace ImGuiTouch
 {
-namespace
-{
     // The hidden field and the keyboard button, created by the page. The field mirrors the active text widget (its
     // text and its caret), so that the keyboard's own editing (the caret moved from the space bar on iOS, a word
     // replaced by the autocorrection) has something to act on; ImGui stays the source of truth:
@@ -39,7 +37,7 @@ namespace
     // outside the canvas). The field counts in UTF-16 units, ImGui's caret in bytes: converted here.
     // The script is imgui_kit_emscripten_keyboard.js, copied here by tools/embed_js.py (edit the .js, run the script).
     // <embedded file="imgui_kit_emscripten_keyboard.js" sha1="399d2be84a7707fbc3047dbaba9d4b8ef54f3851">
-    const char* kScript = R"JS(
+    const char* KEYBOARD_SCRIPT = R"JS(
 // imgui_kit: the phone's virtual keyboard in a browser: the page's side (the hidden field, the keyboard button).
 // https://github.com/pthom/imgui_kit (MIT license)
 // Embedded into imgui_kit_emscripten_keyboard.cpp by tools/embed_js.py: edit this file, then run the script.
@@ -485,8 +483,7 @@ if (!window.imguiKitKeyboard) {
     // A field that the application activates again (Enter, then SetKeyboardFocusHere: a find bar, a console) leaves
     // ImGui without a text widget for a frame or two: the page hears of it after these frames, so that its field keeps
     // the focus, and the keyboard stays open
-    constexpr int kWantGraceFrames = 5;
-
+    constexpr int WANT_GRACE_FRAMES = 5;
 
     void SendKey(ImGuiIO& io, ImGuiKey key)
     {
@@ -549,10 +546,8 @@ if (!window.imguiKitKeyboard) {
         }
     }
 
-}  // namespace
-
 // Before each frame (a NewFramePre hook): tells the page what Dear ImGui wants, feeds Dear ImGui what was typed
-static void UpdateKeyboard()
+static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
@@ -610,7 +605,7 @@ static void UpdateKeyboard()
             lineHeight = ime.InputLineHeight;
         }
     }
-    else if (b.FramesWithoutWant < kWantGraceFrames)
+    else if (b.FramesWithoutWant < WANT_GRACE_FRAMES)
         ++b.FramesWithoutWant;
     else
         want = false;
@@ -711,12 +706,12 @@ static void UpdateKeyboard()
         for (const char* k = keys; k < keysEnd;)
         {
             const char* comma = (const char*)memchr(k, ',', (size_t)(keysEnd - k));
-            const char* kEnd = comma ? comma : keysEnd;
-            ImGuiKey key = KeyFromName(k, (int)(kEnd - k));
+            const char* END = comma ? comma : keysEnd;
+            ImGuiKey key = KeyFromName(k, (int)(END - k));
             if (key != ImGuiKey_None)
                 SendKey(io, key);
-            keysSent = keysSent || kEnd > k;
-            k = kEnd + 1;
+            keysSent = keysSent || END > k;
+            k = END + 1;
         }
     }
 
@@ -751,7 +746,7 @@ void SetupEmscriptenKeyboard()
 #ifdef IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG
     emscripten_run_script("window.imguiKitKeyboardDebugBuild = true;");
 #endif
-    emscripten_run_script(kScript);
+    emscripten_run_script(KEYBOARD_SCRIPT);
     const ImGuiID owner = ImHashStr("ImGuiTouch_EmscriptenKeyboard");
     for (const ImGuiContextHook& hook : ctx->Hooks)
         if (hook.Owner == owner && hook.Type != ImGuiContextHookType_PendingRemoval_)
@@ -759,7 +754,7 @@ void SetupEmscriptenKeyboard()
     ImGuiContextHook hook;
     hook.Type = ImGuiContextHookType_NewFramePre;
     hook.Owner = owner;
-    hook.Callback = [](ImGuiContext*, ImGuiContextHook*) { UpdateKeyboard(); };
+    hook.Callback = UpdateKeyboard;
     ImGui::AddContextHook(ctx, &hook);
     SetupKeepCaretInView(ctx);  // after the hook above: it reads the insets this one sets
 }

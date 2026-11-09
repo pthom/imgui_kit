@@ -23,7 +23,7 @@ def embedded_block(indent: str, name: str, js: str) -> str:
     assert ')JS"' not in js, f"{name} holds the raw string's delimiter"
     sha1 = hashlib.sha1(js.encode()).hexdigest()
     return (f'{indent}// <embedded file="{name}" sha1="{sha1}">\n'
-            f'{indent}const char* kScript = R"JS(\n{js})JS";\n'
+            f'{indent}const char* KEYBOARD_SCRIPT = R"JS(\n{js})JS";\n'
             f'{indent}// </embedded>')
 
 

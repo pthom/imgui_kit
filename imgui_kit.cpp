@@ -59,6 +59,13 @@ float PixelSizeToEm(float pixel_size)
 // It hangs on a Shutdown hook of the Dear ImGui context (its UserData), as the Test Engine's: the hook frees it with
 // the context (see imgui_kit_internal.h's top). The hooks are per context: no global (GImGui may be thread-local).
 
+// The hook frees the state with its context
+static void ShutdownHook(ImGuiContext*, ImGuiContextHook* h)
+{
+    IM_DELETE((ImGuiKitContext*)h->UserData);
+    h->UserData = nullptr;
+}
+
 namespace ImGuiKit
 {
 ImGuiKitContext& GetCurrentContext()
@@ -74,10 +81,7 @@ ImGuiKitContext& GetCurrentContext()
     hook.Type = ImGuiContextHookType_Shutdown;
     hook.Owner = owner;
     hook.UserData = state;
-    hook.Callback = [](ImGuiContext*, ImGuiContextHook* h) {
-        IM_DELETE((ImGuiKitContext*)h->UserData);
-        h->UserData = nullptr;
-    };
+    hook.Callback = ShutdownHook;
     ImGui::AddContextHook(ctx, &hook);
     return *state;
 }

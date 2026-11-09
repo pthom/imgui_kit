@@ -20,44 +20,46 @@
 // item. The owner the widgets left is thus read before NewFrame() (WheelSessionBeforeNewFrame).
 namespace ImGuiKit
 {
-namespace
+constexpr float SESSION_SECONDS = 0.7f;  // ImGui's WINDOWS_MOUSE_WHEEL_SCROLL_LOCK_TIMER
+
+// The item (not a window) that owns the wheel, as of the previous frame; 0 when none
+static ImGuiID WheelOwnerItem(const ImGuiContext& g, const ImGuiKitWheelSessionState& s)
 {
-    constexpr float kSessionSeconds = 0.7f;  // ImGui's WINDOWS_MOUSE_WHEEL_SCROLL_LOCK_TIMER
+    // The owner noted before NewFrame(), when the hook noted it (NewFrame() may have given the wheel back to the
+    // window ImGui keeps scrolling)
+    ImGuiID owner = (s.ownerFrame == g.FrameCount - 1)
+        ? s.ownerBeforeNewFrame
+        : ImGui::GetKeyOwnerData(GImGui, ImGuiKey_MouseWheelY)->OwnerCurr;
+    if (owner == ImGuiKeyOwner_NoOwner || owner == ImGuiKeyOwner_Any)
+        return 0;
+    if (g.HoveredWindow != nullptr && owner == g.HoveredWindow->ID)
+        return 0;
+    if (g.WheelingWindow != nullptr && owner == g.WheelingWindow->ID)
+        return 0;
+    return owner;
+}
 
-    using State = ImGuiKitWheelSessionState;
+// ImGui's scroll of a wheel notch (UpdateMouseWheel)
+static void ScrollByWheel(ImGuiWindow* window, float wheel)
+{
+    float maxStep = window->InnerRect.GetHeight() * 0.67f;
+    float step = ImTrunc(ImMin(5 * window->FontRefSize, maxStep));
+    ImGui::SetScrollY(window, window->Scroll.y - wheel * step);
+}
 
-    // The item (not a window) that owns the wheel, as of the previous frame; 0 when none
-    ImGuiID WheelOwnerItem(const ImGuiContext& g, const State& s)
-    {
-        // The owner noted before NewFrame(), when the hook noted it (NewFrame() may have given the wheel back to the
-        // window ImGui keeps scrolling)
-        ImGuiID owner = (s.ownerFrame == g.FrameCount - 1)
-            ? s.ownerBeforeNewFrame
-            : ImGui::GetKeyOwnerData(GImGui, ImGuiKey_MouseWheelY)->OwnerCurr;
-        if (owner == ImGuiKeyOwner_NoOwner || owner == ImGuiKeyOwner_Any)
-            return 0;
-        if (g.HoveredWindow != nullptr && owner == g.HoveredWindow->ID)
-            return 0;
-        if (g.WheelingWindow != nullptr && owner == g.WheelingWindow->ID)
-            return 0;
-        return owner;
-    }
-
-    // ImGui's scroll of a wheel notch (UpdateMouseWheel)
-    void ScrollByWheel(ImGuiWindow* window, float wheel)
-    {
-        float maxStep = window->InnerRect.GetHeight() * 0.67f;
-        float step = ImTrunc(ImMin(5 * window->FontRefSize, maxStep));
-        ImGui::SetScrollY(window, window->Scroll.y - wheel * step);
-    }
-}  // namespace
+// The two steps, as context hooks
+static void NewFramePreHook(ImGuiContext*, ImGuiContextHook*) { WheelSessionBeforeNewFrame(); }
+static void NewFramePostHook(ImGuiContext*, ImGuiContextHook*)
+{
+    UpdateWheelSession(GetCurrentContext().WheelSessionEnabled);
+}
 
 void WheelSessionBeforeNewFrame()
 {
     ImGuiContext* g = GImGui;
     if (g == nullptr)
         return;
-    State& s = GetCurrentContext().WheelSession;
+    ImGuiKitWheelSessionState& s = GetCurrentContext().WheelSession;
     s.ownerBeforeNewFrame = ImGui::GetKeyOwnerData(g, ImGuiKey_MouseWheelY)->OwnerNext;
     s.ownerFrame = g->FrameCount;
 }
@@ -66,10 +68,10 @@ void UpdateWheelSession(bool enabled)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    State& s = GetCurrentContext().WheelSession;
+    ImGuiKitWheelSessionState& s = GetCurrentContext().WheelSession;
     if (s.context != &g || g.FrameCount < s.frameCount)
     {
-        s = State{};
+        s = ImGuiKitWheelSessionState{};
         s.context = &g;
     }
     s.frameCount = g.FrameCount;
@@ -100,7 +102,7 @@ void UpdateWheelSession(bool enabled)
         s.scrolled = false;
         s.window = g.WheelingWindow ? g.WheelingWindow : g.HoveredWindow;  // ImGui locked the one it scrolled
     }
-    s.timer = ImMin(s.timer + ImAbs(io.MouseWheel) * kSessionSeconds, kSessionSeconds);
+    s.timer = ImMin(s.timer + ImAbs(io.MouseWheel) * SESSION_SECONDS, SESSION_SECONDS);
     s.refMousePos = io.MousePos;
     if (s.window == nullptr)
         return;
@@ -151,12 +153,10 @@ void SetupWheelSession(bool enabled)
     ImGuiContextHook hook;
     hook.Owner = owner;
     hook.Type = ImGuiContextHookType_NewFramePre;
-    hook.Callback = [](ImGuiContext*, ImGuiContextHook*) { WheelSessionBeforeNewFrame(); };
+    hook.Callback = NewFramePreHook;
     ImGui::AddContextHook(ctx, &hook);
     hook.Type = ImGuiContextHookType_NewFramePost;
-    hook.Callback = [](ImGuiContext*, ImGuiContextHook*) {
-        UpdateWheelSession(GetCurrentContext().WheelSessionEnabled);
-    };
+    hook.Callback = NewFramePostHook;
     ImGui::AddContextHook(ctx, &hook);
 }
 
