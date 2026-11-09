@@ -137,6 +137,20 @@ TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
     ImGui::DestroyContext();
 }
 
+TEST_CASE("Url zones: outside a browser, the caller opens its links itself")
+{
+    HookBench b;
+    b.Frame();
+    ImGui_ImplNull_NewFrame();
+    ImGui::NewFrame();
+    ImGui::Begin("links");
+    ImGui::TextLink("Docs");
+    CHECK(!ImGuiTouch::SetItemOpensUrl("https://example.com"));
+    CHECK(!ImGuiTouch::SetRectOpensUrl(ImVec2(0, 0), ImVec2(10, 10), "https://example.com"));
+    ImGui::End();
+    ImGui::Render();
+}
+
 TEST_CASE("Touch context: each Dear ImGui context has its own touch state, freed with it")
 {
     ImGuiContext* a = ImGui::CreateContext();

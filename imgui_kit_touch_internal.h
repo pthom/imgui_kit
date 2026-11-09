@@ -118,9 +118,21 @@ struct ImGuiTouchCaretView
 
 // In a browser (SetupEmscripten, SetupEmscriptenKeyboard): what the page reported at the last frame, and the buffers
 // reused at each frame (no allocation once they have grown)
+struct ImGuiTouchUrlZone
+{
+    ImRect rect;    // the link's visible part, in Dear ImGui's coordinates
+    int urlOffset;  // its url, in ImGuiTouchBrowserState::UrlZoneUrls
+};
+
 struct ImGuiTouchBrowserState
 {
+    bool Installed = false;  // SetupEmscripten() was called: the page has the probe (and takes the url zones)
     ImGuiMouseSource LastPointerSource = ImGuiMouseSource_Mouse;
+    // The links the page opens itself (SetItemOpensUrl): this frame's, pushed to the page before the next frame
+    ImVector<ImGuiTouchUrlZone> UrlZones;
+    ImVector<char> UrlZoneUrls;      // their urls, each zero-terminated
+    ImVector<char> UrlZonesScript;   // the script that tells the page, reused
+    ImGuiID UrlZonesPushed = 0;      // its hash as last run: run again only when the zones changed
     ImVector<int> FingersDown, FingersNow;  // the fingers' ids at the last frame, at this one
     ImVector<int> FingersCancelled;         // the fingers the browser cancelled since the last frame
     // The keyboard: what the page was last told

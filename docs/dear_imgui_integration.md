@@ -96,6 +96,7 @@ Each item would replace a workaround in the layer:
 | A per-context slot for an extension | a `Shutdown` hook's `UserData`, found by scanning the hooks (as the Test Engine does) | a user-data slot in `ImGuiContext`                                            |
 | Knowing which widgets a finger drags along an axis (sliders, drags) | `SetItemTakesDrags(ImGuiTouchAxis_X)` after each one; in Dear ImGui Bundle's fork, a callback that Dear ImGui's draggable widgets call ([`ItemDragAxisCallback`](https://github.com/pthom/imgui/blob/imgui_bundle/imgui_internal.h): about 20 lines, a generic commit), which the kit listens to | that callback, upstream: then every app's sliders take a finger's drag along their axis |
 | Several fingers from the backend | `ImGuiTouch::AddFingerEvent(id, pos, phase)` | an `io.AddTouchPointEvent()`                                                  |
+| A link that opens in a new tab in every browser (WebKit allows a new tab only from the gesture's own handler, not from the frame loop where Dear ImGui sees the click) | `ImGuiTouch::SetItemOpensUrl(url)` after the link: the page keeps the links' rectangles and opens from its own handler | a callback from `TextLinkOpenURL` with each link's rectangle and url, per frame, which a browser backend would use the same way |
 | Running before the hooks that draw a GUI (the Test Engine draws its tests from a `NewFramePost` hook) | the kit is set up before `ImGuiTestEngine_Start()`: hooks run in the order they were added | an order, or a priority, for context hooks |
 
 ### Cost

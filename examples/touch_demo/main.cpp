@@ -104,6 +104,7 @@ int main(int, char**)
         ImGui::TextWrapped("Open \"Touch\" below, then try it with a finger. On a desktop: tick \"Simulate a touch "
                            "source\", and the mouse plays a finger.");
         ImGui::TextLinkOpenURL("See the full interactive explorer", "https://pthom.github.io/imgui_explorer/?lib=imguikit");
+        ImGuiTouch::SetItemOpensUrl("https://pthom.github.io/imgui_explorer/?lib=imguikit");  // imgui_kit: a new tab, in every browser
         ImGuiKit::ShowDemoContents();
         ImGui::End();
 
