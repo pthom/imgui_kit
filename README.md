@@ -116,13 +116,33 @@ The touch layer needs four things from the platform. Checked in each backend's s
 |---|---|---|---|---|---|
 | A browser, any of Dear ImGui's Emscripten backends, with `SetupEmscripten()` and `SetupEmscriptenKeyboard()` | yes | yes | yes, cancel included | yes | nothing |
 | iOS, the kit's example (Metal, its own `UITouch` code) | yes | yes | yes, cancel included | yes | nothing: an app copies its touch and keyboard code |
-| SDL2, SDL3 (a desktop touch screen; iOS and Android through SDL) | yes | no | no | no | SDL's finger events to `AddFingerEvent()` (down, motion, up; SDL3 also has canceled), the flag, and on a phone the keyboard's area |
+| SDL2, SDL3 (a desktop touch screen; iOS and Android through SDL) | yes | no | no | no | SDL's finger events to `AddFingerEvent()` (down, motion, up; SDL3 also has canceled) and the flag: a dozen lines in the app's event loop, below; on a phone the keyboard's area |
 | Win32, and GLFW on Windows | yes (`GetMessageExtraInfo()`) | no | no | - | `WM_POINTER` messages to `AddFingerEvent()` (their canceled flag), the flag |
 | Android (`imgui_impl_android`) | yes (the tool type) | no | no: the first pointer only, as the mouse | no | each pointer of an `AMotionEvent` to `AddFingerEvent()` (`ACTION_CANCEL` too), the flag, the keyboard's area |
 | GLFW on Linux and macOS | no: GLFW does not tell a finger from a mouse | no | no | - | not possible through GLFW: `ScrollMode_Always` lets the mouse swipe |
 | macOS (`imgui_impl_osx`) | mouse and pen | - | - | - | a Mac has no touch screen |
 
-Hello ImGui (and Dear ImGui Bundle): in a browser, its runners call both Emscripten setups (complete). Its native runners (GLFW, SDL, on the desktop, iOS and Android) use the backends above, and forward no fingers yet: a swipe and a long press work where the backend tells a finger, a pinch does not.
+The fingers from SDL, in the app's event loop (SDL2; SDL3 has `SDL_EVENT_FINGER_DOWN`, `_MOTION`, `_UP` and `_CANCELED`, the same fields):
+
+```cpp
+// After ImGui_ImplSDL2_ProcessEvent(&event). SDL gives a finger's position as a fraction of the window; a trackpad is a
+// touch device too (an indirect one): only the screens. The first finger is also the mouse, through SDL.
+if (event.type == SDL_FINGERDOWN || event.type == SDL_FINGERMOTION || event.type == SDL_FINGERUP)
+{
+    const SDL_TouchFingerEvent& finger = event.tfinger;
+    if (SDL_GetTouchDeviceType(finger.touchId) == SDL_TOUCH_DEVICE_DIRECT)
+    {
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+        ImGuiTouchPhase phase = (finger.type == SDL_FINGERDOWN) ? ImGuiTouchPhase_Began
+                              : (finger.type == SDL_FINGERUP) ? ImGuiTouchPhase_Ended : ImGuiTouchPhase_Moved;
+        ImGuiTouch::AddFingerEvent((int)finger.fingerId, ImVec2(finger.x * w, finger.y * h), phase);
+    }
+}
+```
+
+Hello ImGui (and Dear ImGui Bundle): in a browser, its runners call both Emscripten setups (complete). Its SDL2 runner forwards the fingers as above (the desktop, iOS and Android through SDL): the pinch works there. Its GLFW runner cannot: GLFW reports no fingers.
 
 How it works: a touch press is held back until it is known to be a tap or a drag. A tap is then replayed to the widgets; a drag scrolls. So no widget needs to change. The cost per frame is too small to measure, with no allocation. The state lives in the Dear ImGui context (one per context), and the code reads Dear ImGui's internals (`imgui_internal.h`).
 
