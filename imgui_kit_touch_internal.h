@@ -24,22 +24,22 @@ struct ImGuiTouchScrollSample
 
 struct ImGuiTouchScrollState
 {
-    ImGuiContext* Context = nullptr;  // the state belongs to one Context (its windows): a new one starts afresh
-    int FrameCount = -1;              // (a new Context may reuse the address of a destroyed one: its frames restart)
-    bool Owning = false;            // the sentinel holds the Active Id: a press, not released nor handed over yet
+    ImGuiContext* Context = nullptr;  // the state belongs to one context (its windows): a new one starts afresh
+    int FrameCount = -1;            // (a new context may reuse the address of a destroyed one: its frames restart)
+    bool Owning = false;            // the sentinel holds the active id: a press, not released nor handed over yet
     bool Swiping = false;           // the finger moved past the slop
-    bool Parked = false;            // the sentinel holds the Active Id for a pinch: nothing until the Fingers lift
-    ImGuiWindow* Window = nullptr;  // the pressed Window, then the one that scrolls
+    bool Parked = false;            // the sentinel holds the active id for a pinch: nothing until the fingers lift
+    ImGuiWindow* Window = nullptr;  // the pressed window, then the one that scrolls
     ImGuiAxis Axis = ImGuiAxis_None;
     ImVec2 PressPos;
     ImGuiTouchScrollSample Samples[IMGUI_TOUCH_FLICK_SAMPLES];  // the finger's recent positions, a ring: the lift speed
-                                                             // comes from them
+                                    // comes from them
     int NbSamples = 0, NextSample = 0;
     ImVec2 Inertia;                 // px/s, after the release
-    float Pull = 0.0f;               // px: how far the finger dragged past the end of the scroll (the rubber band)
-    float Overscroll = 0.0f;         // px: the content is drawn this far past its end, along the Axis (positive:
+    float Pull = 0.0f;              // px: how far the finger dragged past the end of the scroll (the rubber band)
+    float Overscroll = 0.0f;        // px: the content is drawn this far past its end, along the axis (positive:
                                     // toward the start)
-    float OverscrollSpeed = 0.0f;    // px/s, while it springs back
+    float OverscrollSpeed = 0.0f;   // px/s, while it springs back
     int ReplayedPresses = 0;        // presses queued by the layer, which it must not claim
     bool WatchingLongPress = false; // a touch press, still so far: a long press when it stays
     bool LongPressArmed = false;    // it stayed: a right click when it lifts, unless it moves (a ring shows it)
@@ -60,13 +60,13 @@ struct ImGuiTouchScrollState
     float PressTime = 0.0f;
     struct DragTaker
     {
-        ImGuiID Window;  // the widget's Window
-        ImRect Rect;     // its Visible part, on the screen
+        ImGuiID Window;             // the widget's window
+        ImRect Rect;                // its visible part, on the screen
         bool LongPressIsRightClick;
-        ImGuiAxis Axis;  // SetItemTakesDrags(X or Y): the drags along it only; ImGuiAxis_None: all, at once
+        ImGuiAxis Axis;             // SetItemTakesDrags(X or Y): the drags along it only; ImGuiAxis_None: all, at once
     };
     ImVector<DragTaker> Takers, PreviousTakers;  // SetItemTakesDrags(): this frame's, the last frame's
-    ImGuiAxis TakerAxis = ImGuiAxis_None;  // the press landed on a widget that takes the drags along this Axis
+    ImGuiAxis TakerAxis = ImGuiAxis_None;  // the press landed on a widget that takes the drags along this axis
 };
 
 typedef int ImGuiTouchPinchGesture;  // -> enum ImGuiTouchPinchGesture_
@@ -87,32 +87,33 @@ struct ImGuiTouchFinger
 
 struct ImGuiTouchPinchState
 {
-    ImVector<ImGuiTouchFinger> Fingers;  // the Fingers down, in the order they landed
-    bool Cancelled = false;     // a finger was Cancelled since the last frame: its press ends with no click
-    float StartDistance = 0.0f;  // between the first two Fingers, when the second one landed (or the pair changed)
-    ImVec2 StartCenter;         // their middle, then
-    float ScaleBase = 1.0f;      // the scale reached when the pair last changed: the scale is
-                                // ScaleBase * distance / StartDistance
+    ImVector<ImGuiTouchFinger> Fingers;  // the fingers down, in the order they landed
+    bool Cancelled = false;            // a finger was cancelled since the last frame: its press ends with no click
+    float StartDistance = 0.0f;        // between the first two fingers, when the second one landed (or the pair
+                                       // changed)
+    ImVec2 StartCenter;                // their middle, then
+    float ScaleBase = 1.0f;            // the scale reached when the pair last changed: the scale is
+                                       // ScaleBase * distance / StartDistance
     ImGuiTouchPinchGesture Gesture = ImGuiTouchPinchGesture_None;
-    float BaseScale = 1.0f;  // style.FontScaleMain when the pinch began
-    // A widget that claims two Fingers (ItemPinch, the adapters): the claims of one item, or of one rectangle, merge
+    float BaseScale = 1.0f;            // style.FontScaleMain when the pinch began
+    // A widget that claims two fingers (ItemPinch, the adapters): the claims of one item, or of one rectangle, merge
     struct PinchTaker
     {
         ImGuiID Id = 0;                // the item's (ItemPinch, RectPinch); 0 for the adapters on a rectangle
-        ImRect Rect;                   // its Visible part, on the screen
-        bool Data = false;             // ItemPinch(): the widget reads the Gesture
+        ImRect Rect;                   // its visible part, on the screen
+        bool Data = false;             // ItemPinch(): the widget reads the gesture
         bool Wheel = false;            // SetItemPinchAsWheel()
-        float WheelZoomFactor = 1.1f;  // the widget's zoom for one Wheel unit
+        float WheelZoomFactor = 1.1f;  // the widget's zoom for one wheel unit
         ImGuiTouchPinchDelivery Delivery = ImGuiTouchPinchDelivery_WheelContinuous;
         bool Pan = false;              // SetItemTwoFingerPanAsMouseDrag()
         ImGuiMouseButton PanButton = ImGuiMouseButton_Right;
     };
     ImVector<PinchTaker> Takers, PreviousTakers;  // the claims: this frame's, the last frame's
-    int FrameCount = -1;                          // the frame UpdateTouchPinch() ran: the Takers are noted then only
-    bool HasTaker = false;                        // the two Fingers landed on a Taker: the Gesture is its
+    int FrameCount = -1;               // the frame UpdateTouchPinch() ran: the takers are noted then only
+    bool HasTaker = false;             // the two fingers landed on a taker: the gesture is its
     PinchTaker Taker;
-    float NotchesSent = 0.0f;                      // the Wheel notches sent to the Taker during this pinch
-    // The Gesture's Data for its Taker (ItemPinch), at this frame; ended: the Taker's Id, for the frame after the lift
+    float NotchesSent = 0.0f;          // the wheel notches sent to the taker during this pinch
+    // The gesture's data for its taker (ItemPinch), at this frame; ended: the taker's id, for the frame after the lift
     ImGuiTouchPinch Data;
     float LastDistance = 0.0f;
     ImVec2 LastCenter;
@@ -125,7 +126,7 @@ struct ImGuiTouchCaretView
 {
     ImGuiID Window = 0;
     ImVec2 InContent = ImVec2(-1.0f, -1.0f);
-    ImVec2 Visible;  // the Visible area's top and bottom
+    ImVec2 Visible;  // the visible area's top and bottom
     int FramesLeft = 0;
 };
 
@@ -133,7 +134,7 @@ struct ImGuiTouchCaretView
 // reused at each frame (no allocation once they have grown)
 struct ImGuiTouchUrlZone
 {
-    ImRect Rect;    // the link's Visible part, in Dear ImGui's coordinates
+    ImRect Rect;    // the link's visible part, in Dear ImGui's coordinates
     int UrlOffset;  // its url, in ImGuiTouchBrowserState::UrlZoneUrls
 };
 
@@ -191,9 +192,9 @@ struct ImGuiTouchContext
 namespace ImGuiTouch
 {
     // The swipe: a finger that drags the content of a window scrolls it, with inertia; a tap still clicks, a short hold
-    // then a drag goes to the widget. On a touch screen, thinScrollbars makes the bars thin.
+    // then a drag goes to the widget. On a touch screen, thin_scrollbars makes the bars thin.
     // Right after ImGui::NewFrame(), before any widget.
-    void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bool thinScrollbars);
+    void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool long_press_is_right_click, bool thin_scrollbars);
 
     // A thin scroll bar held by a finger widens over the content (iOS): after the GUI, when this frame's scroll is
     // final
@@ -204,14 +205,14 @@ namespace ImGuiTouch
     void ApplyTouchOverscroll();
 
     // A second finger landed (a pinch): the layer lets go of its press (no swipe, no tap, no inertia) and keeps the
-    // widgets out of it until the fingers lift. even_awidget: a widget that holds the press (after a hold) loses it
+    // widgets out of it until the fingers lift. even_a_widget: a widget that holds the press (after a hold) loses it
     // too; else it keeps it, and this returns false.
-    bool TouchScrollLetGo(bool even_awidget);
+    bool TouchScrollLetGo(bool even_a_widget);
 
     // Two fingers that drag together, or a cancel: the layer releases its press for good, nothing parked, so that
-    // the widgets see the mouse. even_awidget: as above (the layer's own gestures take a widget's press; a widget that
+    // the widgets see the mouse. even_a_widget: as above (the layer's own gestures take a widget's press; a widget that
     // reads the pinch's data keeps its own). Returns false when a widget keeps its press.
-    bool TouchScrollRelease(bool even_awidget);
+    bool TouchScrollRelease(bool even_a_widget);
 
     // The pinch, right after ImGui::NewFrame(): two fingers that spread or close scale the font (style.FontScaleMain)
     // while they stay on the screen; two fingers that move together are a right drag. The swipe lets go of its press
@@ -231,7 +232,7 @@ namespace ImGuiTouch
     ImGuiTouchContext& CreateCurrentContextIfNeeded();
     // A widget that takes a finger's drags (SetItemTakesDrags, or Dear ImGui's draggable widgets
     // through ImGuiItemDragAxisCallback when the build has it); ImGuiAxis_None: all, at once
-    void AddDragTaker(const ImRect& item_rect, bool longPressIsRightClick, ImGuiAxis axis);
+    void AddDragTaker(const ImRect& item_rect, bool long_press_is_right_click, ImGuiAxis axis);
     // The content moves on its own this frame (the inertia, the bounce, an animation): IsAnimating() is true
     void RequestAnimation();
     void SetupKeepCaretInView(ImGuiContext* ctx);  // the caret kept above the keyboard (imgui_kit_touch_keyboard.cpp)

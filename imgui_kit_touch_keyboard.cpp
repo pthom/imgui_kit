@@ -26,13 +26,13 @@ static void KeepCaretInView(ImGuiContext& g, ImGuiTouchCaretView& view, bool key
         view = ImGuiTouchCaretView();
         return;
     }
-    ImVec2 inContent(ime.InputPos.x + window->Scroll.x, ime.InputPos.y + window->Scroll.y);
-    bool changed = window->ID != view.Window || inContent.x != view.InContent.x || inContent.y != view.InContent.y
+    ImVec2 in_content(ime.InputPos.x + window->Scroll.x, ime.InputPos.y + window->Scroll.y);
+    bool changed = window->ID != view.Window || in_content.x != view.InContent.x || in_content.y != view.InContent.y
                    || visible_top != view.Visible.x || visible_bottom != view.Visible.y;
     if (changed)
         view.FramesLeft = 3;  // the layout takes a frame or two to follow a new visible area
     view.Window = window->ID;
-    view.InContent = inContent;
+    view.InContent = in_content;
     view.Visible = ImVec2(visible_top, visible_bottom);
     if (view.FramesLeft == 0)
         return;

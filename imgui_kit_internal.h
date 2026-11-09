@@ -38,18 +38,18 @@ namespace ImGuiKit
 
 struct ImGuiKitWheelSessionState
 {
-    ImGuiContext* Context = nullptr;  // the state belongs to one Context: a new one starts afresh
-    int FrameCount = -1;              // (a new Context may reuse the address of a destroyed one: its frames restart)
+    ImGuiContext* Context = nullptr;  // the state belongs to one context: a new one starts afresh
+    int FrameCount = -1;            // (a new context may reuse the address of a destroyed one: its frames restart)
     bool Active = false;
-    bool StartedOnItem = false;     // the item under the mouse owned the Wheel at the first event: the item's session
+    bool StartedOnItem = false;     // the item under the mouse owned the wheel at the first event: the item's session
     ImGuiID ItemId = 0;             // that item
-    ImGuiWindow* Window = nullptr;  // the Window the session scrolls
-    bool Scrolled = false;          // the page Scrolled during the session (by ImGui, or by the session)
-    float Timer = 0.0f;              // s: the session ends when it runs out; each event adds its amount's worth
+    ImGuiWindow* Window = nullptr;  // the window the session scrolls
+    bool Scrolled = false;          // the page scrolled during the session (by ImGui, or by the session)
+    float Timer = 0.0f;             // s: the session ends when it runs out; each event adds its amount's worth
                                     // (ImGui's rule: a trackpad's small momentum events extend it by little)
-    ImVec2 RefMousePos;             // the mouse at the last Wheel event: a move past ImGui's drag threshold ends the
+    ImVec2 RefMousePos;             // the mouse at the last wheel event: a move past ImGui's drag threshold ends the
                                     // session
-    ImGuiID OwnerBeforeNewFrame = 0;  // the Wheel's owner as the widgets of the frame OwnerFrame Left it
+    ImGuiID OwnerBeforeNewFrame = 0;  // the wheel's owner as the widgets of the frame OwnerFrame left it
     int OwnerFrame = -1;
 };
 
@@ -80,7 +80,7 @@ struct ImGuiKitHidden
         ImGui::PopItemFlag();
         ImGui::PopStyleVar();
         ImGuiWindow* Window = ImGui::GetCurrentWindow();
-        // The Hidden items still take their height: keep the vertical extent, drop the horizontal one
+        // The hidden items still take their height: keep the vertical extent, drop the horizontal one
         Window->DC.CursorMaxPos.x = CursorMaxPos.x;
         Active = false;
     }
@@ -104,7 +104,7 @@ struct ImGuiKitColumn
 {
     ImGuiID Id;
     float Left;   // screen x, at BeginColumn()
-    float Width;  // on the previous frame, or ImGuiKitUnknown
+    float Width;  // on the previous frame, or IMGUI_KIT_UNKNOWN
 };
 
 struct ImGuiKitLabelColumn
@@ -112,8 +112,8 @@ struct ImGuiKitLabelColumn
     ImGuiID Id;
     float Left;           // screen x, at BeginLabelColumn()
     float AlignX;
-    float Column;         // the Widest label on the previous frame, or ImGuiKitUnknown
-    float Widest = 0.0f;  // the Widest label on this frame
+    float Column;         // the widest label on the previous frame, or IMGUI_KIT_UNKNOWN
+    float Widest = 0.0f;  // the widest label on this frame
     ImGuiKitHidden Hidden;
 };
 
@@ -137,7 +137,7 @@ enum ImGuiKitHelpMarkerShown { ImGuiKitHelpMarkerShown_Tooltip, ImGuiKitHelpMark
 struct ImGuiKitHelpMarkerOpen
 {
     ImGuiKitHelpMarkerShown Shown;
-    ImGuiStorage* Storage;  // the marker's Window: it keeps whether the tooltip's text was cut
+    ImGuiStorage* Storage;  // the marker's window: it keeps whether the tooltip's text was cut
     ImGuiID Cut_key;
 };
 

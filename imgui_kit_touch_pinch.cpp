@@ -109,14 +109,14 @@ static ImGuiTouchPinchState::PinchTaker* Claim(ImGuiID id, const ImRect& rect)
     return &s.Takers.back();
 }
 
-static void ClaimWheel(ImGuiID id, const ImRect& rect, float wheelZoomFactor, ImGuiTouchPinchDelivery delivery)
+static void ClaimWheel(ImGuiID id, const ImRect& rect, float wheel_zoom_factor, ImGuiTouchPinchDelivery delivery)
 {
-    IM_ASSERT(wheelZoomFactor > 0.0f && wheelZoomFactor != 1.0f && "a zoom per wheel unit, e.g. 1.1 for +10%");
+    IM_ASSERT(wheel_zoom_factor > 0.0f && wheel_zoom_factor != 1.0f && "a zoom per wheel unit, e.g. 1.1 for +10%");
     if (ImGuiTouchPinchState::PinchTaker* t = Claim(id, rect))
     {
         IM_ASSERT(!t->Data && "a widget gets the pinch's data (ItemPinch) or wheel events, not both");
         t->Wheel = true;
-        t->WheelZoomFactor = wheelZoomFactor;
+        t->WheelZoomFactor = wheel_zoom_factor;
         t->Delivery = delivery;
     }
 }
@@ -191,14 +191,15 @@ ImGuiTouchPinch RectPinch(ImGuiID id, const ImVec2& min, const ImVec2& max)
     return DataFor(id);
 }
 
-void SetItemPinchAsWheel(float wheelZoomFactor, ImGuiTouchPinchDelivery delivery)
+void SetItemPinchAsWheel(float wheel_zoom_factor, ImGuiTouchPinchDelivery delivery)
 {
-    ClaimWheel(GImGui->LastItemData.ID, GImGui->LastItemData.Rect, wheelZoomFactor, delivery);
+    ClaimWheel(GImGui->LastItemData.ID, GImGui->LastItemData.Rect, wheel_zoom_factor, delivery);
 }
 
-void SetRectPinchAsWheel(const ImVec2& min, const ImVec2& max, float wheelZoomFactor, ImGuiTouchPinchDelivery delivery)
+void SetRectPinchAsWheel(const ImVec2& min, const ImVec2& max, float wheel_zoom_factor,
+                         ImGuiTouchPinchDelivery delivery)
 {
-    ClaimWheel(0, ImRect(min, max), wheelZoomFactor, delivery);
+    ClaimWheel(0, ImRect(min, max), wheel_zoom_factor, delivery);
 }
 
 void SetItemTwoFingerPanAsMouseDrag(ImGuiMouseButton button)

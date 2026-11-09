@@ -334,7 +334,7 @@ static void ReplayPress(ImGuiIO& io, ImGuiTouchScrollState& s, bool finger_down)
 // or a pinch (the font size), would change them. The style's own values are kept, and put back when the bars
 // stop being thin; values that differ from the ones written last come from the app (a theme): they are its own.
 // The pointer in use decides too: a touch laptop driven by its mouse keeps the theme's bars, until a finger comes.
-static void UpdateThinScrollbars(ImGuiTouchScrollState& s, bool thinScrollbars)
+static void UpdateThinScrollbars(ImGuiTouchScrollState& s, bool thin_scrollbars)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
@@ -342,7 +342,7 @@ static void UpdateThinScrollbars(ImGuiTouchScrollState& s, bool thinScrollbars)
         s.MouseInUse = false;
     else if (ImGui::IsMousePosValid() && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f || io.MouseDown[0]))
         s.MouseInUse = true;
-    s.ThinScrollbars = thinScrollbars && (io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) && !s.MouseInUse;
+    s.ThinScrollbars = thin_scrollbars && (io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) && !s.MouseInUse;
     const bool style_changed = s.BarsWritten && (g.Style.ScrollbarSize != s.WrittenBarSize
                                                 || g.Style.ScrollbarRounding != s.WrittenBarRounding);
     if (s.ThinScrollbars)
@@ -371,7 +371,7 @@ static void UpdateThinScrollbars(ImGuiTouchScrollState& s, bool thinScrollbars)
 
 // A press: one replayed by the layer goes to the widgets; a real one stops the inertia and is claimed when it
 // lands on the content of a window, or on its scroll bars with a finger (not its title bar, nor its borders)
-static void OnPress(ImGuiTouchScrollState& s, ImGuiID id, bool longPressIsRightClick)
+static void OnPress(ImGuiTouchScrollState& s, ImGuiID id, bool long_press_is_right_click)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
@@ -388,7 +388,7 @@ static void OnPress(ImGuiTouchScrollState& s, ImGuiID id, bool longPressIsRightC
         ImGuiWindow* w = g.HoveredWindow;
         const ImGuiTouchScrollState::DragTaker* taker =
             (w != nullptr && ImGui::IsMousePosValid()) ? FindDragTaker(s, w, io.MousePos) : nullptr;
-        s.WatchingLongPress = longPressIsRightClick && ImGui::IsMousePosValid()
+        s.WatchingLongPress = long_press_is_right_click && ImGui::IsMousePosValid()
                               && (taker == nullptr || taker->LongPressIsRightClick);
         bool touch = (io.MouseSource == ImGuiMouseSource_TouchScreen);
         // A widget that takes all the drags gets the press at once; one that takes them along an axis gets it
@@ -432,7 +432,7 @@ static void OnRelease(ImGuiTouchScrollState& s)
 
 // The long press: a finger still since its press (the layer let the widget have it at the hold), for half a
 // second, arms a right click, fired when it lifts. The release of a replayed handover is not a lift
-// (replayedPresses tells).
+// (ReplayedPresses tells).
 static void WatchLongPress(ImGuiTouchScrollState& s, ImGuiID id)
 {
     ImGuiContext& g = *GImGui;
@@ -564,7 +564,7 @@ static void Bounce(ImGuiTouchScrollState& s, float dt)
 // [SECTION] UpdateTouchScroll
 //-----------------------------------------------------------------------------
 
-void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bool thinScrollbars)
+void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool long_press_is_right_click, bool thin_scrollbars)
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
@@ -578,7 +578,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     const ImGuiID id = SentinelId();
     s.PreviousTakers.swap(s.Takers);
     s.Takers.resize(0);
-    UpdateThinScrollbars(s, thinScrollbars);
+    UpdateThinScrollbars(s, thin_scrollbars);
 
     bool enabled = (mode == ImGuiTouchScrollMode_Always)
                    || (mode == ImGuiTouchScrollMode_Auto && io.MouseSource == ImGuiMouseSource_TouchScreen);
@@ -595,7 +595,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     const float dt = (io.DeltaTime > 0.0f) ? io.DeltaTime : 1.0f / 60.0f;
 
     // The phases, in the order the gesture goes through them in a frame; each one knows whether it applies
-    OnPress(s, id, longPressIsRightClick);
+    OnPress(s, id, long_press_is_right_click);
     if (s.Owning && g.ActiveId != id)  // a widget took the press itself
         EndPress(s);
     OnRelease(s);
@@ -806,7 +806,7 @@ void DrawTouchScrollbarGrab()
 
 // The widget just drawn: its visible part, noted for the press of the next frame. Nothing when the layer did not run
 // this frame (ImGuiTouch::Setup() not called): the notes would pile up, never read.
-void AddDragTaker(const ImRect& item_rect, bool longPressIsRightClick, ImGuiAxis axis)
+void AddDragTaker(const ImRect& item_rect, bool long_press_is_right_click, ImGuiAxis axis)
 {
     ImGuiContext& g = *GImGui;
     ImGuiTouchContext* touch = FindTouchContext();  // none without the touch layer: the widget just draws
@@ -820,16 +820,16 @@ void AddDragTaker(const ImRect& item_rect, bool longPressIsRightClick, ImGuiAxis
     rect.ClipWith(window->ClipRect);
     if (rect.GetWidth() > 0.0f && rect.GetHeight() > 0.0f)
     {
-        ImGuiTouchScrollState::DragTaker taker = {window->ID, rect, longPressIsRightClick, axis};
+        ImGuiTouchScrollState::DragTaker taker = {window->ID, rect, long_press_is_right_click, axis};
         s.Takers.push_back(taker);
     }
 }
 
-void SetItemTakesDrags(ImGuiTouchAxis axis, bool longPressIsRightClick)
+void SetItemTakesDrags(ImGuiTouchAxis axis, bool long_press_is_right_click)
 {
     const ImGuiAxis along =
         (axis == ImGuiTouchAxis_X) ? ImGuiAxis_X : (axis == ImGuiTouchAxis_Y) ? ImGuiAxis_Y : ImGuiAxis_None;
-    AddDragTaker(GImGui->LastItemData.Rect, longPressIsRightClick, along);
+    AddDragTaker(GImGui->LastItemData.Rect, long_press_is_right_click, along);
 }
 
 }  // namespace ImGuiTouch
