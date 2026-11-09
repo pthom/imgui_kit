@@ -98,7 +98,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
   - `ImGuiTouch::ItemPinch()` returns the gesture at each frame (`ImGuiTouchPinch`: its center, its spread and its move since the last frame, its start and end). A canvas or a map applies the zoom and the pan at once, as on a phone. `RectPinch()` for a rectangle.
   - `ImGuiTouch::SetItemPinchAsWheel(wheel_zoom_factor)`: for a widget that zooms with the wheel (an image viewer, ImPlot), the pinch becomes wheel events at the fingers' center (`ImGuiTouchPinchDelivery_WheelNotches` for a widget that reads only the wheel's sign).
   - `ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(button)`: two fingers moved together drag it with that button (a plot pans with the left one). It combines with the wheel. The `SetRect...` variants take a rectangle (an ImPlot plot).
-- *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, phase)` for each one (began, moved, ended, cancelled), for the pinch and so that a touch the system takes over ends without a click: see the [iOS example](examples/ios_touch_demo/main.mm).
+- *The fingers*: the browser setup reports them. Another backend calls `ImGuiTouch::AddFingerEvent(id, pos, phase)` for each one (began, moved, ended, cancelled), for the pinch and so that a touch the system takes over ends without a click: see the [SDL3 example](examples/sdl3_touch_demo/main.cpp) (a dozen lines) and the [iOS example](examples/ios_touch_demo/main.mm) (UIKit's touches).
 - *Links, in a browser*: `ImGuiTouch::SetItemOpensUrl(url)` after a link's item: the page opens it in a new tab from the tap's or the click's own handler, in every browser (WebKit allows no new tab from the frame loop, where Dear ImGui sees the click). It returns true when the page takes the link; the caller then does nothing on the click.
 - *The keyboard*: `ImGuiTouch::GetKeyboardInsets()` tells how much of the screen it covers, so that a full-screen window keeps out of it. A native app sets them (`SetKeyboardInsets()`); the browser setup does it.
 - *Idling*: an app that sleeps between events keeps drawing while `ImGuiKit::IsAnimating()` is true: the touch layer's motion (a fling coasts, a ring grows; `ImGuiTouch::IsAnimating()` alone) and the kit's widgets' (a segmented switch slides). A widget of yours that animates calls `ImGuiKit::RequestAnimation()`.
@@ -146,7 +146,7 @@ Hello ImGui (and Dear ImGui Bundle): in a browser, its runners call both Emscrip
 
 How it works: a touch press is held back until it is known to be a tap or a drag. A tap is then replayed to the widgets; a drag scrolls. So no widget needs to change. The cost per frame is too small to measure, with no allocation. The state lives in the Dear ImGui context (one per context), and the code reads Dear ImGui's internals (`imgui_internal.h`).
 
-The examples (`-DIMGUI_KIT_BUILD_EXAMPLES=ON`): `examples/touch_demo` (GLFW, desktop and web, published at https://pthom.github.io/imgui_kit/) and `examples/ios_touch_demo` (Metal, an iOS app).
+The examples (`-DIMGUI_KIT_BUILD_EXAMPLES=ON`): `examples/touch_demo` (GLFW, desktop and web, published at https://pthom.github.io/imgui_kit/), `examples/ios_touch_demo` (Metal, an iOS app with its own touch code) and, with `-DIMGUI_KIT_BUILD_SDL3_EXAMPLE=ON`, `examples/sdl3_touch_demo` (stock Dear ImGui on SDL3 with its renderer, the fingers from SDL: the desktop and iOS from one CMake; SDL3 is fetched and built).
 
 ## In Python
 

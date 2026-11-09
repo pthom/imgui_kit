@@ -12,6 +12,13 @@ option(IMGUI_KIT_BUILD_TESTS "Build the tests (Dear ImGui's null backend, doctes
 option(IMGUI_KIT_BUILD_EXAMPLES "Build the examples (the touch demo: GLFW + OpenGL3, desktop or Emscripten)" OFF)
 option(IMGUI_KIT_BUILD_TEST_ENGINE_TESTS "Build the tests driven by Dear ImGui's Test Engine (headless, and visible)" OFF)
 option(IMGUI_KIT_INSTALL "Install the library, its header and its CMake package (find_package(imgui_kit))" ${PROJECT_IS_TOP_LEVEL})
+option(IMGUI_KIT_BUILD_SDL3_EXAMPLE "With the examples: the SDL3 touch demo too (desktop and iOS; SDL3 is fetched and built)" OFF)
+if (IMGUI_KIT_BUILD_SDL3_EXAMPLE AND NOT EMSCRIPTEN)
+    enable_language(C)  # SDL3 is C, and Objective-C on Apple's platforms: enabled before any target
+    if (APPLE)
+        enable_language(OBJC)
+    endif()
+endif()
 
 set(CMAKE_CXX_STANDARD 11)  # as Dear ImGui
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -98,6 +105,9 @@ if (IMGUI_KIT_BUILD_EXAMPLES)
         add_subdirectory(examples/ios_touch_demo)
     else()
         add_subdirectory(examples/touch_demo)
+    endif()
+    if (IMGUI_KIT_BUILD_SDL3_EXAMPLE AND NOT EMSCRIPTEN)
+        add_subdirectory(examples/sdl3_touch_demo)
     endif()
 endif()
 
