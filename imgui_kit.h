@@ -226,8 +226,8 @@ IMGUI_API bool   SegmentedSwitch(const char* str_id, int* current, const std::ve
 #endif
 
 // Fit text: the text, cut at a word and ended with an ellipsis, so that it takes at most max_lines once wrapped at
-// wrap_width (in the current font). Returns the text itself when it fits; else a buffer of the kit, valid until the
-// next call (copy it to keep two results).
+// wrap_width (in the current font). Returns the text itself when it fits; else a buffer of the kit, valid for this
+// frame (a small cache: the cut is computed once per text and width, not at each frame; copy it to keep it).
 //
 //     ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + width);
 //     ImGui::TextUnformatted(ImGuiKit::FitText(summary, width, 2));   // two lines at most, then "..."

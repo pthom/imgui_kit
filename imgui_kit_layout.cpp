@@ -31,7 +31,7 @@ namespace ImGuiKit
 // and a seed per helper: the bare ID would be Dear ImGui's own key for an item with that label (a tree node's open
 // state), and two helpers with one str_id would share a value.
 // A value never measured reads as IMGUI_KIT_UNKNOWN: the helper then draws hidden on that frame (Alpha = 0, no input)
-// and// keeps its overflow out of the window's content size, so that a first frame neither flashes nor adds a scrollbar.
+// and keeps its overflow out of the window's content size, so that a first frame neither flashes nor adds a scrollbar.
 // Their Begin/End stacks are in ImGuiKitContext, one per Dear ImGui context (imgui_kit_internal.h).
 
 static ImGuiID StorageKey(const char* str_id, ImGuiID helper_seed)
@@ -62,7 +62,8 @@ static ImGuiID FlowItemKey(const ImGuiKitFlow& flow, int index)
 
 bool IsInFillRowTail()
 {
-    return !GetCurrentContext().FillRows.empty() && GetCurrentContext().FillRows.back().tailStarted;
+    ImGuiKitContext& kit = GetCurrentContext();
+    return !kit.FillRows.empty() && kit.FillRows.back().tailStarted;
 }
 
 //-----------------------------------------------------------------------------
@@ -82,8 +83,9 @@ float BeginFillRow(const char* str_id)
 
 void FillRowTail()
 {
-    IM_ASSERT(!GetCurrentContext().FillRows.empty() && "FillRowTail() needs BeginFillRow()");
-    ImGuiKitFillRow& row = GetCurrentContext().FillRows.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.FillRows.empty() && "FillRowTail() needs BeginFillRow()");
+    ImGuiKitFillRow& row = kit.FillRows.back();
     IM_ASSERT(!row.tailStarted && "FillRowTail() called twice");
     row.fillRight = ImGui::GetItemRectMax().x;
     row.tailStarted = true;
@@ -94,13 +96,14 @@ void FillRowTail()
 
 void EndFillRow()
 {
-    IM_ASSERT(!GetCurrentContext().FillRows.empty() && "EndFillRow() without BeginFillRow()");
-    ImGuiKitFillRow& row = GetCurrentContext().FillRows.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.FillRows.empty() && "EndFillRow() without BeginFillRow()");
+    ImGuiKitFillRow& row = kit.FillRows.back();
     // The tail's width: from the fill item's right edge to the tail's last item, the spacing included
     float tail = row.tailStarted ? ImMax(0.0f, ImGui::GetItemRectMax().x - row.fillRight) : 0.0f;
     StoreFloat(row.id, tail);
     row.hidden.End();
-    GetCurrentContext().FillRows.pop_back();
+    kit.FillRows.pop_back();
 }
 
 //-----------------------------------------------------------------------------
@@ -109,14 +112,15 @@ void EndFillRow()
 
 void BeginAlignedGroup(const char* str_id, float align_x)
 {
+    ImGuiKitContext& kit = GetCurrentContext();
     ImGuiKitAlignedGroup group;
     group.id = StorageKey(str_id, ALIGNED_GROUP_SEED);
     float width = StoredFloat(group.id);
     // The room to align in: up to the innermost column's right edge, else up to the line's end
     float room = ImGui::GetContentRegionAvail().x;
-    if (!GetCurrentContext().Columns.empty())
+    if (!kit.Columns.empty())
     {
-        const ImGuiKitColumn& column = GetCurrentContext().Columns.back();
+        const ImGuiKitColumn& column = kit.Columns.back();
         room = (column.width == IMGUI_KIT_UNKNOWN)
                    ? IMGUI_KIT_UNKNOWN : column.left + column.width - ImGui::GetCursorScreenPos().x;
     }
@@ -130,18 +134,19 @@ void BeginAlignedGroup(const char* str_id, float align_x)
         if (offset > 0.0f)
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
     }
-    GetCurrentContext().AlignedGroups.push_back(group);
+    kit.AlignedGroups.push_back(group);
     ImGui::BeginGroup();
 }
 
 void EndAlignedGroup()
 {
-    IM_ASSERT(!GetCurrentContext().AlignedGroups.empty() && "EndAlignedGroup() without BeginAlignedGroup()");
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.AlignedGroups.empty() && "EndAlignedGroup() without BeginAlignedGroup()");
     ImGui::EndGroup();
-    ImGuiKitAlignedGroup& group = GetCurrentContext().AlignedGroups.back();
+    ImGuiKitAlignedGroup& group = kit.AlignedGroups.back();
     StoreFloat(group.id, ImGui::GetItemRectSize().x);
     group.hidden.End();
-    GetCurrentContext().AlignedGroups.pop_back();
+    kit.AlignedGroups.pop_back();
 }
 
 //-----------------------------------------------------------------------------
@@ -160,10 +165,11 @@ void BeginColumn(const char* str_id)
 
 void EndColumn()
 {
-    IM_ASSERT(!GetCurrentContext().Columns.empty() && "EndColumn() without BeginColumn()");
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.Columns.empty() && "EndColumn() without BeginColumn()");
     ImGui::EndGroup();
-    StoreFloat(GetCurrentContext().Columns.back().id, ImGui::GetItemRectSize().x);
-    GetCurrentContext().Columns.pop_back();
+    StoreFloat(kit.Columns.back().id, ImGui::GetItemRectSize().x);
+    kit.Columns.pop_back();
 }
 
 //-----------------------------------------------------------------------------
@@ -172,20 +178,22 @@ void EndColumn()
 
 void BeginLabelColumn(const char* str_id, float labels_align_x)
 {
+    ImGuiKitContext& kit = GetCurrentContext();
     ImGuiKitLabelColumn lc;
     lc.id = StorageKey(str_id, LABEL_COLUMN_SEED);
     lc.left = ImGui::GetCursorScreenPos().x;
     lc.alignX = labels_align_x;
     lc.column = StoredFloat(lc.id);
-    GetCurrentContext().LabelColumns.push_back(lc);
+    kit.LabelColumns.push_back(lc);
     if (lc.column == IMGUI_KIT_UNKNOWN)
-        GetCurrentContext().LabelColumns.back().hidden.Begin();
+        kit.LabelColumns.back().hidden.Begin();
 }
 
 void Label(const char* text)
 {
-    IM_ASSERT(!GetCurrentContext().LabelColumns.empty() && "Label() needs BeginLabelColumn()");
-    ImGuiKitLabelColumn& lc = GetCurrentContext().LabelColumns.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.LabelColumns.empty() && "Label() needs BeginLabelColumn()");
+    ImGuiKitLabelColumn& lc = kit.LabelColumns.back();
     const char* text_end = ImGui::FindRenderedTextEnd(text);
     float width = ImGui::CalcTextSize(text, text_end).x;
     lc.widest = ImMax(lc.widest, width);
@@ -203,11 +211,12 @@ void Label(const char* text)
 
 void EndLabelColumn()
 {
-    IM_ASSERT(!GetCurrentContext().LabelColumns.empty() && "EndLabelColumn() without BeginLabelColumn()");
-    ImGuiKitLabelColumn& lc = GetCurrentContext().LabelColumns.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.LabelColumns.empty() && "EndLabelColumn() without BeginLabelColumn()");
+    ImGuiKitLabelColumn& lc = kit.LabelColumns.back();
     StoreFloat(lc.id, lc.widest);
     lc.hidden.End();
-    GetCurrentContext().LabelColumns.pop_back();
+    kit.LabelColumns.pop_back();
 }
 
 //-----------------------------------------------------------------------------
@@ -241,10 +250,11 @@ void BeginGroupPanel(const char* label, const ImVec2& size)
 
 void EndGroupPanel()
 {
-    IM_ASSERT(!GetCurrentContext().GroupPanels.empty() && "EndGroupPanel() without BeginGroupPanel()");
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.GroupPanels.empty() && "EndGroupPanel() without BeginGroupPanel()");
     const ImGuiStyle& style = ImGui::GetStyle();
-    ImGuiKitGroupPanel panel = GetCurrentContext().GroupPanels.back();
-    GetCurrentContext().GroupPanels.pop_back();
+    ImGuiKitGroupPanel panel = kit.GroupPanels.back();
+    kit.GroupPanels.pop_back();
     ImGui::EndGroup();  // the content
     ImVec2 content_max = ImGui::GetItemRectMax();
 
@@ -289,8 +299,9 @@ void BeginFlow(const char* str_id)
 
 void FlowNext()
 {
-    IM_ASSERT(!GetCurrentContext().Flows.empty() && "FlowNext() needs BeginFlow()");
-    ImGuiKitFlow& flow = GetCurrentContext().Flows.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.Flows.empty() && "FlowNext() needs BeginFlow()");
+    ImGuiKitFlow& flow = kit.Flows.back();
     if (flow.index > 0)
     {
         // The previous item is drawn: keep its width, and decide where the next one goes
@@ -306,13 +317,14 @@ void FlowNext()
 
 void EndFlow()
 {
-    IM_ASSERT(!GetCurrentContext().Flows.empty() && "EndFlow() without BeginFlow()");
-    ImGuiKitFlow& flow = GetCurrentContext().Flows.back();
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.Flows.empty() && "EndFlow() without BeginFlow()");
+    ImGuiKitFlow& flow = kit.Flows.back();
     if (flow.index > 0)
         StoreFloat(FlowItemKey(flow, flow.index - 1), ImGui::GetItemRectSize().x);
     StoreFloat(flow.id, (float)flow.index);  // the flow was drawn (its items' count)
     flow.hidden.End();
-    GetCurrentContext().Flows.pop_back();
+    kit.Flows.pop_back();
 }
 
 } // namespace ImGuiKit

@@ -167,19 +167,19 @@ static void DrawSwitchSegment(ImDrawList* draw_list, const ImRect& bb, int label
 constexpr float HELP_WIDTH_EM = 35.0f;      // the default width of a help's text, as Dear ImGui's demo wraps it
 constexpr float HELP_MAX_HEIGHT = 0.6f;     // a help's window, at most this fraction of the screen's height
 
-// The help window's size, before it begins. Its width: the asked one, else the text's on one line up to 35 em, else
-// none (the content sizes it); never wider than the screen. Its height: at most 60% of the screen (a popup then
-// scrolls, a tooltip shows its beginning). A content that wraps to its window's width (Markdown) needs a width:
-// an auto-sized window offers it none. Returns the width set, or 0.
-static float SetNextHelpWindowSize(float width, float text_width)
+// The help window's size, before it begins. Its width: the asked one, else the text's on one line up to 35 em (the
+// text is measured here, only when the window opens), else none (the content sizes it); never wider than the screen.
+// Its height: at most 60% of the screen (a popup then scrolls, a tooltip shows its beginning). A content that wraps
+// to its window's width (Markdown) needs a width: an auto-sized window offers it none. Returns the width set, or 0.
+static float SetNextHelpWindowSize(float width, const char* text)
 {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     float em = ImGui::GetFontSize();
     float w = 0.0f;
     if (width > 0.0f)
         w = width;
-    else if (text_width > 0.0f)
-        w = ImMin(text_width + ImGui::GetStyle().WindowPadding.x * 2.0f, em * HELP_WIDTH_EM);
+    else if (text != nullptr)
+        w = ImMin(ImGui::CalcTextSize(text).x + ImGui::GetStyle().WindowPadding.x * 2.0f, em * HELP_WIDTH_EM);
     if (w > 0.0f)
         w = ImMin(w, viewport->WorkSize.x - em * 2.0f);
     ImGui::SetNextWindowSizeConstraints(ImVec2(w, 0.0f),
@@ -193,8 +193,10 @@ static void PushHelpTextWrapPos(float window_width)
     ImGui::PushTextWrapPos(window_width > 0.0f ? 0.0f : ImGui::GetFontSize() * HELP_WIDTH_EM);
 }
 
-static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
+// text: HelpMarker()'s, which sizes the window when it opens; null for BeginHelpMarker()
+static bool BeginHelpMarkerEx(const char* str_id, float width, const char* text)
 {
+    ImGuiKitContext& kit = GetCurrentContext();
     ImVec2 size = HelpMarkerSize();
     NewLineIfNoRoom(size.x);
     ImGui::PushID(str_id);
@@ -208,11 +210,11 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
         ImGui::OpenPopup("##help_popup");
     if (ImGui::IsPopupOpen("##help_popup"))
     {
-        float window_width = SetNextHelpWindowSize(width, text_width);
+        float window_width = SetNextHelpWindowSize(width, text);
         if (ImGui::BeginPopup("##help_popup"))
         {
             ImGuiKitHelpMarkerOpen open = { ImGuiKitHelpMarkerShown_Popup, nullptr, 0 };
-            GetCurrentContext().HelpMarkersShown.push_back(open);
+            kit.HelpMarkersShown.push_back(open);
             PushHelpTextWrapPos(window_width);
             return true;
         }
@@ -226,10 +228,10 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
         ImGuiKitHelpMarkerOpen open{ImGuiKitHelpMarkerShown_Tooltip, ImGui::GetStateStorage(),
                             ImGui::GetID("##help_tooltip_cut")};
         bool was_cut = open.storage->GetBool(open.cut_key, false);
-        float window_width = SetNextHelpWindowSize(width, text_width);
+        float window_width = SetNextHelpWindowSize(width, text);
         if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_None, ImGuiWindowFlags_NoScrollbar))
         {
-            GetCurrentContext().HelpMarkersShown.push_back(open);
+            kit.HelpMarkersShown.push_back(open);
             if (was_cut)
             {
                 ImGui::TextDisabled("Click the (i) to read all");
@@ -245,15 +247,16 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
 
 bool BeginHelpMarker(const char* str_id, float width_em)
 {
-    return BeginHelpMarkerEx(str_id, width_em * ImGui::GetFontSize(), 0.0f);
+    return BeginHelpMarkerEx(str_id, width_em * ImGui::GetFontSize(), nullptr);
 }
 
 void EndHelpMarker()
 {
-    IM_ASSERT(!GetCurrentContext().HelpMarkersShown.empty()
+    ImGuiKitContext& kit = GetCurrentContext();
+    IM_ASSERT(!kit.HelpMarkersShown.empty()
               && "EndHelpMarker() without a BeginHelpMarker() that returned true");
     ImGui::PopTextWrapPos();
-    const ImGuiKitHelpMarkerOpen& open = GetCurrentContext().HelpMarkersShown.back();
+    const ImGuiKitHelpMarkerOpen& open = kit.HelpMarkersShown.back();
     if (open.shown == ImGuiKitHelpMarkerShown_Popup)
         ImGui::EndPopup();
     else
@@ -261,13 +264,13 @@ void EndHelpMarker()
         open.storage->SetBool(open.cut_key, ImGui::GetCurrentWindow()->ScrollMax.y > 0.0f);
         ImGui::EndTooltip();
     }
-    GetCurrentContext().HelpMarkersShown.pop_back();
+    kit.HelpMarkersShown.pop_back();
     ImGui::PopID();
 }
 
 void HelpMarker(const char* text, float width_em)
 {
-    if (BeginHelpMarkerEx(text, width_em * ImGui::GetFontSize(), ImGui::CalcTextSize(text).x))
+    if (BeginHelpMarkerEx(text, width_em * ImGui::GetFontSize(), text))
     {
         HelpMarkerTextRenderer renderer = GetCurrentContext().HelpMarkerRenderer;
         (renderer ? renderer : DefaultHelpMarkerTextRenderer)(text);
@@ -420,10 +423,17 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
 #ifdef IMGUI_KIT_USE_STL
 bool SegmentedSwitch(const char* str_id, int* current, const std::vector<std::string>& labels)
 {
-    ImVector<const char*> c_labels;
-    for (const std::string& label : labels)
-        c_labels.push_back(label.c_str());
-    return SegmentedSwitch(str_id, current, c_labels.Data, c_labels.Size);
+    const char* stack_labels[16];  // no allocation for the usual counts
+    ImVector<const char*> heap_labels;
+    const char** c_labels = stack_labels;
+    if (labels.size() > IM_ARRAYSIZE(stack_labels))
+    {
+        heap_labels.resize((int)labels.size());
+        c_labels = heap_labels.Data;
+    }
+    for (int i = 0; i < (int)labels.size(); i++)
+        c_labels[i] = labels[(size_t)i].c_str();
+    return SegmentedSwitch(str_id, current, c_labels, (int)labels.size());
 }
 #endif
 
@@ -431,16 +441,34 @@ bool SegmentedSwitch(const char* str_id, int* current, const std::vector<std::st
 // [SECTION] Fit text
 //-----------------------------------------------------------------------------
 
+// The cut is computed once per text (the key: the text, the width, the lines, the font size), and kept in a small
+// cache: a list of cards with cut summaries measures nothing at the frames that follow
 const char* FitText(const char* text, float wrap_width, int max_lines)
 {
-    const float max_height = (float)max_lines * ImGui::GetTextLineHeight() + 1.0f;
-    if (ImGui::CalcTextSize(text, nullptr, false, wrap_width).y <= max_height)
-        return text;
-    // The result is never longer than the text and the ellipsis: the buffer grows to that, and never truncates
-    ImVector<char>& buffer = GetCurrentContext().FitTextBuffer;
-    const char* ellipsis = "\xE2\x80\xA6";  // U+2026, 3 bytes
     const int len = (int)strlen(text);
+    ImGuiKitContext& kit = GetCurrentContext();
+    struct { float wrap_width; int max_lines; float font_size; } key_data;
+    key_data.wrap_width = wrap_width;
+    key_data.max_lines = max_lines;
+    key_data.font_size = ImGui::GetFontSize();
+    const ImGuiID key = ImHashData(&key_data, sizeof(key_data), ImHashData(text, (size_t)len));
+    for (ImGuiKitFitTextEntry& entry : kit.FitTextCache)
+        if (entry.Key == key && entry.Key != 0)
+            return entry.Text.empty() ? text : entry.Text.Data;  // an empty entry: the text fits, as it is
+
+    const float max_height = (float)max_lines * ImGui::GetTextLineHeight() + 1.0f;
+    ImGuiKitFitTextEntry& entry = kit.FitTextCache[kit.FitTextNext];
+    kit.FitTextNext = (kit.FitTextNext + 1) % IM_ARRAYSIZE(kit.FitTextCache);
+    entry.Key = key;
+    ImVector<char>& buffer = entry.Text;
+    if (ImGui::CalcTextSize(text, nullptr, false, wrap_width).y <= max_height)
+    {
+        buffer.resize(0);  // it fits: the text itself, and the next frames skip the measure
+        return text;
+    }
+    // The result is never longer than the text and the ellipsis: the buffer grows to that, and never truncates
     buffer.resize(len + 4);
+    const char* ellipsis = "\xE2\x80\xA6";  // U+2026, 3 bytes
     // Words leave from the end, until the rest and the ellipsis fit; a word that is alone and too long (a URL, a
     // path) loses characters instead
     int end = len;

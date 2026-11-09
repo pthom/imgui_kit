@@ -141,6 +141,13 @@ struct ImGuiKitHelpMarkerOpen
     ImGuiID cut_key;
 };
 
+// A result of FitText(): the cut text, under the key of (text, wrap width, max lines, font size)
+struct ImGuiKitFitTextEntry
+{
+    ImGuiID Key = 0;
+    ImVector<char> Text;
+};
+
 struct ImGuiKitContext
 {
     ImVector<ImGuiKitFillRow> FillRows;
@@ -150,7 +157,8 @@ struct ImGuiKitContext
     ImVector<ImGuiKitGroupPanel> GroupPanels;
     ImVector<ImGuiKitFlow> Flows;
     ImVector<ImGuiKitHelpMarkerOpen> HelpMarkersShown;  // what each open BeginHelpMarker() shows, for EndHelpMarker()
-    ImVector<char> FitTextBuffer;                       // FitText()'s result, when the text was cut
+    ImGuiKitFitTextEntry FitTextCache[8];               // FitText()'s last results (a text that does not fit is cut
+    int FitTextNext = 0;                                // once, not at each frame); the next entry to reuse
     bool WheelSessionEnabled = true;                    // SetupWheelSession(enabled)
     ImGuiKitWheelSessionState WheelSession;
     int AnimationFrame = -1;                            // the last frame a widget asked to animate (RequestAnimation)
