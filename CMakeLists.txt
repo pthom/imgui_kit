@@ -40,6 +40,18 @@ if (NOT TARGET ${IMGUI_KIT_IMGUI_TARGET})
     set(IMGUI_KIT_BUILT_IMGUI ON)
 endif()
 
+if (PROJECT_IS_TOP_LEVEL)
+    # The page's script (imgui_kit_emscripten_keyboard.js) is copied into its .cpp by tools/embed_js.py, which writes
+    # the file's sha1 in the marker line: a stale copy stops a developer's build here, not in the CI
+    file(SHA1 ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit_emscripten_keyboard.js IMGUI_KIT_KEYBOARD_JS_SHA1)
+    file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit_emscripten_keyboard.cpp IMGUI_KIT_KEYBOARD_JS_MARKER
+         REGEX "<embedded file=\"imgui_kit_emscripten_keyboard.js\" sha1=\"")
+    if (NOT IMGUI_KIT_KEYBOARD_JS_MARKER MATCHES "sha1=\"${IMGUI_KIT_KEYBOARD_JS_SHA1}\"")
+        message(FATAL_ERROR "imgui_kit_emscripten_keyboard.cpp holds a stale copy of imgui_kit_emscripten_keyboard.js: "
+                            "run tools/embed_js.py (edit the .js, never the copy)")
+    endif()
+endif()
+
 file(GLOB IMGUI_KIT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit*.cpp)  # imgui_kit.cpp, imgui_kit_layout.cpp...
 add_library(imgui_kit STATIC ${IMGUI_KIT_SOURCES})
 add_library(imgui_kit::imgui_kit ALIAS imgui_kit)
