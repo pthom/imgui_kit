@@ -69,7 +69,8 @@ void DrawHelpIcon(ImDrawList* draw_list, const ImRect& bb, ImU32 color)
     draw_list->AddCircle(c, r, color, 0, thickness);
     draw_list->AddCircleFilled(ImVec2(c.x, c.y - r * 0.45f), r * 0.13f, color);
     float half_w = r * 0.11f;
-    draw_list->AddRectFilled(ImVec2(c.x - half_w, c.y - r * 0.12f), ImVec2(c.x + half_w, c.y + r * 0.55f), color, half_w);
+    draw_list->AddRectFilled(ImVec2(c.x - half_w, c.y - r * 0.12f), ImVec2(c.x + half_w, c.y + r * 0.55f), color,
+                             half_w);
 }
 
 //-----------------------------------------------------------------------------
@@ -87,15 +88,19 @@ void DrawMagnifier(ImDrawList* draw_list, ImVec2 center, float size, ImU32 color
                        ImVec2(glass.x - r * 1.85f * d, glass.y + r * 1.85f * d), color, size * 0.1f);
     float half = r * 0.5f, t = size * 0.05f;
     if (icon == ImGuiKitIcon_ZoomIn || icon == ImGuiKitIcon_ZoomOut)
-        draw_list->AddRectFilled(ImVec2(glass.x - half, glass.y - t * 0.5f), ImVec2(glass.x + half, glass.y + t * 0.5f), color);
+        draw_list->AddRectFilled(ImVec2(glass.x - half, glass.y - t * 0.5f), ImVec2(glass.x + half, glass.y + t * 0.5f),
+                                 color);
     if (icon == ImGuiKitIcon_ZoomIn)
-        draw_list->AddRectFilled(ImVec2(glass.x - t * 0.5f, glass.y - half), ImVec2(glass.x + t * 0.5f, glass.y + half), color);
+        draw_list->AddRectFilled(ImVec2(glass.x - t * 0.5f, glass.y - half), ImVec2(glass.x + t * 0.5f, glass.y + half),
+                                 color);
     if (icon == ImGuiKitIcon_ZoomOneToOne)
     {
         // A "1": a stroke and its serif
         float h = r * 0.45f;
-        draw_list->AddRectFilled(ImVec2(glass.x - t * 0.5f, glass.y - h), ImVec2(glass.x + t * 0.5f, glass.y + h), color);
-        draw_list->AddLine(ImVec2(glass.x, glass.y - h), ImVec2(glass.x - r * 0.18f, glass.y - h + r * 0.18f), color, t);
+        draw_list->AddRectFilled(ImVec2(glass.x - t * 0.5f, glass.y - h), ImVec2(glass.x + t * 0.5f, glass.y + h),
+                                 color);
+        draw_list->AddLine(ImVec2(glass.x, glass.y - h), ImVec2(glass.x - r * 0.18f, glass.y - h + r * 0.18f), color,
+                           t);
     }
 }
 
@@ -163,7 +168,8 @@ static float SetNextHelpWindowSize(float width, float text_width)
         w = ImMin(text_width + ImGui::GetStyle().WindowPadding.x * 2.0f, em * kHelpWidthEm);
     if (w > 0.0f)
         w = ImMin(w, viewport->WorkSize.x - em * 2.0f);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(w, 0.0f), ImVec2(w > 0.0f ? w : FLT_MAX, viewport->WorkSize.y * kHelpMaxHeight));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(w, 0.0f),
+                                        ImVec2(w > 0.0f ? w : FLT_MAX, viewport->WorkSize.y * kHelpMaxHeight));
     return w;
 }
 
@@ -202,7 +208,8 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, float text_width)
     {
         // A tooltip cannot scroll (the mouse cannot reach it): no scrollbar, and when its text was cut on the
         // previous frame, its first line says how to read the rest
-        HelpMarkerOpen open{ImGuiKitHelpMarkerShown_Tooltip, ImGui::GetStateStorage(), ImGui::GetID("##help_tooltip_cut")};
+        HelpMarkerOpen open{ImGuiKitHelpMarkerShown_Tooltip, ImGui::GetStateStorage(),
+                            ImGui::GetID("##help_tooltip_cut")};
         bool was_cut = open.storage->GetBool(open.cut_key, false);
         float window_width = SetNextHelpWindowSize(width, text_width);
         if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_None, ImGuiWindowFlags_NoScrollbar))
@@ -228,7 +235,8 @@ bool BeginHelpMarker(const char* str_id, float width_em)
 
 void EndHelpMarker()
 {
-    IM_ASSERT(!GetCurrentContext().HelpMarkersShown.empty() && "EndHelpMarker() without a BeginHelpMarker() that returned true");
+    IM_ASSERT(!GetCurrentContext().HelpMarkersShown.empty()
+              && "EndHelpMarker() without a BeginHelpMarker() that returned true");
     ImGui::PopTextWrapPos();
     const HelpMarkerOpen& open = GetCurrentContext().HelpMarkersShown.back();
     if (open.shown == ImGuiKitHelpMarkerShown_Popup)
@@ -376,7 +384,8 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
         ImVec2 text_size = ImGui::CalcTextSize(labels[i], nullptr, true);
         ImVec2 text_pos(p0.x + segment_width * (float)i + (segment_width - text_size.x) * 0.5f,
                         p0.y + (size.y - text_size.y) * 0.5f);
-        draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), labels[i], ImGui::FindRenderedTextEnd(labels[i]));
+        draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), labels[i],
+                           ImGui::FindRenderedTextEnd(labels[i]));
     }
     return changed;
 }
@@ -441,7 +450,8 @@ bool ResizeHandle(const char* str_id, ImVec2* size, const ImVec2& min_size)
     ImGuiStorage* storage = ImGui::GetStateStorage();
     const ImGuiID offset_x_key = ImHashStr("offset_x", 0, id), offset_y_key = ImHashStr("offset_y", 0, id);
     // The item may be a child window (a multiline text field, a child): it, not this window, is then the hovered one
-    const ImGuiHoveredFlags hover_flags = ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_ChildWindows;
+    const ImGuiHoveredFlags hover_flags =
+        ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_ChildWindows;
     const bool hovered = ImGui::IsWindowHovered(hover_flags) && ImGui::IsMouseHoveringRect(grip_bb.Min, grip_bb.Max);
     if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {

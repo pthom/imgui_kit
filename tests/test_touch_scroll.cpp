@@ -29,7 +29,8 @@ struct Bench
     ImGuiTouchScrollMode mode = ImGuiTouchScrollMode_Always;
     bool longPressIsRightClick = true;
     bool thinScrollbars = false;
-    bool itemPopupOpen = false, windowPopupOpen = false;  // the context menus (right clicks) of the button and the window
+    bool itemPopupOpen = false, windowPopupOpen = false;  // the context menus (right clicks) of the button and the
+                                                          // window
     bool rightDown = false;  // io.MouseDown[1], as of the last frame
     int rightClicks = 0;     // the right clicks seen by the widgets
     bool pinchScalesFont = true;
@@ -39,7 +40,8 @@ struct Bench
     bool canvasLongPressIsRightClick = true;  // its argument
     int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDrags(axis) instead
     bool wideContent = false;  // the window's content is wider than it: it scrolls sideways too
-    bool canvasTakesPinch = false;  // the adapters: SetItemPinchAsWheel() (1.1 per notch), SetItemTwoFingerPanAsMouseDrag()
+    bool canvasTakesPinch = false;  // the adapters: SetItemPinchAsWheel() (1.1 per notch) and
+                                    // SetItemTwoFingerPanAsMouseDrag()
     bool canvasPanOnly = false;     // only SetItemTwoFingerPanAsMouseDrag()
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
     ImGuiTouchPinchDelivery canvasDelivery = ImGuiTouchPinchDelivery_WheelNotches;
@@ -63,7 +65,8 @@ struct Bench
     float scrollY = 0.f, childScrollY = 0.f, wideScrollX = 0.f;  // as of the last frame's Begin()
     float scrollMaxY = 0.f;
     float lastVtxY = 0.f;  // the y of the window's last drawn vertex (its last visible line): the overscroll moves it
-    ImRect buttonRect, sliderRect, repeatRect, childRect, wideRect, canvasRect, linesRect;  // screen coordinates, as of the last frame
+    // Screen coordinates, as of the last frame
+    ImRect buttonRect, sliderRect, repeatRect, childRect, wideRect, canvasRect, linesRect;
     ImRect heldBarRect;  // what DrawTouchScrollbarGrab() drew in the last frame: an inverted rect when nothing
     ImGuiWindow* benchWindow = nullptr;  // their scroll bars: ImGui::GetWindowScrollbarRect()
     ImGuiWindow* wideWindow = nullptr;
@@ -83,7 +86,8 @@ struct Bench
             doubleClicks++;
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(400.f, 300.f), ImGuiCond_Always);
-        ImGui::Begin("Bench", nullptr, ImGuiWindowFlags_NoTitleBar | (wideContent ? ImGuiWindowFlags_HorizontalScrollbar : 0));
+        ImGui::Begin("Bench", nullptr,
+                     ImGuiWindowFlags_NoTitleBar | (wideContent ? ImGuiWindowFlags_HorizontalScrollbar : 0));
         benchWindow = ImGui::GetCurrentWindow();
         scrollY = ImGui::GetScrollY();
         scrollMaxY = ImGui::GetScrollMaxY();
@@ -120,7 +124,8 @@ struct Bench
             ImGui::Text("Child line %d", i);
         ImGui::EndChild();
         childRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-        ImGui::BeginChild("Wide", ImVec2(0.f, 60.f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);  // tall enough: one line plus its scrollbar, no vertical scroll
+        // Tall enough: one line plus its scrollbar, no vertical scroll
+        ImGui::BeginChild("Wide", ImVec2(0.f, 60.f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
         wideScrollX = ImGui::GetScrollX();
         wideWindow = ImGui::GetCurrentWindow();
         ImGui::Text("A wide line, wider than the window, so that this child scrolls sideways and not vertically");
@@ -171,7 +176,8 @@ struct Bench
             ImGui::Text("Line %d", i);
         linesRect = ImRect(linesPos, ImVec2(linesPos.x + 300.f, 290.f));
         windowPopupOpen = false;
-        if (ImGui::BeginPopupContextWindow("window_menu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+        if (ImGui::BeginPopupContextWindow("window_menu",
+                                           ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
             windowPopupOpen = true;
             ImGui::EndPopup();
@@ -984,7 +990,7 @@ TEST_CASE("Touch pinch: a third finger takes the place of one that lifts, and th
     ImGuiTouch::AddFingerEvent(2, c + ImVec2(40.f, 0.f), ImGuiTouchPhase_Moved);  // 60 px: a scale of 1.5
     b.Frames(2);
     CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));
-    ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Ended);  // the first lifts: the pair is now 2 and 3
+    ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Ended);  // the first lifts: the pair is 2, 3
     b.Frame();
     CHECK(b.canvasPinch.Active);
     CHECK(b.canvasPinch.ScaleDelta == doctest::Approx(1.f));  // no jump
@@ -1134,7 +1140,8 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
     CHECK(!ImGui::GetIO().MouseDown[0]);
 }
 
-TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch reaches the widget in a frame of its own")
+TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch reaches the widget in a frame of its "
+          "own")
 {
     Bench b;
     b.canvas = true;
@@ -1160,7 +1167,8 @@ TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch r
     CHECK(b.canvasZoom == doctest::Approx(powf(1.1f, 7.f)));
 }
 
-TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amount at each frame, and follows the fingers")
+TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amount at each frame, and follows the "
+          "fingers")
 {
     Bench b;
     b.canvas = true;
@@ -1193,7 +1201,8 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
                                  // fingers' center only every half line, and a move holds the wheel back a frame
 }
 
-TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways drag, even where the page scrolls sideways")
+TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways drag, even where the page scrolls "
+          "sideways")
 {
     Bench b;
     b.canvas = true;
@@ -1217,7 +1226,8 @@ TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways d
     CHECK(b.canvasDrag.y == 0.f);
 }
 
-TEST_CASE("Touch scroll: without SetItemTakesDrags(X), a sideways drag on a widget scrolls a page that scrolls sideways")
+TEST_CASE("Touch scroll: without SetItemTakesDrags(X), a sideways drag on a widget scrolls a page that scrolls "
+          "sideways")
 {
     Bench b;
     b.canvas = true;

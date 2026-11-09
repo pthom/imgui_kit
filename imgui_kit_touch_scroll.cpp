@@ -1,5 +1,7 @@
 // imgui_kit: the swipe of a touch screen (ImGuiTouch)
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui_kit.h"
 #include "imgui_kit_touch_internal.h"
 
@@ -37,24 +39,35 @@ namespace ImGuiTouch
 namespace
 {
     // Tunables. The slop is in font sizes, so that it follows the DPI and the font scale.
-    constexpr float kSlopFontSizes = 0.5f;      // a press that moved less than this is a tap, not a swipe (a mouse)
-    constexpr float kSlopFontSizesTouch = 1.f;  // the same for a finger, which jitters more, and is a finger wide
-    constexpr float kHoldRippleSeconds = 0.35f; // the ring drawn around the finger when the hold hands it the press
-    constexpr float kDoubleTapSeconds = 0.4f;   // two taps closer than this in time, and than kDoubleTapFontSizes...
-    constexpr float kDoubleTapFontSizes = 1.5f; // ...in distance, are a double click (ImGui's 0.3 s and 6 px suit a mouse)
-    constexpr float kHoldSeconds = 0.15f;       // a finger still for this long hands the press to the widget under it (iOS: 150 ms)
-    constexpr float kLongPressSeconds = 0.5f;   // a finger still for this long arms a right click, at the lift (iOS: about 500 ms)
-    constexpr float kLongPressArcDelay = 0.15f; // s: the long press's arc shows after this, so that a tap does not flash it
-    constexpr float kLongPressRingRadius = 3.f; // font sizes: the long press's ring, past a fingertip
-    constexpr float kInertiaDecay = 2.f;        // speed *= exp(-decay * dt) after the release (iOS: 0.998 per ms)
-    constexpr float kInertiaMinSpeedEm = 3.f;   // font sizes per second: below this, a release starts no inertia, and the inertia ends
-    constexpr float kFlickWindow = 0.05f;       // s: the lift speed is the finger's motion over this long before the lift
-    constexpr int kFlickSamples = ImGuiTouchFlickSamples; // enough for the window at 240 fps
-    constexpr float kRubberBandResistance = 0.55f;  // iOS: a drag of d past the end moves the content by (1 - 1 / (d * c / size + 1)) * size
+    // A press that moved less than the slop is a tap, not a swipe: a mouse's, and a finger's (it jitters more, and is
+    // a finger wide)
+    constexpr float kSlopFontSizes = 0.5f;
+    constexpr float kSlopFontSizesTouch = 1.f;
+    constexpr float kHoldRippleSeconds = 0.35f;  // the ring drawn around the finger when the hold hands it the press
+    // Two taps closer than this in time and in distance are a double click (ImGui's 0.3 s and 6 px suit a mouse)
+    constexpr float kDoubleTapSeconds = 0.4f;
+    constexpr float kDoubleTapFontSizes = 1.5f;
+    constexpr float kHoldSeconds = 0.15f;        // a finger still for this long hands the press to the widget under it
+                                                 // (iOS: 150 ms)
+    constexpr float kLongPressSeconds = 0.5f;    // a finger still for this long arms a right click, at the lift (iOS:
+                                                 // about 500 ms)
+    constexpr float kLongPressArcDelay = 0.15f;  // s: the long press's arc shows after this, so that a tap does not
+                                                 // flash it
+    constexpr float kLongPressRingRadius = 3.f;  // font sizes: the long press's ring, past a fingertip
+    constexpr float kInertiaDecay = 2.f;         // speed *= exp(-decay * dt) after the release (iOS: 0.998 per ms)
+    constexpr float kInertiaMinSpeedEm = 3.f;    // font sizes per second: below this, a release starts no inertia, and
+                                                 // the inertia ends
+    constexpr float kFlickWindow = 0.05f;        // s: the lift speed is the finger's motion over this long before the
+                                                 // lift
+    constexpr int kFlickSamples = ImGuiTouchFlickSamples;  // enough for the window at 240 fps
+    // iOS's rubber band: a drag of d past the end moves the content by (1 - 1 / (d * c / size + 1)) * size
+    constexpr float kRubberBandResistance = 0.55f;
     constexpr float kThinScrollbarFontSizes = 0.3f;  // the scroll bars' width on a touch screen (iOS: about 3 pt)
-    constexpr float kHeldScrollbarFontSizes = 0.8f;  // a bar held by a finger widens to this, over the content (iOS too)
+    constexpr float kHeldScrollbarFontSizes = 0.8f;  // a bar held by a finger widens to this, over the content (iOS
+                                                     // too)
     constexpr float kHeldScrollbarGrowSeconds = 0.15f;
-    constexpr float kBounceOmega = 12.f;        // 1/s: the content past its end springs back as a critically damped spring (settled in about 0.4 s)
+    constexpr float kBounceOmega = 12.f;  // 1/s: the content past its end springs back as a critically damped spring
+                                          // (settled in about 0.4 s)
 
 
     using Sample = ImGuiTouchScrollSample;
@@ -118,7 +131,8 @@ namespace
         for (; w->Flags & ImGuiWindowFlags_ChildWindow; w = w->ParentWindow)
         {
             bool canScroll = (axis == ImGuiAxis_X) ? (w->ScrollMax.x != 0.f) : (w->ScrollMax.y != 0.f);
-            bool inputsDisabled = (w->Flags & ImGuiWindowFlags_NoScrollWithMouse) && !(w->Flags & ImGuiWindowFlags_NoMouseInputs);
+            bool inputsDisabled = (w->Flags & ImGuiWindowFlags_NoScrollWithMouse)
+                                  && !(w->Flags & ImGuiWindowFlags_NoMouseInputs);
             if (canScroll && !inputsDisabled)
                 break;
         }
@@ -153,7 +167,8 @@ namespace
     {
         for (;; w = w->ParentWindow)
         {
-            bool canScroll = (w->ScrollMax.x != 0.f || w->ScrollMax.y != 0.f) && !(w->Flags & ImGuiWindowFlags_NoScrollWithMouse);
+            bool canScroll = (w->ScrollMax.x != 0.f || w->ScrollMax.y != 0.f)
+                             && !(w->Flags & ImGuiWindowFlags_NoScrollWithMouse);
             if (canScroll)
                 return true;
             if (!(w->Flags & ImGuiWindowFlags_ChildWindow))
@@ -520,7 +535,8 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     if (s.pull == 0.f && (s.overscroll != 0.f || s.overscrollSpeed != 0.f))
     {
         float step = ImMin(dt, 1.f / 30.f);
-        s.overscrollSpeed += (-2.f * kBounceOmega * s.overscrollSpeed - kBounceOmega * kBounceOmega * s.overscroll) * step;
+        s.overscrollSpeed +=
+            (-2.f * kBounceOmega * s.overscrollSpeed - kBounceOmega * kBounceOmega * s.overscroll) * step;
         s.overscroll += s.overscrollSpeed * step;
         if (ImFabs(s.overscroll) < 0.5f && ImFabs(s.overscrollSpeed) < kBounceOmega)
             s.overscroll = s.overscrollSpeed = 0.f;
@@ -550,7 +566,8 @@ namespace
             if (cmd.ElemCount == 0 || cmd.UserCallback != nullptr)
                 continue;
             firstVtx = ImMin(firstVtx, (int)(dl->IdxBuffer[cmd.IdxOffset] + cmd.VtxOffset));
-            ImRect r(cmd.ClipRect.x + offset.x, cmd.ClipRect.y + offset.y, cmd.ClipRect.z + offset.x, cmd.ClipRect.w + offset.y);
+            ImRect r(cmd.ClipRect.x + offset.x, cmd.ClipRect.y + offset.y, cmd.ClipRect.z + offset.x,
+                     cmd.ClipRect.w + offset.y);
             r.ClipWithFull(clip);
             cmd.ClipRect = ImVec4(r.Min.x, r.Min.y, r.Max.x, r.Max.y);
         }
@@ -725,7 +742,8 @@ void AddDragTaker(const ImRect& itemRect, bool longPressIsRightClick, ImGuiAxis 
 
 void SetItemTakesDrags(ImGuiTouchAxis axis, bool longPressIsRightClick)
 {
-    const ImGuiAxis along = (axis == ImGuiTouchAxis_X) ? ImGuiAxis_X : (axis == ImGuiTouchAxis_Y) ? ImGuiAxis_Y : ImGuiAxis_None;
+    const ImGuiAxis along =
+        (axis == ImGuiTouchAxis_X) ? ImGuiAxis_X : (axis == ImGuiTouchAxis_Y) ? ImGuiAxis_Y : ImGuiAxis_None;
     AddDragTaker(GImGui->LastItemData.Rect, longPressIsRightClick, along);
 }
 

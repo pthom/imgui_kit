@@ -26,7 +26,8 @@ int main(int argc, char** argv)
     ImGuiTestEngine_Start(engine, ImGui::GetCurrentContext());
 
     KitTestsRegister(engine);
-    ImGuiTestEngine_QueueTests(engine, ImGuiTestGroup_Tests, argc > 1 ? argv[1] : nullptr, ImGuiTestRunFlags_RunFromCommandLine);
+    ImGuiTestEngine_QueueTests(engine, ImGuiTestGroup_Tests, argc > 1 ? argv[1] : nullptr,
+                               ImGuiTestRunFlags_RunFromCommandLine);
     while (!ImGuiTestEngine_IsTestQueueEmpty(engine))
     {
         ImGui_ImplNull_NewFrame();

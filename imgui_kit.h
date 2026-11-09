@@ -316,8 +316,10 @@ enum ImGuiTouchAxis_
 // How a pinch reaches a widget as wheel events (ImGuiTouch::SetItemPinchAsWheel)
 enum ImGuiTouchPinchDelivery_
 {
-    ImGuiTouchPinchDelivery_WheelContinuous,  // the exact amount at each frame: a widget that zooms by the wheel's value
-    ImGuiTouchPinchDelivery_WheelNotches,     // whole notches (+1, -1): a widget that reads only the wheel's sign (ImPlot)
+    ImGuiTouchPinchDelivery_WheelContinuous,  // the exact amount at each frame: a widget that zooms by the wheel's
+                                              // value
+    ImGuiTouchPinchDelivery_WheelNotches,     // whole notches (+1, -1): a widget that reads only the wheel's sign
+                                              // (ImPlot)
 };
 
 // What two fingers do, as the layer decides it once per gesture (ImGuiTouchPinch::Kind)
@@ -498,8 +500,9 @@ IMGUI_API bool   SetRectOpensUrl(const ImVec2& min, const ImVec2& max, const cha
 
 #ifdef __EMSCRIPTEN__
 // In a browser, with any of Dear ImGui's Emscripten backends: tells Dear ImGui which pointer is a finger (the
-// browser's pointer events), relays the fingers to AddFingerEvent() (the pinch), and sets ImGuiConfigFlags_IsTouchScreen
-// on a touch screen. Call once, after the backend's init and ImGuiTouch::Setup(). The canvas must have the id "canvas".
+// browser's pointer events), relays the fingers to AddFingerEvent() (the pinch), and sets
+// ImGuiConfigFlags_IsTouchScreen on a touch screen. Call once, after the backend's init and ImGuiTouch::Setup(). The
+// canvas must have the id "canvas".
 // Also: the url zones (SetItemOpensUrl); Dear ImGui's own links (TextLinkOpenURL) open in a new tab where the browser
 // allows it from the frame loop (Chrome, Firefox), else in the same tab (WebKit: Safari, every browser on iOS); and
 // the phone's own long press (text selection, its menu) is turned off on the canvas.

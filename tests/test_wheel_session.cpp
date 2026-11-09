@@ -109,7 +109,8 @@ TEST_CASE("Wheel session: the mouse still, the page scrolls the zooming item und
     CHECK(b.zooms == 0);
 }
 
-TEST_CASE("Wheel session: disabled, the item that arrives under the still mouse takes the wheel (Dear ImGui's behavior)")
+TEST_CASE("Wheel session: disabled, the item that arrives under the still mouse takes the wheel (Dear ImGui's "
+          "behavior)")
 {
     Bench b;
     b.sessionEnabled = false;
@@ -170,7 +171,8 @@ TEST_CASE("Wheel session: a trackpad's small momentum events extend a session by
 {
     Bench b;
     b.Frames(3);
-    b.MoveTo(ImVec2(100.f, b.zoomRect.Min.y - 30.f));  // the mouse still above the item: the first notch brings it under
+    b.MoveTo(ImVec2(100.f, b.zoomRect.Min.y - 30.f));  // the mouse still above the item: the first notch brings it
+                                                       // under
     b.Wheel(-1.f);
     for (int i = 0; i < 60; ++i)  // a second of a dying tail: 0.01 notch per frame (each adds 7 ms, a frame takes 17)
         b.Wheel(-0.01f);
@@ -181,7 +183,8 @@ TEST_CASE("Wheel session: a trackpad's small momentum events extend a session by
     CHECK(b.zooms == 1);
 }
 
-TEST_CASE("Wheel session: a widget that reads the wheel without owning it keeps it when nothing scrolls (a node editor's zoom)")
+TEST_CASE("Wheel session: a widget that reads the wheel without owning it keeps it when nothing scrolls (a node "
+          "editor's zoom)")
 {
     Bench b;
     b.shortContent = true;
@@ -212,7 +215,8 @@ TEST_CASE("Wheel session: a widget that reads the wheel without owning it sees n
     CHECK(b.zooms == 0);
 }
 
-TEST_CASE("Wheel session: an item whose ownership comes one frame late keeps the wheel when nothing scrolls (fast frames)")
+TEST_CASE("Wheel session: an item whose ownership comes one frame late keeps the wheel when nothing scrolls (fast "
+          "frames)")
 {
     Bench b;
     b.shortContent = true;

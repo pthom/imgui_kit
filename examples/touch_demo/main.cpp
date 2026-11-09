@@ -49,7 +49,8 @@ int main(int, char**)
 #endif
 
     float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-    GLFWwindow* window = glfwCreateWindow((int)(600 * main_scale), (int)(800 * main_scale), "imgui_kit touch demo", nullptr, nullptr);
+    GLFWwindow* window =
+        glfwCreateWindow((int)(600 * main_scale), (int)(800 * main_scale), "imgui_kit touch demo", nullptr, nullptr);
     if (window == nullptr)
         return 1;
     glfwMakeContextCurrent(window);
@@ -103,8 +104,9 @@ int main(int, char**)
         ImGui::Begin("imgui_kit touch demo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
         ImGui::TextWrapped("Open \"Touch\" below, then try it with a finger. On a desktop: tick \"Simulate a touch "
                            "source\", and the mouse plays a finger.");
-        ImGui::TextLinkOpenURL("See the full interactive explorer", "https://pthom.github.io/imgui_explorer/?lib=imguikit");
-        ImGuiTouch::SetItemOpensUrl("https://pthom.github.io/imgui_explorer/?lib=imguikit");  // imgui_kit: a new tab, in every browser
+        const char* explorer_url = "https://pthom.github.io/imgui_explorer/?lib=imguikit";
+        ImGui::TextLinkOpenURL("See the full interactive explorer", explorer_url);
+        ImGuiTouch::SetItemOpensUrl(explorer_url);  // imgui_kit: a new tab, in every browser
         ImGuiKit::ShowDemoContents();
         ImGui::End();
 

@@ -1,5 +1,7 @@
 // imgui_kit: the pinch of a touch screen (ImGuiTouch)
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui_kit.h"
 #include "imgui_kit_touch_internal.h"
 
@@ -406,7 +408,8 @@ void UpdateTouchPinch(bool scalesFont)
     else if (s.gesture == Gesture::Pinch && twoFingers && scalesFont)
     {
         const ImGuiTouchConfig& config = GetCurrentContext().Config;
-        ImGui::GetStyle().FontScaleMain = ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
+        ImGui::GetStyle().FontScaleMain =
+            ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
     }
 
     // The data, for a widget that reads it: the move and the spread since the last frame, both at each frame

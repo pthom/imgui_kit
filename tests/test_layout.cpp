@@ -89,7 +89,8 @@ TEST_CASE("Aligned group: on a whole pixel, and still from frame to frame, when 
     float group_left = 0;
     auto gui = [&] {
         ImGuiKit::BeginAlignedGroup("g", 0.5f);
-        ImGui::BeginChild("child", ImVec2(101, 40));  // the room minus 101 is odd: a centered group falls on a half pixel
+        ImGui::BeginChild("child", ImVec2(101, 40));  // the room minus 101 is odd: a centered group falls on a half
+                                                      // pixel
         ImGui::EndChild();
         ImGuiKit::EndAlignedGroup();
         group_left = ImGui::GetItemRectMin().x;

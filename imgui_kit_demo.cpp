@@ -12,6 +12,7 @@ Index of this file:
 // [SECTION] Layout
 // [SECTION] Widgets
 // [SECTION] Touch
+// [SECTION] Touch keyboard
 // [SECTION] Demo window
 
 */
@@ -517,7 +518,8 @@ void ZoomableCanvas(const char* str_id, ImVec2 size)
         draw_list->AddLine(ImVec2(p0.x, y), ImVec2(p1.x, y), grid_color);
     ImVec2 center(p0.x + offset.x + 4.0f * step, p0.y + offset.y + 3.0f * step);
     draw_list->AddCircleFilled(center, 1.5f * step, ImGui::GetColorU32(ImGuiCol_SliderGrabActive));
-    draw_list->AddRectFilled(ImVec2(center.x + 3.0f * step, center.y - step), ImVec2(center.x + 6.0f * step, center.y + step),
+    draw_list->AddRectFilled(ImVec2(center.x + 3.0f * step, center.y - step),
+                             ImVec2(center.x + 6.0f * step, center.y + step),
                              ImGui::GetColorU32(ImGuiCol_ButtonActive));
     if (gesture_alpha > 0.0f)
     {
@@ -641,8 +643,8 @@ void DemoTouch()
                          "- It claims the wheel while hovered: if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY)). With "
                          "the wheel session, a wheel that scrolls the zone keeps scrolling it when the canvas passes "
                          "under the mouse; a wheel that starts on the canvas zooms it.\n"
-                         "- It reads two fingers' gesture with ImGuiTouch::ItemPinch(): their spread zooms it and their "
-                         "move pans it, both at once, as on a map. The font keeps its size.");
+                         "- It reads two fingers' gesture with ImGuiTouch::ItemPinch(): their spread zooms it and "
+                         "their move pans it, both at once, as on a map. The font keeps its size.");
     if (ImGui::BeginPopupContextWindow("##zone_menu"))
     {
         ImGui::TextUnformatted("The zone's context menu: a right click, or a long press");
@@ -650,12 +652,14 @@ void DemoTouch()
     }
 
     // A child that scrolls sideways: a swipe inside scrolls it, not the zone. Its buttons count their taps. Its slider
-    // takes the sideways drags (ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_X)): a sideways drag on it moves it at once
+    // takes the sideways drags (ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_X)): a sideways drag on it moves it at
+    // once
     ImGui::TextWrapped("A sideways swipe scrolls this row; a tap clicks a button; a sideways drag moves the slider:");
     ImGui::BeginChild("##sideways", ImVec2(0.0f, ImGuiKit::EmSize(5.f)), ImGuiChildFlags_Borders,
                       ImGuiWindowFlags_HorizontalScrollbar);
     static int taps[8] = {};
-    float card_width = ImMax(ImGuiKit::EmSize(6.f), ImGui::GetContentRegionAvail().x * 0.3f);  // 3 per screen: it scrolls
+    // Three per screen: the row scrolls
+    float card_width = ImMax(ImGuiKit::EmSize(6.f), ImGui::GetContentRegionAvail().x * 0.3f);
     static float row_value = 0.5f;
     ImGui::SetNextItemWidth(card_width);
     ImGui::SliderFloat("##row_slider", &row_value, 0.0f, 1.0f);
@@ -677,6 +681,10 @@ void DemoTouch()
     ImGui::Text("Moving on its own: touch %s, kit %s", ImGuiTouch::IsAnimating() ? "yes" : "no",
                 ImGuiKit::IsAnimating() ? "yes" : "no");
 }
+
+//-----------------------------------------------------------------------------
+// [SECTION] Touch keyboard
+//-----------------------------------------------------------------------------
 
 // The phone's keyboard, in a browser: the fields of all kinds, one of them in a child that scrolls
 void DemoTouchKeyboard()

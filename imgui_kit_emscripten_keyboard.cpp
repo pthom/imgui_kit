@@ -50,21 +50,26 @@ if (!window.imguiKitKeyboard) {
   // Invisible through transparent colors, not opacity, and hit-testable while focused: iOS enters the keyboard's
   // trackpad mode by hit-testing the text under the caret, and a field it cannot hit sends the caret to the start.
   // Without the focus, the field takes no pointer events: the touches on the widget's line are ImGui's.
-  input.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:20px;opacity:1;color:transparent;background:transparent;caret-color:transparent;outline:none;border:0;padding:0;margin:0;font-size:16px;line-height:20px;z-index:1000;resize:none;white-space:pre;overflow:hidden;font-family:sans-serif;pointer-events:none;-webkit-text-fill-color:transparent;';
+  input.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:20px;opacity:1;color:transparent;'
+    + 'background:transparent;caret-color:transparent;outline:none;border:0;padding:0;margin:0;font-size:16px;'
+    + 'line-height:20px;z-index:1000;resize:none;white-space:pre;overflow:hidden;font-family:sans-serif;'
+    + 'pointer-events:none;-webkit-text-fill-color:transparent;';
   const button = document.createElement('button');
   button.id = 'imguiKitKeyboardButton'; button.textContent = '⌨'; button.title = 'Keyboard';
-  button.style.cssText = 'position:fixed;display:none;z-index:1001;font-size:24px;line-height:1;padding:6px 12px;border-radius:10px;border:1px solid #999;background:#333;color:#eee;';
+  button.style.cssText = 'position:fixed;display:none;z-index:1001;font-size:24px;line-height:1;padding:6px 12px;'
+    + 'border-radius:10px;border:1px solid #999;background:#333;color:#eee;';
   document.body.appendChild(input); document.body.appendChild(button);
   // A debug overlay on the page (the url with 'kbddebug'): the field's events, to see what a phone sends. Only in a
-  // build with HELLOIMGUI_EMSCRIPTEN_KEYBOARD_DEBUG: the log holds what is typed, and a link could turn it on.
+  // build with IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG: the log holds what is typed, and a link could turn it on.
 )JS"
-#ifdef HELLOIMGUI_EMSCRIPTEN_KEYBOARD_DEBUG
+#ifdef IMGUI_KIT_EMSCRIPTEN_KEYBOARD_DEBUG
 R"JS(
   const debug = location.search.includes('kbddebug') || location.hash.includes('kbddebug');
   let logEl = null;
   if (debug) {
     logEl = document.createElement('div');
-    logEl.style.cssText = 'position:fixed;left:0;bottom:0;width:100%;max-height:45%;overflow:auto;background:rgba(0,0,0,0.8);color:#8f8;font:12px monospace;z-index:1002;padding:4px;white-space:pre-wrap;';
+    logEl.style.cssText = 'position:fixed;left:0;bottom:0;width:100%;max-height:45%;overflow:auto;'
+      + 'background:rgba(0,0,0,0.8);color:#8f8;font:12px monospace;z-index:1002;padding:4px;white-space:pre-wrap;';
     document.body.appendChild(logEl);
     logEl.addEventListener('touchstart', (e) => { logEl.innerText = ''; e.stopPropagation(); }, {capture: true});
   }
@@ -83,7 +88,8 @@ R"JS(
     m = new Date().toISOString().slice(14, 23) + ' ' + m;
     if (logEl) logEl.innerText = m + '\n' + logEl.innerText;
     if (serverLog) fetch('/kbdlog?' + encodeURIComponent(m)).catch(() => {}); };
-  const canvasRect = () => { const c = document.getElementById('canvas'); return c ? c.getBoundingClientRect() : {left: 0, top: 0, width: 0}; };
+  const canvasRect = () => {
+    const c = document.getElementById('canvas'); return c ? c.getBoundingClientRect() : {left: 0, top: 0, width: 0}; };
   const scale = (r) => (K.displayW > 0 && r.width > 0) ? r.width / K.displayW : 1;
   // The field's place: ImGui gives the caret's position, which moves as the caret moves. While the field has the
   // focus, it stays where it was (the keyboard's trackpad hit-tests the finger against the field: a field that
@@ -165,7 +171,8 @@ R"JS(
         + ' (field had ' + input.selectionStart + ')');
     K.syncing = true;
     if (input.value !== text) input.value = text;
-    if (input.selectionStart !== caret || input.selectionEnd !== caret) { try { input.setSelectionRange(caret, caret); } catch (e) {} }
+    if (input.selectionStart !== caret || input.selectionEnd !== caret) {
+      try { input.setSelectionRange(caret, caret); } catch (e) {} }
     K.mirror = text; K.mirrorCaret = caret;
     K.syncing = false;
     place(); };
@@ -311,11 +318,13 @@ R"JS(
     let tries = 0;
     settleTimer = setInterval(() => {
       tries++;
-      if (document.activeElement !== input || restoreCaret() || tries > 20) { clearInterval(settleTimer); settleTimer = null; K.focusReset = false; }
+      if (document.activeElement !== input || restoreCaret() || tries > 20) {
+        clearInterval(settleTimer); settleTimer = null; K.focusReset = false; }
     }, 30); };
   document.addEventListener('selectionchange', () => {
     log('selectionchange: sel ' + input.selectionStart + '-' + input.selectionEnd + ' mirrorCaret ' + K.mirrorCaret
-        + (document.activeElement === input ? '' : ' (not focused)') + (K.syncing ? ' (syncing)' : '') + (K.focusReset ? ' (after focus)' : ''));
+        + (document.activeElement === input ? '' : ' (not focused)') + (K.syncing ? ' (syncing)' : '')
+        + (K.focusReset ? ' (after focus)' : ''));
     if (K.syncing || document.activeElement !== input) return;
     if (settleTimer || K.focusReset) return;  // the field settling after a focus: not a move of the user's
     if (input.selectionStart !== K.mirrorCaret && input.selectionStart === input.selectionEnd) {
@@ -354,7 +363,7 @@ R"JS(
   input.addEventListener('keypress', (e) => e.stopPropagation());
   input.addEventListener('focus', refresh);
   // The keyboard covering the page. iOS scrolls the page to show the focused field: a fixed field, which no scroll
-  // reveals, so the canvas would leave the screen. The page stays in place, and hello_imgui learns which part of the
+  // reveals, so the canvas would leave the screen. The page stays in place, and the kit learns which part of the
   // canvas is visible, in ImGui units from its top (its full-screen window shrinks to it). The canvas element's own
   // height is no guide: it may follow the keyboard while ImGui's display keeps its height.
   const vv = window.visualViewport;
@@ -377,11 +386,12 @@ R"JS(
   input.addEventListener('blur', updateVisibleArea);
   // For C++: "top,bottom" of the visible area, while the keyboard is shown; '' otherwise
   K.visibleArea = () => visibleArea();
-  // While the keyboard is open, a tap on the canvas leaves the focus to the field, so that the keyboard stays open as in
-  // a native app: the GLFW port (emscripten-glfw) focuses the canvas on each press, which closed the keyboard. The press
-  // still reaches ImGui; after a tap outside the text widget, the field blurs itself once ImGui stops wanting text.
-  // The keyboard counts as open when it hides a fifth of the window: not iPadOS's bar once its keyboard is hidden. After
-  // iPadOS's hide key or Android's back key, the field keeps the focus without a keyboard: the next touch takes it
+  // While the keyboard is open, a tap on the canvas leaves the focus to the field, so that the keyboard stays open as
+  // in a native app: the GLFW port (emscripten-glfw) focuses the canvas on each press, which closed the keyboard. The
+  // press still reaches ImGui; after a tap outside the text widget, the field blurs itself once ImGui stops wanting
+  // text. The keyboard counts as open when it hides a fifth of the window: not iPadOS's bar once its keyboard is
+  // hidden. After iPadOS's hide key or Android's back key, the field keeps the focus without a keyboard: the next
+  // touch takes it
   // (the touchstart handler below).
   const keyboardOpen = () => !!vv && vv.height < 0.8 * window.innerHeight;
   const canvasEl = document.getElementById('canvas');
@@ -424,7 +434,8 @@ R"JS(
                  + ((K.edits.length || K.caret >= 0 || K.keys.length) ? 1 : 0);
   // The frame drains, in one call: the caret, "\n", the keys, "\n", the edits as "at|removed|inserted" lines
   K.drainAll = () => { const c = K.drainCaret(), k = K.drainKeys(); return c + '\n' + k + '\n' + K.drainEdits(); };
-  K.drainEdits = () => { const e = K.edits.map(x => x.at + '|' + x.removed + '|' + x.inserted).join('\n'); K.edits = []; return e; };
+  K.drainEdits = () => {
+    const e = K.edits.map(x => x.at + '|' + x.removed + '|' + x.inserted).join('\n'); K.edits = []; return e; };
   K.drainCaret = () => { const c = K.caret; K.caret = -1; if (c >= 0) log('caret -> ImGui: ' + c); return c; };
   K.drainKeys = () => { const k = K.keys.join(','); K.keys = []; return k; };
   // Keys mode: the next action, "K:<key name>", "M:<key name>" (a move) or "T:<text>"
@@ -735,7 +746,8 @@ static void UpdateKeyboard()
 void SetupEmscriptenKeyboard()
 {
     ImGuiContext* ctx = ImGui::GetCurrentContext();
-    IM_ASSERT(ctx != nullptr && "ImGuiTouch::SetupEmscriptenKeyboard() needs a context: call ImGui::CreateContext() first");
+    IM_ASSERT(ctx != nullptr
+              && "ImGuiTouch::SetupEmscriptenKeyboard() needs a context: call ImGui::CreateContext() first");
     CreateCurrentContextIfNeeded();  // the page's state (ImGuiTouchContext::Browser)
     emscripten_run_script(kScript);
     const ImGuiID owner = ImHashStr("ImGuiTouch_EmscriptenKeyboard");

@@ -239,7 +239,8 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         // The layer released the first finger's press, so that the item is hovered: the Test Engine's mouse lifts too
         // (it sends its button's state at each frame, a platform only its changes)
         ctx->MouseUp();
-        ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), ImGuiTouchPhase_Moved);  // 54 px: a scale of 1.35, three notches of 10%
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(34.f, 0.f), ImGuiTouchPhase_Moved);  // 54 px: a scale of 1.35, three
+                                                                                      // notches of 10%
         ctx->Yield(20);  // one notch at a time, each read before the next is sent
         ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
@@ -314,7 +315,8 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->ItemClose("Touch");
     };
 
-    // The same row: a sideways drag that starts on its slider moves the slider (SetItemTakesDrags(ImGuiTouchAxis_X)), and the row
+    // The same row: a sideways drag that starts on its slider moves the slider (SetItemTakesDrags(ImGuiTouchAxis_X)),
+    // and the row
     // does not scroll
     t = IM_REGISTER_TEST(engine, "demo", "touch_row_slider_takes_sideways_drag");
     t->GuiFunc = [](ImGuiTestContext*) {
