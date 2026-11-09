@@ -49,7 +49,9 @@ add_subdirectory(imgui_kit)                      # uses your `imgui` target if y
 target_link_libraries(my_app PRIVATE imgui_kit)
 ```
 
-Without an `imgui` target, the CMake builds one from `IMGUI_KIT_IMGUI_DIR`, or fetches Dear ImGui (`IMGUI_KIT_FETCH_IMGUI_TAG`).
+Without an `imgui` target, the CMake uses a Dear ImGui package (`find_package(imgui)`: Conan, vcpkg), builds one from `IMGUI_KIT_IMGUI_DIR`, or fetches Dear ImGui (`IMGUI_KIT_FETCH_IMGUI_TAG`).
+
+Installed (`cmake --install`, with `IMGUI_KIT_INSTALL`), the kit is a package: `find_package(imgui_kit)`, then link `imgui_kit::imgui_kit`.
 
 ```cpp
 #include "imgui_kit.h"
