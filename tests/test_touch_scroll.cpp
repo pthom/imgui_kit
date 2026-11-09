@@ -27,50 +27,50 @@ struct Bench
     }
 
     ImGuiTouchScrollMode mode = ImGuiTouchScrollMode_Always;
-    bool longPressIsRightClick = true;
-    bool thinScrollbars = false;
-    bool itemPopupOpen = false, windowPopupOpen = false;  // the context menus (right clicks) of the button and the
+    bool LongPressIsRightClick = true;
+    bool ThinScrollbars = false;
+    bool item_popup_open = false, window_popup_open = false;  // the context menus (right clicks) of the button and the
                                                           // window
-    bool rightDown = false;  // io.MouseDown[1], as of the last frame
-    int rightClicks = 0;     // the right clicks seen by the widgets
-    bool pinchScalesFont = true;
-    bool shortContent = false;  // the window's lines fit: nothing to scroll (the child still scrolls)
+    bool right_down = false;  // io.MouseDown[1], as of the last frame
+    int right_clicks = 0;     // the right clicks seen by the widgets
+    bool pinch_scales_font = true;
+    bool short_content = false;  // the window's lines fit: nothing to scroll (the child still scrolls)
     bool canvas = false;        // a canvas below the wide child: an item that sums its drags
-    bool canvasTakesDrags = false;  // it calls SetItemTakesDrags()
-    bool canvasLongPressIsRightClick = true;  // its argument
-    int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDrags(axis) instead
-    bool wideContent = false;  // the window's content is wider than it: it scrolls sideways too
-    bool canvasTakesPinch = false;  // the adapters: SetItemPinchAsWheel() (1.1 per notch) and
+    bool canvas_takes_drags = false;  // it calls SetItemTakesDrags()
+    bool canvas_long_press_is_right_click = true;  // its argument
+    int canvas_drag_axis = -1;   // >= 0: it calls SetItemTakesDrags(axis) instead
+    bool wide_content = false;  // the window's content is wider than it: it scrolls sideways too
+    bool canvas_takes_pinch = false;  // the adapters: SetItemPinchAsWheel() (1.1 per notch) and
                                     // SetItemTwoFingerPanAsMouseDrag()
-    bool canvasPanOnly = false;     // only SetItemTwoFingerPanAsMouseDrag()
-    ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
-    ImGuiTouchPinchDelivery canvasDelivery = ImGuiTouchPinchDelivery_WheelNotches;
-    bool canvasPinchData = false;   // it reads the gesture (ItemPinch) instead
-    ImGuiTouchPinch canvasPinch;    // the last frame's
-    float canvasDataZoom = 1.f;     // the products of ScaleDelta, the sums of CenterDelta
-    ImVec2 canvasDataPan;
-    int canvasStarted = 0, canvasEnded = 0, canvasActiveFrames = 0;
-    ImGuiTouchPinchKind canvasFirstKind = -1;  // the first Kind other than Undecided
-    float canvasZoom = 1.f;
-    ImVec2 canvasWheelPos;  // the mouse when the canvas last zoomed
-    ImGuiID canvasId = 0;
-    ImVec2 canvasDrag;
-    ImGuiID buttonId = 0;
+    bool canvas_pan_only = false;     // only SetItemTwoFingerPanAsMouseDrag()
+    ImGuiMouseButton canvas_pan_button = ImGuiMouseButton_Right;
+    ImGuiTouchPinchDelivery canvas_delivery = ImGuiTouchPinchDelivery_WheelNotches;
+    bool canvas_pinch_data = false;   // it reads the gesture (ItemPinch) instead
+    ImGuiTouchPinch canvas_pinch;    // the last frame's
+    float canvas_data_zoom = 1.f;     // the products of ScaleDelta, the sums of CenterDelta
+    ImVec2 canvas_data_pan;
+    int canvas_started = 0, canvas_ended = 0, canvas_active_frames = 0;
+    ImGuiTouchPinchKind canvas_first_kind = -1;  // the first Kind other than Undecided
+    float canvas_zoom = 1.f;
+    ImVec2 canvas_wheel_pos;  // the mouse when the canvas last zoomed
+    ImGuiID canvas_id = 0;
+    ImVec2 canvas_drag;
+    ImGuiID button_id = 0;
     bool steal = false;  // the GUI takes the active id while the button is down (a widget that wants a long press)
-    ImGuiID stealId = 0;
+    ImGuiID steal_id = 0;
     int clicks = 0;
     int repeats = 0;  // the presses of a button that repeats while held
-    int doubleClicks = 0;  // the frames where the widgets would see a double click (read after the layer ran)
+    int double_clicks = 0;  // the frames where the widgets would see a double click (read after the layer ran)
     float slider = 0.5f;
-    float scrollY = 0.f, childScrollY = 0.f, wideScrollX = 0.f;  // as of the last frame's Begin()
-    float scrollMaxY = 0.f;
-    float lastVtxY = 0.f;  // the y of the window's last drawn vertex (its last visible line): the overscroll moves it
+    float scrollY = 0.f, child_scroll_y = 0.f, wide_scroll_x = 0.f;  // as of the last frame's Begin()
+    float scroll_max_y = 0.f;
+    float last_vtx_y = 0.f;  // the y of the window's last drawn vertex (its last visible line): the overscroll moves it
     // Screen coordinates, as of the last frame
-    ImRect buttonRect, sliderRect, repeatRect, childRect, wideRect, canvasRect, linesRect;
-    ImRect heldBarRect;  // what DrawTouchScrollbarGrab() drew in the last frame: an inverted rect when nothing
-    ImGuiWindow* benchWindow = nullptr;  // their scroll bars: ImGui::GetWindowScrollbarRect()
-    ImGuiWindow* wideWindow = nullptr;
-    ImGuiWindow* childWindow = nullptr;
+    ImRect button_rect, slider_rect, repeat_rect, child_rect, wide_rect, canvasRect, lines_rect;
+    ImRect held_bar_rect;  // what DrawTouchScrollbarGrab() drew in the last frame: an inverted rect when nothing
+    ImGuiWindow* bench_window = nullptr;  // their scroll bars: ImGui::GetWindowScrollbarRect()
+    ImGuiWindow* wide_window = nullptr;
+    ImGuiWindow* child_window = nullptr;
     ImVec2 mouse;
 
     void Frame()
@@ -80,118 +80,118 @@ struct Bench
         ImGui::NewFrame();
         // As the hooks do: the layer runs before any widget (it acts on the frame's input before the widgets see it)
         ImGuiTouch::ApplyFingerCancel();
-        ImGuiTouch::UpdateTouchScroll(mode, longPressIsRightClick, thinScrollbars);
-        ImGuiTouch::UpdateTouchPinch(pinchScalesFont);
+        ImGuiTouch::UpdateTouchScroll(mode, LongPressIsRightClick, ThinScrollbars);
+        ImGuiTouch::UpdateTouchPinch(pinch_scales_font);
         if (ImGui::GetIO().MouseClickedCount[ImGuiMouseButton_Left] == 2)
-            doubleClicks++;
+            double_clicks++;
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(400.f, 300.f), ImGuiCond_Always);
         ImGui::Begin("Bench", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | (wideContent ? ImGuiWindowFlags_HorizontalScrollbar : 0));
-        benchWindow = ImGui::GetCurrentWindow();
+                     ImGuiWindowFlags_NoTitleBar | (wide_content ? ImGuiWindowFlags_HorizontalScrollbar : 0));
+        bench_window = ImGui::GetCurrentWindow();
         scrollY = ImGui::GetScrollY();
-        scrollMaxY = ImGui::GetScrollMaxY();
-        rightDown = ImGui::GetIO().MouseDown[1];
+        scroll_max_y = ImGui::GetScrollMaxY();
+        right_down = ImGui::GetIO().MouseDown[1];
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-            rightClicks++;
+            right_clicks++;
         if (steal && ImGui::IsMouseDown(0))
         {
-            stealId = ImGui::GetID("steal");
-            ImGui::SetActiveID(stealId, ImGui::GetCurrentWindow());
-            ImGui::KeepAliveID(stealId);
+            steal_id = ImGui::GetID("steal");
+            ImGui::SetActiveID(steal_id, ImGui::GetCurrentWindow());
+            ImGui::KeepAliveID(steal_id);
         }
         if (ImGui::Button("Button"))
             clicks++;
-        buttonId = ImGui::GetItemID();
-        buttonRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-        itemPopupOpen = false;
+        button_id = ImGui::GetItemID();
+        button_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        item_popup_open = false;
         if (ImGui::BeginPopupContextItem("button_menu"))
         {
-            itemPopupOpen = true;
+            item_popup_open = true;
             ImGui::EndPopup();
         }
         ImGui::SliderFloat("Slider", &slider, 0.f, 1.f);
-        sliderRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        slider_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
         if (ImGui::Button("Repeat"))
             repeats++;
         ImGui::PopItemFlag();
-        repeatRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        repeat_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         ImGui::BeginChild("Child", ImVec2(0.f, 80.f), ImGuiChildFlags_Borders);
-        childScrollY = ImGui::GetScrollY();
-        childWindow = ImGui::GetCurrentWindow();
+        child_scroll_y = ImGui::GetScrollY();
+        child_window = ImGui::GetCurrentWindow();
         for (int i = 0; i < 30; ++i)
             ImGui::Text("Child line %d", i);
         ImGui::EndChild();
-        childRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        child_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         // Tall enough: one line plus its scrollbar, no vertical scroll
         ImGui::BeginChild("Wide", ImVec2(0.f, 60.f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
-        wideScrollX = ImGui::GetScrollX();
-        wideWindow = ImGui::GetCurrentWindow();
+        wide_scroll_x = ImGui::GetScrollX();
+        wide_window = ImGui::GetCurrentWindow();
         ImGui::Text("A wide line, wider than the window, so that this child scrolls sideways and not vertically");
         ImGui::EndChild();
-        wideRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        wide_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         if (canvas)
         {
             ImGui::InvisibleButton("Canvas", ImVec2(300.f, 50.f));
-            canvasId = ImGui::GetItemID();
+            canvas_id = ImGui::GetItemID();
             canvasRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
             if (ImGui::IsItemActive())
-                canvasDrag += ImGui::GetIO().MouseDelta;
-            if (canvasTakesDrags)
-                ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_Any, canvasLongPressIsRightClick);
-            if (canvasDragAxis >= 0)
-                ImGuiTouch::SetItemTakesDrags(canvasDragAxis, canvasLongPressIsRightClick);
-            if (canvasPinchData)
+                canvas_drag += ImGui::GetIO().MouseDelta;
+            if (canvas_takes_drags)
+                ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_Any, canvas_long_press_is_right_click);
+            if (canvas_drag_axis >= 0)
+                ImGuiTouch::SetItemTakesDrags(canvas_drag_axis, canvas_long_press_is_right_click);
+            if (canvas_pinch_data)
             {
-                canvasPinch = ImGuiTouch::ItemPinch();
-                if (canvasPinch.Active)
+                canvas_pinch = ImGuiTouch::ItemPinch();
+                if (canvas_pinch.Active)
                 {
-                    canvasDataZoom *= canvasPinch.ScaleDelta;
-                    canvasDataPan += canvasPinch.CenterDelta;
-                    canvasActiveFrames++;
-                    if (canvasFirstKind < 0 && canvasPinch.Kind != ImGuiTouchPinchKind_Undecided)
-                        canvasFirstKind = canvasPinch.Kind;
+                    canvas_data_zoom *= canvas_pinch.ScaleDelta;
+                    canvas_data_pan += canvas_pinch.CenterDelta;
+                    canvas_active_frames++;
+                    if (canvas_first_kind < 0 && canvas_pinch.Kind != ImGuiTouchPinchKind_Undecided)
+                        canvas_first_kind = canvas_pinch.Kind;
                 }
-                canvasStarted += canvasPinch.Started ? 1 : 0;
-                canvasEnded += canvasPinch.Ended ? 1 : 0;
+                canvas_started += canvas_pinch.Started ? 1 : 0;
+                canvas_ended += canvas_pinch.Ended ? 1 : 0;
             }
-            if (canvasPanOnly)
-                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvasPanButton);
-            if (canvasTakesPinch)
+            if (canvas_pan_only)
+                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvas_pan_button);
+            if (canvas_takes_pinch)
             {
-                ImGuiTouch::SetItemPinchAsWheel(1.1f, canvasDelivery);
-                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvasPanButton);
+                ImGuiTouch::SetItemPinchAsWheel(1.1f, canvas_delivery);
+                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvas_pan_button);
                 if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
                 {
-                    canvasZoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
-                    canvasWheelPos = ImGui::GetIO().MousePos;
+                    canvas_zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+                    canvas_wheel_pos = ImGui::GetIO().MousePos;
                 }
             }
         }
-        if (wideContent)
+        if (wide_content)
             ImGui::Dummy(ImVec2(800.f, 1.f));  // twice the window's width
-        ImVec2 linesPos = ImGui::GetCursorScreenPos();
-        for (int i = 0; i < (shortContent ? 2 : 100); ++i)
+        ImVec2 lines_pos = ImGui::GetCursorScreenPos();
+        for (int i = 0; i < (short_content ? 2 : 100); ++i)
             ImGui::Text("Line %d", i);
-        linesRect = ImRect(linesPos, ImVec2(linesPos.x + 300.f, 290.f));
-        windowPopupOpen = false;
+        lines_rect = ImRect(lines_pos, ImVec2(lines_pos.x + 300.f, 290.f));
+        window_popup_open = false;
         if (ImGui::BeginPopupContextWindow("window_menu",
                                            ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
-            windowPopupOpen = true;
+            window_popup_open = true;
             ImGui::EndPopup();
         }
         ImGui::End();
         ImDrawList* foreground = ImGui::GetForegroundDrawList();
-        const int vtxBefore = foreground->VtxBuffer.Size;
+        const int vtx_before = foreground->VtxBuffer.Size;
         ImGuiTouch::DrawTouchScrollbarGrab();  // as the hooks do, after the GUI
-        heldBarRect = ImRect(ImVec2(FLT_MAX, FLT_MAX), ImVec2(-FLT_MAX, -FLT_MAX));
-        for (int i = vtxBefore; i < foreground->VtxBuffer.Size; ++i)
-            heldBarRect.Add(foreground->VtxBuffer[i].pos);
+        held_bar_rect = ImRect(ImVec2(FLT_MAX, FLT_MAX), ImVec2(-FLT_MAX, -FLT_MAX));
+        for (int i = vtx_before; i < foreground->VtxBuffer.Size; ++i)
+            held_bar_rect.Add(foreground->VtxBuffer[i].pos);
         ImGui::Render();
         ImGuiTouch::ApplyTouchOverscroll();
-        lastVtxY = ImGui::FindWindowByName("Bench")->DrawList->VtxBuffer.back().pos.y;
+        last_vtx_y = ImGui::FindWindowByName("Bench")->DrawList->VtxBuffer.back().pos.y;
         ImGui_ImplNullRender_RenderDrawData(ImGui::GetDrawData());
     }
     void Frames(int n) { for (int i = 0; i < n; ++i) Frame(); }
@@ -236,14 +236,14 @@ TEST_CASE("Touch scroll: a swipe on the lines scrolls the window, a tap does not
     Bench b;
     b.Frames(3);
     REQUIRE(b.scrollY == 0.f);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(Near(b.scrollY, 50.f));
     CHECK(ImGui::GetCurrentContext()->ActiveId == 0);
 
     float before = b.scrollY;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.ReleaseStill();
     CHECK(b.scrollY == before);
     CHECK(b.clicks == 0);
@@ -254,23 +254,23 @@ TEST_CASE("Touch scroll: Auto acts with a touch source only, Disabled never")
     Bench b;
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(b.scrollY == 0.f);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     CHECK(ImGui::GetCurrentContext()->ActiveId != 0);  // the button, at once
     b.Release();
     CHECK(b.clicks == 1);
 
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(Near(b.scrollY, 50.f));
 
     b.mode = ImGuiTouchScrollMode_Disabled;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(Near(b.scrollY, 50.f));
@@ -280,14 +280,14 @@ TEST_CASE("Touch scroll: a tap on a button clicks it when the finger lifts, a sw
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Frames(2);
     CHECK(b.clicks == 0);  // nothing yet: the press is held back
     b.Release();
     CHECK(b.clicks == 1);  // replayed
     CHECK(b.scrollY == 0.f);
 
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(Near(b.scrollY, 50.f));
@@ -298,49 +298,49 @@ TEST_CASE("Touch scroll: two taps are a double click, a tap after a pause is not
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Release();
     CHECK(b.clicks == 1);
-    CHECK(b.doubleClicks == 0);  // the replayed press does not pair with the finger's own press
-    b.Press(b.buttonRect.GetCenter());  // about 0.1 s after the first tap
+    CHECK(b.double_clicks == 0);  // the replayed press does not pair with the finger's own press
+    b.Press(b.button_rect.GetCenter());  // about 0.1 s after the first tap
     b.Release();
     CHECK(b.clicks == 2);
-    CHECK(b.doubleClicks == 1);
+    CHECK(b.double_clicks == 1);
     b.Frames(30);  // half a second
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Release();
     CHECK(b.clicks == 3);
-    CHECK(b.doubleClicks == 1);
+    CHECK(b.double_clicks == 1);
     // A finger's two taps land apart: 12 px (ImGui's 6 px suit a mouse), and may take 0.35 s
     b.Frames(30);
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Release();
     b.Frames(14);  // about 0.35 s from the first tap's press to the second's
-    b.Press(b.buttonRect.GetCenter() + ImVec2(12.f, 0.f));
+    b.Press(b.button_rect.GetCenter() + ImVec2(12.f, 0.f));
     b.Release();
     CHECK(b.clicks == 5);
-    CHECK(b.doubleClicks == 2);
+    CHECK(b.double_clicks == 2);
 }
 
 TEST_CASE("Touch scroll: a hold hands the press to the widget under the finger")
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.sliderRect.GetCenter());
+    b.Press(b.slider_rect.GetCenter());
     b.Frames(20);  // past the hold delay, the slider got the press
     b.Drag(ImVec2(60.f, 0.f), 5);
     b.ReleaseStill();
     CHECK(b.slider > 0.6f);
     CHECK(b.scrollY == 0.f);
 
-    b.Press(b.linesRect.GetCenter());  // a hold on the void: nothing
+    b.Press(b.lines_rect.GetCenter());  // a hold on the void: nothing
     b.Frames(20);
     b.Release();
     CHECK(b.scrollY == 0.f);
     CHECK(b.clicks == 0);
 
-    b.Press(b.buttonRect.GetCenter());  // a long tap still clicks
+    b.Press(b.button_rect.GetCenter());  // a long tap still clicks
     b.Frames(20);
     b.Release();
     CHECK(b.clicks == 1);
@@ -351,20 +351,20 @@ TEST_CASE("Touch scroll: on a touch screen, a lift leaves no pointer, so nothing
     Bench b;
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Frames(3);
-    b.Press(b.buttonRect.GetCenter());  // a mouse: the pointer stays, the button is hovered after the click
+    b.Press(b.button_rect.GetCenter());  // a mouse: the pointer stays, the button is hovered after the click
     b.Release();
     CHECK(b.clicks == 1);
     CHECK(ImGui::IsMousePosValid());
     CHECK(ImGui::GetCurrentContext()->HoveredId != 0);
 
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.buttonRect.GetCenter());  // a finger: the tap clicks, then no pointer, nothing hovered
+    b.Press(b.button_rect.GetCenter());  // a finger: the tap clicks, then no pointer, nothing hovered
     b.Release();
     CHECK(b.clicks == 2);
     CHECK(!ImGui::IsMousePosValid());
     CHECK(ImGui::GetCurrentContext()->HoveredId == 0);
 
-    b.Press(b.linesRect.GetCenter());  // a flick: nothing hovered while the content coasts
+    b.Press(b.lines_rect.GetCenter());  // a flick: nothing hovered while the content coasts
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.Release();
     b.Frames(10);
@@ -372,7 +372,7 @@ TEST_CASE("Touch scroll: on a touch screen, a lift leaves no pointer, so nothing
     CHECK(!ImGui::IsMousePosValid());
     CHECK(ImGui::GetCurrentContext()->HoveredId == 0);
 
-    b.MoveTo(b.buttonRect.GetCenter());  // the next touch brings a position back
+    b.MoveTo(b.button_rect.GetCenter());  // the next touch brings a position back
     b.Frame();
     CHECK(ImGui::IsMousePosValid());
 
@@ -384,7 +384,7 @@ TEST_CASE("Touch scroll: on a touch screen, the release of a handover is not a l
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Frames(3);
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.sliderRect.GetCenter());  // a hold: the slider gets the press, with the pointer where the finger is
+    b.Press(b.slider_rect.GetCenter());  // a hold: the slider gets the press, with the pointer where the finger is
     b.Frames(20);
     CHECK(ImGui::IsMousePosValid());
     CHECK(ImGui::GetCurrentContext()->ActiveId != 0);
@@ -408,7 +408,7 @@ TEST_CASE("Touch: a cancelled finger ends its press with no click, on a button a
 {
     Bench b;
     b.Frames(3);
-    const ImVec2 p = b.buttonRect.GetCenter();
+    const ImVec2 p = b.button_rect.GetCenter();
     b.Press(p);
     ImGuiTouch::AddFingerEvent(1, p, ImGuiTouchPhase_Began);
     b.Frames(20);  // held: the button has the press
@@ -438,7 +438,7 @@ TEST_CASE("Touch pinch: two fingers scale the font, and take the press from the 
     Bench b;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -30.f), 3);
     Fingers(ImVec2(100, 100), ImVec2(200, 100));  // the second finger lands, 100 px from the first
     b.Frame();
@@ -464,20 +464,20 @@ TEST_CASE("Touch pinch: two fingers that move together are a right drag, the lef
     Bench b;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     Fingers(ImVec2(100, 100), ImVec2(200, 100));  // the second finger lands
     b.Frames(2);
-    CHECK(!b.rightDown);
+    CHECK(!b.right_down);
     Fingers(ImVec2(100, 70), ImVec2(202, 70));  // the two move together, 30 px up (and spread a little: 1.02)
     b.Frames(4);
-    CHECK(b.rightDown);
+    CHECK(b.right_down);
     CHECK(!ImGui::GetIO().MouseDown[0]);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
     b.Drag(ImVec2(0.f, -30.f), 3);  // the first finger moves: no scroll (it is a right drag now)
     CHECK(b.scrollY == 0.f);
     LiftFingers();
     b.Release();
-    CHECK(!b.rightDown);
+    CHECK(!b.right_down);
     CHECK(b.clicks == 0);
 }
 
@@ -486,7 +486,7 @@ TEST_CASE("Touch pinch: a widget that holds the press keeps it")
     Bench b;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
-    b.Press(b.sliderRect.GetCenter());
+    b.Press(b.slider_rect.GetCenter());
     b.Frames(20);  // the hold: the slider got the press
     Fingers(ImVec2(100, 100), ImVec2(200, 100));
     b.Frame();
@@ -504,20 +504,20 @@ TEST_CASE("Touch scroll: a press is not held back when nothing can scroll, nor a
 {
     {
         Bench b;
-        b.shortContent = true;
+        b.short_content = true;
         b.Frames(3);
-        b.Press(b.buttonRect.GetCenter());  // the window fits: the button gets the press at once
-        CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+        b.Press(b.button_rect.GetCenter());  // the window fits: the button gets the press at once
+        CHECK(ImGui::GetCurrentContext()->ActiveId == b.button_id);
         b.Release();
         CHECK(b.clicks == 1);
-        b.Press(b.childRect.GetCenter());  // the child scrolls: a swipe there still works
+        b.Press(b.child_rect.GetCenter());  // the child scrolls: a swipe there still works
         b.Drag(ImVec2(0.f, -30.f), 3);
         b.ReleaseStill();
-        CHECK(Near(b.childScrollY, 30.f));
+        CHECK(Near(b.child_scroll_y, 30.f));
     }  // one ImGui context at a time
     Bench c;
     c.Frames(3);
-    c.Press(c.sliderRect.GetCenter());  // the window scrolls vertically only: a horizontal drag goes to the slider
+    c.Press(c.slider_rect.GetCenter());  // the window scrolls vertically only: a horizontal drag goes to the slider
     c.Drag(ImVec2(60.f, 0.f), 5);       // at once, no hold
     c.ReleaseStill();
     CHECK(c.slider > 0.6f);
@@ -531,22 +531,22 @@ TEST_CASE("Touch scroll: a widget that takes the drags gets the press at once, a
         b.canvas = true;
         b.Frames(3);
         b.Press(b.canvasRect.GetCenter());  // a plain item: the press is held back, a vertical drag scrolls the window
-        CHECK(ImGui::GetCurrentContext()->ActiveId != b.canvasId);
+        CHECK(ImGui::GetCurrentContext()->ActiveId != b.canvas_id);
         b.Drag(ImVec2(0.f, -40.f), 4);
         b.ReleaseStill();
         CHECK(b.scrollY > 0.f);
-        CHECK(b.canvasDrag.y == 0.f);
+        CHECK(b.canvas_drag.y == 0.f);
     }  // one ImGui context at a time
     Bench c;
-    c.canvas = c.canvasTakesDrags = true;
+    c.canvas = c.canvas_takes_drags = true;
     c.Frames(3);
     c.Press(c.canvasRect.GetCenter());  // SetItemTakesDrags(): the canvas has the press at once, and the drag
-    CHECK(ImGui::GetCurrentContext()->ActiveId == c.canvasId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == c.canvas_id);
     c.Drag(ImVec2(0.f, -40.f), 4);
     c.ReleaseStill();
     CHECK(c.scrollY == 0.f);
-    CHECK(Near(c.canvasDrag.y, -40.f));
-    c.Press(c.linesRect.GetCenter());  // elsewhere, the window still scrolls
+    CHECK(Near(c.canvas_drag.y, -40.f));
+    c.Press(c.lines_rect.GetCenter());  // elsewhere, the window still scrolls
     c.Drag(ImVec2(0.f, -40.f), 4);
     c.ReleaseStill();
     CHECK(c.scrollY > 0.f);
@@ -556,46 +556,46 @@ TEST_CASE("Touch scroll: a long press is a right click when the finger lifts, a 
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Frames(40);  // 0.66 s still: the hold gave the button the press, the long press is armed, nothing happens yet
-    CHECK(!b.itemPopupOpen);
+    CHECK(!b.item_popup_open);
     CHECK(ImGui::GetIO().MouseDown[0]);
-    CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.button_id);
     b.Release();  // the lift: a right click, and the button does not click
-    CHECK(b.itemPopupOpen);
+    CHECK(b.item_popup_open);
     CHECK(b.clicks == 0);
-    CHECK(b.rightClicks == 1);
-    b.Press(b.linesRect.GetCenter());  // away from the menu: it closes
+    CHECK(b.right_clicks == 1);
+    b.Press(b.lines_rect.GetCenter());  // away from the menu: it closes
     b.Release();
-    CHECK(!b.itemPopupOpen);
+    CHECK(!b.item_popup_open);
 
-    b.Press(b.linesRect.GetCenter());  // on the void
+    b.Press(b.lines_rect.GetCenter());  // on the void
     b.Frames(40);
-    CHECK(!b.windowPopupOpen);
+    CHECK(!b.window_popup_open);
     b.Release();
-    CHECK(b.windowPopupOpen);
-    b.Press(ImVec2(b.linesRect.Min.x + 10.f, b.linesRect.Min.y + 10.f));  // away from the menu: it closes
+    CHECK(b.window_popup_open);
+    b.Press(ImVec2(b.lines_rect.Min.x + 10.f, b.lines_rect.Min.y + 10.f));  // away from the menu: it closes
     b.Release();
-    CHECK(!b.windowPopupOpen);
+    CHECK(!b.window_popup_open);
 
-    b.Press(b.buttonRect.GetCenter());  // a shorter hold: a click when the finger lifts
+    b.Press(b.button_rect.GetCenter());  // a shorter hold: a click when the finger lifts
     b.Frames(15);
     b.Release();
     CHECK(b.clicks == 1);
-    CHECK(!b.itemPopupOpen);
+    CHECK(!b.item_popup_open);
 
-    b.Press(b.linesRect.GetCenter());  // a finger that moves before the delay: a swipe, no menu
+    b.Press(b.lines_rect.GetCenter());  // a finger that moves before the delay: a swipe, no menu
     b.Frames(10);
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.Frames(40);
-    CHECK(!b.windowPopupOpen);
+    CHECK(!b.window_popup_open);
     b.ReleaseStill();
 
-    b.longPressIsRightClick = false;
-    b.Press(b.buttonRect.GetCenter());
+    b.LongPressIsRightClick = false;
+    b.Press(b.button_rect.GetCenter());
     b.Frames(40);
     b.Release();
-    CHECK(!b.itemPopupOpen);
+    CHECK(!b.item_popup_open);
     CHECK(b.clicks == 2);
 }
 
@@ -604,26 +604,26 @@ TEST_CASE("Touch scroll: the hold's and the long press's delays come from the co
     Bench b;
     b.Frames(3);
     ImGuiTouchConfig& config = ImGuiTouch::GetConfig();
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Frames(15);  // 0.25 s: past the default hold, the button has the press
-    CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.button_id);
     b.Release();
     config.HoldSeconds = 1.f;
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Frames(15);  // not yet: the layer still holds it
-    CHECK(ImGui::GetCurrentContext()->ActiveId != b.buttonId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId != b.button_id);
     b.Frames(50);  // 1.08 s: now
-    CHECK(ImGui::GetCurrentContext()->ActiveId == b.buttonId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.button_id);
     b.Release();
     config.HoldSeconds = 0.15f;
 
     config.LongPressSeconds = 2.f;
-    const int rightClicks = b.rightClicks;  // the hold of one second above lifted after the long press: one
-    b.Press(b.buttonRect.GetCenter());
+    const int right_clicks = b.right_clicks;  // the hold of one second above lifted after the long press: one
+    b.Press(b.button_rect.GetCenter());
     b.Frames(40);  // 0.66 s: a long press by default, not with this setting
     b.Release();
-    CHECK(!b.itemPopupOpen);
-    CHECK(b.rightClicks == rightClicks);
+    CHECK(!b.item_popup_open);
+    CHECK(b.right_clicks == right_clicks);
     config.LongPressSeconds = 0.5f;
 }
 
@@ -631,24 +631,24 @@ TEST_CASE("Touch scroll: a widget that takes the drags may keep a still finger p
 {
     {
         Bench b;
-        b.canvas = b.canvasTakesDrags = true;
+        b.canvas = b.canvas_takes_drags = true;
         b.Frames(3);
         b.Press(b.canvasRect.GetCenter());
         b.Frames(40);  // 0.66 s still: the canvas keeps the press; the lift will be a right click
-        CHECK(ImGui::GetCurrentContext()->ActiveId == b.canvasId);
+        CHECK(ImGui::GetCurrentContext()->ActiveId == b.canvas_id);
         b.Release();
-        CHECK(b.rightClicks == 1);
+        CHECK(b.right_clicks == 1);
     }  // one ImGui context at a time
     Bench c;
-    c.canvas = c.canvasTakesDrags = true;
-    c.canvasLongPressIsRightClick = false;  // a piano key: held as long as the finger stays, and no right click
+    c.canvas = c.canvas_takes_drags = true;
+    c.canvas_long_press_is_right_click = false;  // a piano key: held as long as the finger stays, and no right click
     c.Frames(3);
     c.Press(c.canvasRect.GetCenter());
     c.Frames(40);
-    CHECK(ImGui::GetCurrentContext()->ActiveId == c.canvasId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == c.canvas_id);
     CHECK(ImGui::GetIO().MouseDown[0]);
     c.Release();
-    CHECK(c.rightClicks == 0);
+    CHECK(c.right_clicks == 0);
 }
 
 TEST_CASE("Touch scroll: a button that repeats keeps the finger past the long press, and repeats")
@@ -656,14 +656,14 @@ TEST_CASE("Touch scroll: a button that repeats keeps the finger past the long pr
     Bench b;
     b.Frames(3);
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.repeatRect.GetCenter());
+    b.Press(b.repeat_rect.GetCenter());
     b.Frames(60);  // one second: the hold hands the press over, the repeats start, the long press would fire at 0.5 s
     CHECK(b.repeats > 5);
-    CHECK(b.windowPopupOpen == false);
-    CHECK(b.itemPopupOpen == false);
-    int repeatsSoFar = b.repeats;
+    CHECK(b.window_popup_open == false);
+    CHECK(b.item_popup_open == false);
+    int repeats_so_far = b.repeats;
     b.Frames(12);
-    CHECK(b.repeats > repeatsSoFar);  // still repeating: the press was not taken away
+    CHECK(b.repeats > repeats_so_far);  // still repeating: the press was not taken away
     b.Release();
 }
 
@@ -673,7 +673,7 @@ TEST_CASE("Touch scroll: a long press on a slider, with a touch source, does not
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Frames(3);
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.sliderRect.GetCenter());
+    b.Press(b.slider_rect.GetCenter());
     b.Frames(15);  // the hold gave the slider the press, at the finger
     float held = b.slider;
     CHECK(held > 0.3f);
@@ -682,7 +682,7 @@ TEST_CASE("Touch scroll: a long press on a slider, with a touch source, does not
     CHECK(ImGui::GetIO().MouseDown[0]);
     b.Release();  // a right click, at no position for the slider: it stays
     CHECK(b.slider == held);
-    CHECK(b.rightClicks == 1);
+    CHECK(b.right_clicks == 1);
 }
 
 TEST_CASE("Touch scroll: after a long press, a move keeps the widget's drag, and cancels the right click")
@@ -691,16 +691,16 @@ TEST_CASE("Touch scroll: after a long press, a move keeps the widget's drag, and
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Frames(3);
     b.Source(ImGuiMouseSource_TouchScreen);
-    b.Press(b.sliderRect.GetCenter());
+    b.Press(b.slider_rect.GetCenter());
     b.Frames(45);  // the hold gave the slider the press, the long press is armed
     float held = b.slider;
     b.Drag(ImVec2(60.f, 0.f), 6);  // the drag after a pause, as on a phone
     CHECK(b.slider > held);
     CHECK(ImGui::GetCurrentContext()->ActiveId != 0);
     b.Release();
-    CHECK(b.rightClicks == 0);
-    CHECK(!b.itemPopupOpen);
-    CHECK(!b.windowPopupOpen);
+    CHECK(b.right_clicks == 0);
+    CHECK(!b.item_popup_open);
+    CHECK(!b.window_popup_open);
 }
 
 TEST_CASE("Touch scroll: with a finger, a swipe on a scroll bar scrolls the content with the finger")
@@ -709,28 +709,28 @@ TEST_CASE("Touch scroll: with a finger, a swipe on a scroll bar scrolls the cont
         Bench b;
         b.Frames(3);
         b.Source(ImGuiMouseSource_TouchScreen);
-        b.Press(b.linesRect.GetCenter());  // some scroll first
+        b.Press(b.lines_rect.GetCenter());  // some scroll first
         b.Drag(ImVec2(0.f, -100.f), 5);
         b.ReleaseStill();
         float before = b.scrollY;
         REQUIRE(before > 50.f);
-        b.Press(ImGui::GetWindowScrollbarRect(b.benchWindow, ImGuiAxis_Y).GetCenter());
+        b.Press(ImGui::GetWindowScrollbarRect(b.bench_window, ImGuiAxis_Y).GetCenter());
         b.Drag(ImVec2(0.f, 40.f), 4);  // down, on the vertical bar
         b.ReleaseStill();
         CHECK(Near(b.scrollY, before - 40.f));  // the content followed the finger, as on the content
 
-        b.Press(ImGui::GetWindowScrollbarRect(b.wideWindow, ImGuiAxis_X).GetCenter());
+        b.Press(ImGui::GetWindowScrollbarRect(b.wide_window, ImGuiAxis_X).GetCenter());
         b.Drag(ImVec2(-40.f, 0.f), 4);  // left, on the horizontal bar of the wide child
         b.ReleaseStill();
-        CHECK(Near(b.wideScrollX, 40.f));
+        CHECK(Near(b.wide_scroll_x, 40.f));
     }  // one ImGui context at a time
     Bench c;  // with the mouse, the bar is a control: the same drag moves the content forward (its thumb, a page)
     c.Frames(3);
-    c.Press(c.linesRect.GetCenter());
+    c.Press(c.lines_rect.GetCenter());
     c.Drag(ImVec2(0.f, -100.f), 5);
     c.ReleaseStill();
     float before = c.scrollY;
-    c.Press(ImGui::GetWindowScrollbarRect(c.benchWindow, ImGuiAxis_Y).GetCenter());
+    c.Press(ImGui::GetWindowScrollbarRect(c.bench_window, ImGuiAxis_Y).GetCenter());
     c.Drag(ImVec2(0.f, 40.f), 4);
     c.ReleaseStill();
     CHECK(c.scrollY > before);
@@ -740,13 +740,13 @@ TEST_CASE("Touch scroll: thin scroll bars on a touch screen, when asked")
 {
     Bench b;
     b.Frames(2);
-    const float themeSize = ImGui::GetStyle().ScrollbarSize;
-    b.thinScrollbars = true;
+    const float theme_size = ImGui::GetStyle().ScrollbarSize;
+    b.ThinScrollbars = true;
     b.Frames(2);
-    CHECK(ImGui::GetStyle().ScrollbarSize == themeSize);  // not a touch screen
+    CHECK(ImGui::GetStyle().ScrollbarSize == theme_size);  // not a touch screen
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     b.Frames(2);
-    CHECK(ImGui::GetStyle().ScrollbarSize < themeSize);
+    CHECK(ImGui::GetStyle().ScrollbarSize < theme_size);
     CHECK(ImGui::GetStyle().ScrollbarSize >= 1.f);
     ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
 }
@@ -754,19 +754,19 @@ TEST_CASE("Touch scroll: thin scroll bars on a touch screen, when asked")
 TEST_CASE("Touch scroll: a touch laptop driven by its mouse keeps the theme's bars, thin again at the next finger")
 {
     Bench b;
-    b.thinScrollbars = true;
+    b.ThinScrollbars = true;
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     b.Frames(2);
-    const float thinSize = ImGui::GetStyle().ScrollbarSize;
+    const float thin_size = ImGui::GetStyle().ScrollbarSize;
     b.Source(ImGuiMouseSource_Mouse);
     b.MoveTo(ImVec2(100.f, 100.f));
     b.MoveTo(ImVec2(110.f, 100.f));
     b.Frames(2);
-    CHECK(ImGui::GetStyle().ScrollbarSize > thinSize);  // the theme's
+    CHECK(ImGui::GetStyle().ScrollbarSize > thin_size);  // the theme's
     b.Source(ImGuiMouseSource_TouchScreen);  // tags the next event: a finger that moves
     b.MoveTo(ImVec2(111.f, 100.f));
     b.Frames(2);
-    CHECK(ImGui::GetStyle().ScrollbarSize == thinSize);
+    CHECK(ImGui::GetStyle().ScrollbarSize == thin_size);
     ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
 }
 
@@ -775,18 +775,18 @@ TEST_CASE("Touch scroll: thin scroll bars turned off give the theme's bars back,
     Bench b;
     b.Frames(2);
     ImGuiStyle& style = ImGui::GetStyle();
-    const float themeSize = style.ScrollbarSize, themeRounding = style.ScrollbarRounding;
+    const float theme_size = style.ScrollbarSize, theme_rounding = style.ScrollbarRounding;
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
-    b.thinScrollbars = true;
+    b.ThinScrollbars = true;
     b.Frames(2);
-    CHECK(style.ScrollbarSize < themeSize);
-    b.thinScrollbars = false;
+    CHECK(style.ScrollbarSize < theme_size);
+    b.ThinScrollbars = false;
     b.Frames(2);
-    CHECK(style.ScrollbarSize == themeSize);
-    CHECK(style.ScrollbarRounding == themeRounding);
+    CHECK(style.ScrollbarSize == theme_size);
+    CHECK(style.ScrollbarRounding == theme_rounding);
 
     // A theme applied while the bars are thin: its values come back
-    b.thinScrollbars = true;
+    b.ThinScrollbars = true;
     b.Frames(2);
     style.ScrollbarSize = 20.f;
     style.ScrollbarRounding = 2.f;
@@ -796,39 +796,39 @@ TEST_CASE("Touch scroll: thin scroll bars turned off give the theme's bars back,
     b.Frames(2);
     CHECK(style.ScrollbarSize == 20.f);
     CHECK(style.ScrollbarRounding == 2.f);
-    style.ScrollbarSize = themeSize;
-    style.ScrollbarRounding = themeRounding;
+    style.ScrollbarSize = theme_size;
+    style.ScrollbarRounding = theme_rounding;
 }
 
 TEST_CASE("Touch scroll: a thin scroll bar held by a finger widens over the content")
 {
     Bench b;
-    b.thinScrollbars = true;
+    b.ThinScrollbars = true;
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     b.Frames(3);
     b.Source(ImGuiMouseSource_TouchScreen);
     // The child's bar: the bench window's is under its resize border, which would take the hold
-    const ImRect bar = ImGui::GetWindowScrollbarRect(b.childWindow, ImGuiAxis_Y);
+    const ImRect bar = ImGui::GetWindowScrollbarRect(b.child_window, ImGuiAxis_Y);
     b.Press(bar.GetCenter());
-    CHECK(b.heldBarRect.Min.x > b.heldBarRect.Max.x);  // a swipe so far: nothing drawn
+    CHECK(b.held_bar_rect.Min.x > b.held_bar_rect.Max.x);  // a swipe so far: nothing drawn
     b.Frames(20);  // past the hold delay, the bar got the press
-    CHECK(ImGui::GetActiveID() == ImGui::GetWindowScrollbarID(b.childWindow, ImGuiAxis_Y));
-    CHECK(b.heldBarRect.Min.x < bar.Min.x - 3.f);  // its thumb, wider, over the content
-    CHECK(b.heldBarRect.Max.x <= bar.Max.x + 1.f);  // along the window's edge
-    CHECK(b.heldBarRect.Min.y >= bar.Min.y - 1.f);
-    CHECK(b.heldBarRect.Max.y <= bar.Max.y + 1.f);
+    CHECK(ImGui::GetActiveID() == ImGui::GetWindowScrollbarID(b.child_window, ImGuiAxis_Y));
+    CHECK(b.held_bar_rect.Min.x < bar.Min.x - 3.f);  // its thumb, wider, over the content
+    CHECK(b.held_bar_rect.Max.x <= bar.Max.x + 1.f);  // along the window's edge
+    CHECK(b.held_bar_rect.Min.y >= bar.Min.y - 1.f);
+    CHECK(b.held_bar_rect.Max.y <= bar.Max.y + 1.f);
     b.Release();
-    CHECK(b.heldBarRect.Min.x > b.heldBarRect.Max.x);
+    CHECK(b.held_bar_rect.Min.x > b.held_bar_rect.Max.x);
 }
 
 TEST_CASE("Touch scroll: a widget that takes the active id after the press ends the swipe")
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.steal = true;
     b.Frame();
-    CHECK(ImGui::GetCurrentContext()->ActiveId == b.stealId);
+    CHECK(ImGui::GetCurrentContext()->ActiveId == b.steal_id);
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.ReleaseStill();
     CHECK(b.scrollY == 0.f);
@@ -838,35 +838,35 @@ TEST_CASE("Touch scroll: a child scrolls itself, and its parent when it cannot s
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.childRect.GetCenter());
+    b.Press(b.child_rect.GetCenter());
     b.Drag(ImVec2(0.f, -30.f), 3);
     b.ReleaseStill();
-    CHECK(Near(b.childScrollY, 30.f));
+    CHECK(Near(b.child_scroll_y, 30.f));
     CHECK(b.scrollY == 0.f);
 
-    b.Press(b.wideRect.GetCenter());
+    b.Press(b.wide_rect.GetCenter());
     b.Drag(ImVec2(-30.f, 0.f), 3);
     b.ReleaseStill();
-    CHECK(Near(b.wideScrollX, 30.f));
+    CHECK(Near(b.wide_scroll_x, 30.f));
     CHECK(b.scrollY == 0.f);
 
-    b.Press(b.wideRect.GetCenter());
+    b.Press(b.wide_rect.GetCenter());
     b.Drag(ImVec2(0.f, -30.f), 3);
     b.ReleaseStill();
     CHECK(Near(b.scrollY, 30.f));
-    CHECK(Near(b.wideScrollX, 30.f));
+    CHECK(Near(b.wide_scroll_x, 30.f));
 }
 
 TEST_CASE("Touch scroll: a flick keeps scrolling, then stops")
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);  // 10 px per frame: 600 px/s
     b.Release();
-    float atRelease = b.scrollY;
+    float at_release = b.scrollY;
     b.Frames(10);
-    CHECK(b.scrollY > atRelease + 20.f);
+    CHECK(b.scrollY > at_release + 20.f);
     b.Frames(120);
     float stopped = b.scrollY;
     b.Frames(10);
@@ -878,7 +878,7 @@ TEST_CASE("Touch scroll: while the content coasts, the app does not idle; once i
     // The inertia moves without input events: it asks for a refresh at each frame, as an animation would
     Bench b;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -50.f), 5);
     b.Release();
     ImGuiTouch::ConsumeAnimationRequest();
@@ -894,22 +894,22 @@ TEST_CASE("Touch scroll: a drag past the start pulls the content, which springs 
 {
     Bench b;
     b.Frames(3);
-    float rest = b.lastVtxY;
-    b.Press(b.linesRect.GetCenter());
+    float rest = b.last_vtx_y;
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, 100.f), 5);  // down, while the window is at its start: nothing scrolls, the content follows
     CHECK(b.scrollY == 0.f);
-    float pulled = b.lastVtxY;
+    float pulled = b.last_vtx_y;
     CHECK(pulled > rest + 20.f);
     CHECK(pulled < rest + 100.f);  // less than the finger: the rubber band
     b.Frames(15);
-    CHECK(b.lastVtxY == pulled);  // held there by the finger
+    CHECK(b.last_vtx_y == pulled);  // held there by the finger
     b.Drag(ImVec2(0.f, -40.f), 2);  // the finger comes back: the content follows it, still nothing scrolls
-    CHECK(b.lastVtxY < pulled);
-    CHECK(b.lastVtxY > rest);
+    CHECK(b.last_vtx_y < pulled);
+    CHECK(b.last_vtx_y > rest);
     CHECK(b.scrollY == 0.f);
     b.Release();
     b.Frames(60);
-    CHECK(b.lastVtxY == rest);
+    CHECK(b.last_vtx_y == rest);
     CHECK(b.scrollY == 0.f);
 }
 
@@ -917,33 +917,33 @@ TEST_CASE("Touch scroll: a flick that reaches the end overshoots, then springs b
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -600.f), 6);  // 100 px per frame: thousands of px/s, enough to reach the end
     b.Release();
     bool overshot = false;
     for (int i = 0; i < 120 && !overshot; ++i)
     {
         b.Frame();
-        if (b.scrollY == b.scrollMaxY)
+        if (b.scrollY == b.scroll_max_y)
         {
-            float atEnd = b.lastVtxY;
+            float at_end = b.last_vtx_y;
             b.Frames(2);
-            overshot = b.lastVtxY < atEnd;  // the content keeps going up past its end
+            overshot = b.last_vtx_y < at_end;  // the content keeps going up past its end
         }
     }
     CHECK(overshot);
     b.Frames(60);
-    CHECK(b.scrollY == b.scrollMaxY);
-    float settled = b.lastVtxY;
+    CHECK(b.scrollY == b.scroll_max_y);
+    float settled = b.last_vtx_y;
     b.Frames(5);
-    CHECK(b.lastVtxY == settled);
+    CHECK(b.last_vtx_y == settled);
 }
 
 TEST_CASE("Touch pinch: on a widget that takes the pinch, it zooms the widget by wheel notches, and not the font")
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
+    b.canvas_takes_pinch = true;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
     const ImVec2 c = b.canvasRect.GetCenter();
@@ -953,12 +953,12 @@ TEST_CASE("Touch pinch: on a widget that takes the pinch, it zooms the widget by
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // 54 px: a scale of 1.35, three notches of 10%
     b.Frames(6);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
-    CHECK(b.canvasZoom == doctest::Approx(1.331f));
-    CHECK(Near(b.canvasWheelPos.x, c.x + 7.f, 1.f));  // around the fingers' center, not the first finger (c - 20)
-    CHECK(Near(b.canvasWheelPos.y, c.y, 1.f));
+    CHECK(b.canvas_zoom == doctest::Approx(1.331f));
+    CHECK(Near(b.canvas_wheel_pos.x, c.x + 7.f, 1.f));  // around the fingers' center, not the first finger (c - 20)
+    CHECK(Near(b.canvas_wheel_pos.y, c.y, 1.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // back to 40 px: the notches go back
     b.Frames(6);
-    CHECK(b.canvasZoom == doctest::Approx(1.f));
+    CHECK(b.canvas_zoom == doctest::Approx(1.f));
     LiftFingers();
     b.Release();
     CHECK(b.clicks == 0);
@@ -969,16 +969,16 @@ TEST_CASE("Touch pinch: outside the widgets that take it, the pinch scales the f
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
+    b.canvas_takes_pinch = true;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     Fingers(ImVec2(100, 100), ImVec2(200, 100));  // not on the canvas
     b.Frame();
     Fingers(ImVec2(100, 100), ImVec2(250, 100));
     b.Frames(2);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);
-    CHECK(b.canvasZoom == 1.f);
+    CHECK(b.canvas_zoom == 1.f);
     LiftFingers();
     b.Release();
     ImGui::GetStyle().FontScaleMain = 1.f;
@@ -988,44 +988,44 @@ TEST_CASE("Touch pinch: a widget that reads the data zooms and pans at once, fro
 {
     Bench b;
     b.canvas = true;
-    b.canvasPinchData = true;
+    b.canvas_pinch_data = true;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c - ImVec2(20.f, 0.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // 40 px apart
     b.Frame();
-    CHECK(b.canvasStarted == 1);
-    CHECK(b.canvasPinch.Active);
-    CHECK(b.canvasPinch.ScaleDelta == 1.f);
+    CHECK(b.canvas_started == 1);
+    CHECK(b.canvas_pinch.Active);
+    CHECK(b.canvas_pinch.ScaleDelta == 1.f);
     for (int i = 1; i <= 10; i++)  // spread to 60 px (a scale of 1.5) while their middle moves 30 px right
     {
         const float k = (float)i / 10.f;
         Fingers(c + ImVec2(-20.f + 20.f * k, 0.f), c + ImVec2(20.f + 40.f * k, 0.f));
         b.Frame();
     }
-    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));
-    CHECK(b.canvasDataZoom == doctest::Approx(1.5f));
-    CHECK(b.canvasDataPan.x == doctest::Approx(30.f));
-    CHECK(b.canvasDataPan.y == doctest::Approx(0.f));
-    CHECK(b.canvasPinch.Center.x == doctest::Approx(c.x + 30.f));
-    CHECK(b.canvasFirstKind == ImGuiTouchPinchKind_Pinch);  // the spread passed 12% before the middle passed 0.6 em
+    CHECK(b.canvas_pinch.Scale == doctest::Approx(1.5f));
+    CHECK(b.canvas_data_zoom == doctest::Approx(1.5f));
+    CHECK(b.canvas_data_pan.x == doctest::Approx(30.f));
+    CHECK(b.canvas_data_pan.y == doctest::Approx(0.f));
+    CHECK(b.canvas_pinch.Center.x == doctest::Approx(c.x + 30.f));
+    CHECK(b.canvas_first_kind == ImGuiTouchPinchKind_Pinch);  // the spread passed 12% before the middle passed 0.6 em
     LiftFingers();
     b.Frame();
-    CHECK(b.canvasEnded == 1);
-    CHECK(!b.canvasPinch.Active);
+    CHECK(b.canvas_ended == 1);
+    CHECK(!b.canvas_pinch.Active);
     b.Release();
-    CHECK(b.canvasEnded == 1);  // one frame only
+    CHECK(b.canvas_ended == 1);  // one frame only
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
     CHECK(b.clicks == 0);
-    CHECK(b.canvasDrag.x == 0.f);  // the first finger's press did not drag the canvas
+    CHECK(b.canvas_drag.x == 0.f);  // the first finger's press did not drag the canvas
 }
 
 TEST_CASE("Touch pinch: a third finger takes the place of one that lifts, and the scale goes on without a jump")
 {
     Bench b;
     b.canvas = true;
-    b.canvasPinchData = true;
+    b.canvas_pinch_data = true;
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c - ImVec2(20.f, 0.f));
@@ -1036,17 +1036,17 @@ TEST_CASE("Touch pinch: a third finger takes the place of one that lifts, and th
     b.Frame();
     ImGuiTouch::AddFingerEvent(2, c + ImVec2(40.f, 0.f), ImGuiTouchPhase_Moved);  // 60 px: a scale of 1.5
     b.Frames(2);
-    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));
+    CHECK(b.canvas_pinch.Scale == doctest::Approx(1.5f));
     ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Ended);  // the first lifts: the pair is 2, 3
     b.Frame();
-    CHECK(b.canvasPinch.Active);
-    CHECK(b.canvasPinch.ScaleDelta == doctest::Approx(1.f));  // no jump
-    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));      // continuous
+    CHECK(b.canvas_pinch.Active);
+    CHECK(b.canvas_pinch.ScaleDelta == doctest::Approx(1.f));  // no jump
+    CHECK(b.canvas_pinch.Scale == doctest::Approx(1.5f));      // continuous
     // The new pair spreads: 2 at (c + 40, 0), 3 at (c + 0, 30): 50 px; 3 moves to (c + 0, 60): 72 px, a scale of 1.44
     ImGuiTouch::AddFingerEvent(3, c + ImVec2(0.f, 60.f), ImGuiTouchPhase_Moved);
     b.Frame();
-    CHECK(b.canvasPinch.ScaleDelta == doctest::Approx(72.11f / 50.f).epsilon(0.01));
-    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f * 72.11f / 50.f).epsilon(0.01));
+    CHECK(b.canvas_pinch.ScaleDelta == doctest::Approx(72.11f / 50.f).epsilon(0.01));
+    CHECK(b.canvas_pinch.Scale == doctest::Approx(1.5f * 72.11f / 50.f).epsilon(0.01));
     ImGuiTouch::AddFingerEvent(2, c, ImGuiTouchPhase_Ended);
     ImGuiTouch::AddFingerEvent(3, c, ImGuiTouchPhase_Ended);
     b.Release();
@@ -1056,7 +1056,7 @@ TEST_CASE("Touch scroll: a release at an invalid position (a backend that lost t
 {
     Bench b;
     b.Frames(3);
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     b.Drag(ImVec2(0.f, -40.f), 4);  // a swipe up, fast
     const float dragged = b.scrollY;
     CHECK(dragged > 0.f);
@@ -1066,7 +1066,7 @@ TEST_CASE("Touch scroll: a release at an invalid position (a backend that lost t
     CHECK(b.scrollY == dragged);  // nothing coasted
     // Without the guard, the lift speed is infinite: the overscroll goes to infinity, then NaN, the content is
     // drawn there and the bounce never ends
-    CHECK(ImGuiTouch::GetTouchContext().Scroll.overscroll == 0.f);
+    CHECK(ImGuiTouch::GetTouchContext().Scroll.Overscroll == 0.f);
     ImGuiTouch::ConsumeAnimationRequest();  // (the bench has no hook that clears the flag at each frame)
     b.Frame();
     CHECK(!ImGuiTouch::ConsumeAnimationRequest());
@@ -1078,14 +1078,14 @@ TEST_CASE("Touch scroll: the long press watch ends when the layer turns off (the
     b.mode = ImGuiTouchScrollMode_Auto;
     b.Source(ImGuiMouseSource_TouchScreen);
     b.Frames(3);
-    b.Press(b.buttonRect.GetCenter());
+    b.Press(b.button_rect.GetCenter());
     b.Frames(2);
-    CHECK(ImGuiTouch::GetTouchContext().Scroll.watchingLongPress);
+    CHECK(ImGuiTouch::GetTouchContext().Scroll.WatchingLongPress);
     b.Source(ImGuiMouseSource_Mouse);  // a mouse takes over while the finger is down (the source tags the next event)
-    const ImVec2 p = b.buttonRect.GetCenter();
+    const ImVec2 p = b.button_rect.GetCenter();
     ImGui::GetIO().AddMousePosEvent(p.x + 1.f, p.y);  // a move below the slop: the watch would stay, but for the mouse
     b.Frames(2);
-    CHECK(!ImGuiTouch::GetTouchContext().Scroll.watchingLongPress);
+    CHECK(!ImGuiTouch::GetTouchContext().Scroll.WatchingLongPress);
     b.Release();
 }
 
@@ -1093,21 +1093,21 @@ TEST_CASE("Touch pinch: the data's Kind is Pan for two fingers that move togethe
 {
     Bench b;
     b.canvas = true;
-    b.canvasPinchData = true;
+    b.canvas_pinch_data = true;
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c - ImVec2(20.f, 0.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
     b.Frame();
-    CHECK(b.canvasPinch.Kind == ImGuiTouchPinchKind_Undecided);
+    CHECK(b.canvas_pinch.Kind == ImGuiTouchPinchKind_Undecided);
     Fingers(c + ImVec2(-20.f, 15.f), c + ImVec2(20.f, 15.f));  // together, 15 px down
     b.Frame();
-    CHECK(b.canvasPinch.Kind == ImGuiTouchPinchKind_Pan);
-    CHECK(b.canvasDataPan.y == doctest::Approx(15.f));
-    CHECK(b.canvasDataZoom == doctest::Approx(1.f));
+    CHECK(b.canvas_pinch.Kind == ImGuiTouchPinchKind_Pan);
+    CHECK(b.canvas_data_pan.y == doctest::Approx(15.f));
+    CHECK(b.canvas_data_zoom == doctest::Approx(1.f));
     ImGuiTouch::AddFingerEvent(2, c, ImGuiTouchPhase_Cancelled);
     b.Frame();
-    CHECK(b.canvasEnded == 1);
+    CHECK(b.canvas_ended == 1);
     LiftFingers();
     b.Release();
     CHECK(b.clicks == 0);
@@ -1117,7 +1117,7 @@ TEST_CASE("Touch pinch: a widget with the pan adapter only: a pinch on it does n
 {
     Bench b;
     b.canvas = true;
-    b.canvasPanOnly = true;
+    b.canvas_pan_only = true;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
     const ImVec2 c = b.canvasRect.GetCenter();
@@ -1127,7 +1127,7 @@ TEST_CASE("Touch pinch: a widget with the pan adapter only: a pinch on it does n
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(40.f, 0.f));  // a scale of 1.5
     b.Frames(3);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
-    CHECK(b.canvasZoom == 1.f);
+    CHECK(b.canvas_zoom == 1.f);
     LiftFingers();
     b.Release();
 }
@@ -1136,11 +1136,11 @@ TEST_CASE("Touch pinch: without PinchScalesFont, a pinch outside the widgets lea
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
-    b.pinchScalesFont = false;
+    b.canvas_takes_pinch = true;
+    b.pinch_scales_font = false;
     b.Frames(3);
     ImGui::GetStyle().FontScaleMain = 1.f;
-    b.Press(b.linesRect.GetCenter());
+    b.Press(b.lines_rect.GetCenter());
     Fingers(ImVec2(100, 100), ImVec2(200, 100));  // not on the canvas
     b.Frame();
     Fingers(ImVec2(100, 100), ImVec2(250, 100));
@@ -1157,7 +1157,7 @@ TEST_CASE("Touch pinch: without PinchScalesFont, a pinch outside the widgets lea
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // a scale of 1.35, three notches of 10%
     b.Frames(6);
     CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
-    CHECK(b.canvasZoom == doctest::Approx(1.331f));
+    CHECK(b.canvas_zoom == doctest::Approx(1.331f));
     LiftFingers();
     b.Release();
 }
@@ -1166,8 +1166,8 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
-    b.canvasPanButton = ImGuiMouseButton_Left;  // a plot pans with the left button
+    b.canvas_takes_pinch = true;
+    b.canvas_pan_button = ImGuiMouseButton_Left;  // a plot pans with the left button
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c);
@@ -1176,10 +1176,10 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
     Fingers(c - ImVec2(20.f, 12.f), c + ImVec2(20.f, -12.f));  // the two move together, 12 px up
     b.Frames(3);
     CHECK(ImGui::GetIO().MouseDown[0]);
-    CHECK(!b.rightDown);
+    CHECK(!b.right_down);
     Fingers(c - ImVec2(20.f, 22.f), c + ImVec2(20.f, -22.f));  // the fingers move on, 10 px up
     b.Drag(ImVec2(0.f, -10.f), 2);  // the platform's mouse (the first finger) too: moved to the fingers' center
-    CHECK(b.canvasDrag.y < -5.f);
+    CHECK(b.canvas_drag.y < -5.f);
     CHECK(Near(ImGui::GetIO().MousePos.x, c.x, 1.f));
     CHECK(b.scrollY == 0.f);
     LiftFingers();
@@ -1192,13 +1192,13 @@ TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch r
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
+    b.canvas_takes_pinch = true;
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c - ImVec2(20.f, 0.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
     b.Frame();
-    float zoom = b.canvasZoom;
+    float zoom = b.canvas_zoom;
     for (int i = 1; i <= 30; ++i)  // a fast pinch: the spread grows from 40 px to 80 px in 10 frames (7 notches of 10%)
     {
         Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f + 4.f * (float)ImMin(i, 10), 0.f));
@@ -1206,12 +1206,12 @@ TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch r
             b.MoveTo(c - ImVec2(20.f, (float)(i % 4) * 0.5f));
         else
             b.Frame();
-        CHECK(b.canvasZoom <= zoom * 1.1f * 1.001f);  // at most one notch per frame: two read together zoom once
-        zoom = b.canvasZoom;
+        CHECK(b.canvas_zoom <= zoom * 1.1f * 1.001f);  // at most one notch per frame: two read together zoom once
+        zoom = b.canvas_zoom;
     }
     LiftFingers();
     b.Release();
-    CHECK(b.canvasZoom == doctest::Approx(powf(1.1f, 7.f)));
+    CHECK(b.canvas_zoom == doctest::Approx(powf(1.1f, 7.f)));
 }
 
 TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amount at each frame, and follows the "
@@ -1219,15 +1219,15 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
 {
     Bench b;
     b.canvas = true;
-    b.canvasTakesPinch = true;
-    b.canvasDelivery = ImGuiTouchPinchDelivery_WheelContinuous;  // the canvas zooms by 1.1 ^ wheel
+    b.canvas_takes_pinch = true;
+    b.canvas_delivery = ImGuiTouchPinchDelivery_WheelContinuous;  // the canvas zooms by 1.1 ^ wheel
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c - ImVec2(20.f, 0.f));
     Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
     b.Frame();
-    float zoom = b.canvasZoom, biggestStep = 1.f;
-    int framesZoomed = 0;
+    float zoom = b.canvas_zoom, biggest_step = 1.f;
+    int frames_zoomed = 0;
     for (int i = 1; i <= 30; ++i)  // the spread grows from 40 px to 80 px in 20 frames: a scale of 2
     {
         Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f + 2.f * (float)ImMin(i, 20), 0.f));
@@ -1235,16 +1235,16 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
             b.MoveTo(c - ImVec2(20.f, (float)(i % 4) * 0.5f));
         else
             b.Frame();
-        biggestStep = ImMax(biggestStep, b.canvasZoom / zoom);
-        framesZoomed += (b.canvasZoom != zoom) ? 1 : 0;
-        zoom = b.canvasZoom;
+        biggest_step = ImMax(biggest_step, b.canvas_zoom / zoom);
+        frames_zoomed += (b.canvas_zoom != zoom) ? 1 : 0;
+        zoom = b.canvas_zoom;
     }
     LiftFingers();
     b.Release();
     // The zoom starts where the pinch is recognized (a spread of 1.15, past the 12% threshold): 2 / 1.15
-    CHECK(b.canvasZoom == doctest::Approx(2.f / 1.15f).epsilon(0.005));
-    CHECK(biggestStep < 1.08f);  // small steps: no jump at the start, no notch of 10%
-    CHECK(framesZoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
+    CHECK(b.canvas_zoom == doctest::Approx(2.f / 1.15f).epsilon(0.005));
+    CHECK(biggest_step < 1.08f);  // small steps: no jump at the start, no notch of 10%
+    CHECK(frames_zoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
                                  // fingers' center only every half line, and a move holds the wheel back a frame
 }
 
@@ -1253,24 +1253,24 @@ TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways d
 {
     Bench b;
     b.canvas = true;
-    b.canvasDragAxis = ImGuiTouchAxis_X;  // a slider
-    b.wideContent = true;                 // the page scrolls both ways
+    b.canvas_drag_axis = ImGuiTouchAxis_X;  // a slider
+    b.wide_content = true;                 // the page scrolls both ways
     b.Frames(3);
-    REQUIRE(b.benchWindow->ScrollMax.x > 0.f);
+    REQUIRE(b.bench_window->ScrollMax.x > 0.f);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c);
     b.Drag(ImVec2(40.f, 0.f), 4);  // sideways: the canvas's axis
     b.Frames(2);
-    CHECK(b.canvasDrag.x > 20.f);  // the canvas was dragged (from past the slop)
-    CHECK(b.benchWindow->Scroll.x == 0.f);  // the page did not scroll
+    CHECK(b.canvas_drag.x > 20.f);  // the canvas was dragged (from past the slop)
+    CHECK(b.bench_window->Scroll.x == 0.f);  // the page did not scroll
     b.ReleaseStill();
 
-    b.canvasDrag = ImVec2(0.f, 0.f);
+    b.canvas_drag = ImVec2(0.f, 0.f);
     b.Press(c);
     b.Drag(ImVec2(0.f, -40.f), 4);  // vertical: not its axis, the page scrolls
     b.ReleaseStill();
     CHECK(b.scrollY > 20.f);
-    CHECK(b.canvasDrag.y == 0.f);
+    CHECK(b.canvas_drag.y == 0.f);
 }
 
 TEST_CASE("Touch scroll: without SetItemTakesDrags(X), a sideways drag on a widget scrolls a page that scrolls "
@@ -1278,13 +1278,13 @@ TEST_CASE("Touch scroll: without SetItemTakesDrags(X), a sideways drag on a widg
 {
     Bench b;
     b.canvas = true;
-    b.wideContent = true;
+    b.wide_content = true;
     b.Frames(3);
     const ImVec2 c = b.canvasRect.GetCenter();
     b.Press(c);
     b.Drag(ImVec2(-40.f, 0.f), 4);
     b.ReleaseStill();
-    CHECK(b.benchWindow->Scroll.x > 20.f);
-    CHECK(b.canvasDrag.x == 0.f);
+    CHECK(b.bench_window->Scroll.x > 20.f);
+    CHECK(b.canvas_drag.x == 0.f);
 }
 

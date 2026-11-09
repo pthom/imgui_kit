@@ -16,34 +16,34 @@ namespace ImGuiTouch
 // the windows that hold it scroll. Only when the caret moves in its content, or the display changes: the user may
 // scroll elsewhere meanwhile.
 
-static void KeepCaretInView(ImGuiContext& g, ImGuiTouchCaretView& view, bool keyboardShown, float visibleTop,
-                     float visibleBottom)
+static void KeepCaretInView(ImGuiContext& g, ImGuiTouchCaretView& view, bool keyboard_shown, float visible_top,
+                     float visible_bottom)
 {
     const ImGuiPlatformImeData& ime = g.PlatformImeData;  // the last complete frame's
     ImGuiWindow* window = g.NavWindow;
-    if (!keyboardShown || !ime.WantTextInput || window == nullptr)
+    if (!keyboard_shown || !ime.WantTextInput || window == nullptr)
     {
         view = ImGuiTouchCaretView();
         return;
     }
     ImVec2 inContent(ime.InputPos.x + window->Scroll.x, ime.InputPos.y + window->Scroll.y);
-    bool changed = window->ID != view.window || inContent.x != view.inContent.x || inContent.y != view.inContent.y
-                   || visibleTop != view.visible.x || visibleBottom != view.visible.y;
+    bool changed = window->ID != view.Window || inContent.x != view.InContent.x || inContent.y != view.InContent.y
+                   || visible_top != view.Visible.x || visible_bottom != view.Visible.y;
     if (changed)
-        view.framesLeft = 3;  // the layout takes a frame or two to follow a new visible area
-    view.window = window->ID;
-    view.inContent = inContent;
-    view.visible = ImVec2(visibleTop, visibleBottom);
-    if (view.framesLeft == 0)
+        view.FramesLeft = 3;  // the layout takes a frame or two to follow a new visible area
+    view.Window = window->ID;
+    view.InContent = inContent;
+    view.Visible = ImVec2(visible_top, visible_bottom);
+    if (view.FramesLeft == 0)
         return;
-    --view.framesLeft;
+    --view.FramesLeft;
     float margin = ime.InputLineHeight * 0.5f;
     float top = ime.InputPos.y - margin, bottom = ime.InputPos.y + ime.InputLineHeight + margin;
     for (ImGuiWindow* w = window; w != nullptr; w = w->ParentWindow)
     {
         ImRect clip = w->InnerClipRect;
-        clip.Min.y = ImMax(clip.Min.y, visibleTop);
-        clip.Max.y = ImMin(clip.Max.y, visibleBottom);
+        clip.Min.y = ImMax(clip.Min.y, visible_top);
+        clip.Max.y = ImMin(clip.Max.y, visible_bottom);
         float delta = (bottom > clip.Max.y) ? bottom - clip.Max.y : (top < clip.Min.y) ? top - clip.Min.y : 0.0f;
         // A window moves the field at most to its own top (a child whose top is under the keyboard cannot show
         // it): its parents scroll for the rest. A field out of its window's view is not drawn, and Dear ImGui then
@@ -53,7 +53,7 @@ static void KeepCaretInView(ImGuiContext& g, ImGuiTouchCaretView& view, bool key
         // A top-level window that reaches below the keyboard shrinks above it (the app's full-screen window), and
         // can then scroll that much further than the previous frame's ScrollMax
         float growth = (w->Flags & ImGuiWindowFlags_ChildWindow)
-                       ? 0.0f : ImMax(0.0f, w->InnerClipRect.Max.y - visibleBottom);
+                       ? 0.0f : ImMax(0.0f, w->InnerClipRect.Max.y - visible_bottom);
         float target = ImClamp(w->Scroll.y + delta, 0.0f, w->ScrollMax.y + growth);
         float moved = target - w->Scroll.y;
         if (moved == 0.0f)

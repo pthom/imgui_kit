@@ -227,7 +227,7 @@ static bool BeginHelpMarkerEx(const char* str_id, float width, const char* text)
         // previous frame, its first line says how to read the rest
         ImGuiKitHelpMarkerOpen open{ImGuiKitHelpMarkerShown_Tooltip, ImGui::GetStateStorage(),
                             ImGui::GetID("##help_tooltip_cut")};
-        bool was_cut = open.storage->GetBool(open.cut_key, false);
+        bool was_cut = open.Storage->GetBool(open.Cut_key, false);
         float window_width = SetNextHelpWindowSize(width, text);
         if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_None, ImGuiWindowFlags_NoScrollbar))
         {
@@ -257,11 +257,11 @@ void EndHelpMarker()
               && "EndHelpMarker() without a BeginHelpMarker() that returned true");
     ImGui::PopTextWrapPos();
     const ImGuiKitHelpMarkerOpen& open = kit.HelpMarkersShown.back();
-    if (open.shown == ImGuiKitHelpMarkerShown_Popup)
+    if (open.Shown == ImGuiKitHelpMarkerShown_Popup)
         ImGui::EndPopup();
     else
     {
-        open.storage->SetBool(open.cut_key, ImGui::GetCurrentWindow()->ScrollMax.y > 0.0f);
+        open.Storage->SetBool(open.Cut_key, ImGui::GetCurrentWindow()->ScrollMax.y > 0.0f);
         ImGui::EndTooltip();
     }
     kit.HelpMarkersShown.pop_back();

@@ -99,7 +99,7 @@ TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
     io.IniFilename = nullptr;
     ImGui_ImplNull_Init();
     static char text[64] = "";
-    float fieldBottom = 0.f;
+    float field_bottom = 0.f;
     // A full-screen window that keeps out of the keyboard, 20 lines, then the field
     auto frame = [&](bool focus) {
         ImGui_ImplNull_NewFrame();
@@ -114,7 +114,7 @@ TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
         if (focus)
             ImGui::SetKeyboardFocusHere();
         ImGui::InputText("field", text, IM_ARRAYSIZE(text));
-        fieldBottom = ImGui::GetItemRectMax().y;
+        field_bottom = ImGui::GetItemRectMax().y;
         ImGui::End();
         ImGui::Render();
     };
@@ -124,13 +124,13 @@ TEST_CASE("Keyboard insets: the active text field scrolls above the keyboard")
     for (int i = 0; i < 3; i++)  // the focus request, the activation, then WantTextInput
         frame(false);
     REQUIRE(io.WantTextInput);
-    CHECK(fieldBottom > 150.f);  // under where the keyboard will be
+    CHECK(field_bottom > 150.f);  // under where the keyboard will be
 
     ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{0.f, 150.f});  // a keyboard over the bottom half
     for (int i = 0; i < 6; i++)
         frame(false);
     CHECK(io.WantTextInput);       // the field kept the keyboard
-    CHECK(fieldBottom <= 150.f);   // and is above it
+    CHECK(field_bottom <= 150.f);   // and is above it
 
     ImGuiTouch::SetKeyboardInsets(ImGuiTouchKeyboardInsets{});
     ImGui_ImplNull_Shutdown();

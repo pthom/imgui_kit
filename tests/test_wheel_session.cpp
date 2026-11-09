@@ -26,35 +26,35 @@ struct Bench
 
     float scrollY = 0.f;   // as of the last frame's Begin()
     int zooms = 0;         // the wheel notches the zooming item saw
-    bool ownerLapse = false;  // the item does not claim the wheel this frame (as a widget whose hover flickers)
-    bool shortContent = false;  // the window's lines fit: nothing scrolls (a node editor's window)
-    bool itemOwnsWheel = true;  // false: the item reads the wheel without owning it (a node editor's zoom)
-    int wheelsSeen = 0;  // the wheel notches a non-owning item saw
-    bool sessionEnabled = true;  // SetupWheelSession(enabled)
-    ImRect zoomRect, linesRect;
+    bool owner_lapse = false;  // the item does not claim the wheel this frame (as a widget whose hover flickers)
+    bool short_content = false;  // the window's lines fit: nothing scrolls (a node editor's window)
+    bool item_owns_wheel = true;  // false: the item reads the wheel without owning it (a node editor's zoom)
+    int wheels_seen = 0;  // the wheel notches a non-owning item saw
+    bool session_enabled = true;  // SetupWheelSession(enabled)
+    ImRect zoom_rect, lines_rect;
 
     void Frame()
     {
         ImGui_ImplNull_NewFrame();
         ImGuiKit::WheelSessionBeforeNewFrame();
         ImGui::NewFrame();
-        ImGuiKit::UpdateWheelSession(sessionEnabled);
+        ImGuiKit::UpdateWheelSession(session_enabled);
         ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(400.f, 300.f), ImGuiCond_Always);
         ImGui::Begin("Bench", nullptr, ImGuiWindowFlags_NoTitleBar);
         scrollY = ImGui::GetScrollY();
-        for (int i = 0; i < (shortContent ? 3 : 10); ++i)
+        for (int i = 0; i < (short_content ? 3 : 10); ++i)
             ImGui::Text("Line %d", i);
         ImGui::InvisibleButton("zoom", ImVec2(300.f, 100.f));  // the zooming item, as ImPlot and ImmVision do it
-        zoomRect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        zoom_rect = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         if (ImGui::IsItemHovered())
         {
-            if (!ownerLapse && itemOwnsWheel)
+            if (!owner_lapse && item_owns_wheel)
                 ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
             if (ImGui::GetIO().MouseWheel != 0.f)
                 zooms++;
         }
-        for (int i = 10; i < (shortContent ? 12 : 100); ++i)
+        for (int i = 10; i < (short_content ? 12 : 100); ++i)
             ImGui::Text("Line %d", i);
         ImGui::End();
         ImGui::Render();
@@ -81,14 +81,14 @@ TEST_CASE("Wheel session: a wheel on the lines, then the mouse moves onto the zo
     b.Frames(3);
     b.MoveTo(ImVec2(100.f, 20.f));  // on the lines
     b.Wheel(-1.f);
-    float afterFirst = b.scrollY;
-    CHECK(afterFirst > 0.f);
-    b.MoveTo(b.zoomRect.GetCenter());  // over the item (its rectangle is on the screen, as of the last frame)
+    float after_first = b.scrollY;
+    CHECK(after_first > 0.f);
+    b.MoveTo(b.zoom_rect.GetCenter());  // over the item (its rectangle is on the screen, as of the last frame)
     b.Frames(2);
-    CHECK(b.zoomRect.Contains(ImGui::GetIO().MousePos));
+    CHECK(b.zoom_rect.Contains(ImGui::GetIO().MousePos));
     b.Wheel(-1.f);
     b.Wheel(-1.f);
-    CHECK(b.scrollY == afterFirst);
+    CHECK(b.scrollY == after_first);
     CHECK(b.zooms == 2);
 }
 
@@ -98,7 +98,7 @@ TEST_CASE("Wheel session: the mouse still, the page scrolls the zooming item und
     // its ownership back to the page at each NewFrame(): the item's claim is gone when the session looks
     Bench b;
     b.Frames(3);
-    b.MoveTo(ImVec2(100.f, b.zoomRect.Min.y - 10.f));  // on the line just above the item
+    b.MoveTo(ImVec2(100.f, b.zoom_rect.Min.y - 10.f));  // on the line just above the item
     float scroll = b.scrollY;
     for (int i = 0; i < 6; ++i)
     {
@@ -113,9 +113,9 @@ TEST_CASE("Wheel session: disabled, the item that arrives under the still mouse 
           "behavior)")
 {
     Bench b;
-    b.sessionEnabled = false;
+    b.session_enabled = false;
     b.Frames(3);
-    b.MoveTo(ImVec2(100.f, b.zoomRect.Min.y - 10.f));  // on the line just above the item
+    b.MoveTo(ImVec2(100.f, b.zoom_rect.Min.y - 10.f));  // on the line just above the item
     for (int i = 0; i < 6; ++i)
         b.Wheel(-1.f);
     CHECK(b.zooms > 0);
@@ -125,7 +125,7 @@ TEST_CASE("Wheel session: a wheel that started on the zooming item zooms, and do
 {
     Bench b;
     b.Frames(3);
-    b.MoveTo(b.zoomRect.GetCenter());
+    b.MoveTo(b.zoom_rect.GetCenter());
     b.Frames(2);  // the item owns the wheel from the frame before
     b.Wheel(-1.f);
     b.Wheel(-1.f);
@@ -143,7 +143,7 @@ TEST_CASE("Wheel session: a session ends after a pause, and the item takes the n
     b.Frames(3);
     b.MoveTo(ImVec2(100.f, 20.f));
     b.Wheel(-1.f);
-    b.MoveTo(b.zoomRect.GetCenter());
+    b.MoveTo(b.zoom_rect.GetCenter());
     b.Frames(60);  // one second: past the session's 0.7 s
     float scroll = b.scrollY;
     b.Wheel(-1.f);
@@ -155,12 +155,12 @@ TEST_CASE("Wheel session: during the item's session, a frame where its ownership
 {
     Bench b;
     b.Frames(3);
-    b.MoveTo(b.zoomRect.GetCenter());
+    b.MoveTo(b.zoom_rect.GetCenter());
     b.Frames(2);
     b.Wheel(-1.f);
-    b.ownerLapse = true;  // the next frame's owner is nobody
+    b.owner_lapse = true;  // the next frame's owner is nobody
     b.Frame();
-    b.ownerLapse = false;
+    b.owner_lapse = false;
     b.Wheel(-1.f);  // ImGui would scroll: the owner lapsed; the session cancels it
     b.Frames(2);
     CHECK(b.zooms == 2);
@@ -171,14 +171,14 @@ TEST_CASE("Wheel session: a trackpad's small momentum events extend a session by
 {
     Bench b;
     b.Frames(3);
-    b.MoveTo(ImVec2(100.f, b.zoomRect.Min.y - 30.f));  // the mouse still above the item: the first notch brings it
+    b.MoveTo(ImVec2(100.f, b.zoom_rect.Min.y - 30.f));  // the mouse still above the item: the first notch brings it
                                                        // under
     b.Wheel(-1.f);
     for (int i = 0; i < 60; ++i)  // a second of a dying tail: 0.01 notch per frame (each adds 7 ms, a frame takes 17)
         b.Wheel(-0.01f);
     CHECK(b.zooms == 0);  // the session held while it lived
     b.Frames(12);
-    CHECK(b.zoomRect.Contains(ImGui::GetIO().MousePos));
+    CHECK(b.zoom_rect.Contains(ImGui::GetIO().MousePos));
     b.Wheel(-1.f);  // the session ended with the tail (ImGui's timer): the item takes the wheel
     CHECK(b.zooms == 1);
 }
@@ -187,12 +187,12 @@ TEST_CASE("Wheel session: a widget that reads the wheel without owning it keeps 
           "editor's zoom)")
 {
     Bench b;
-    b.shortContent = true;
-    b.itemOwnsWheel = false;
+    b.short_content = true;
+    b.item_owns_wheel = false;
     b.Frames(3);
     b.MoveTo(ImVec2(100.f, 20.f));  // a session starts on the lines: nothing scrolls there
     b.Wheel(-1.f);
-    b.MoveTo(b.zoomRect.GetCenter());
+    b.MoveTo(b.zoom_rect.GetCenter());
     b.Frames(2);
     b.Wheel(-1.f);
     b.Wheel(-1.f);
@@ -203,15 +203,15 @@ TEST_CASE("Wheel session: a widget that reads the wheel without owning it keeps 
 TEST_CASE("Wheel session: a widget that reads the wheel without owning it sees none while the page scrolls over it")
 {
     Bench b;
-    b.itemOwnsWheel = false;
+    b.item_owns_wheel = false;
     b.Frames(3);
     b.MoveTo(ImVec2(100.f, 20.f));
     b.Wheel(-1.f);
-    float afterFirst = b.scrollY;
-    b.MoveTo(b.zoomRect.GetCenter());
+    float after_first = b.scrollY;
+    b.MoveTo(b.zoom_rect.GetCenter());
     b.Frames(2);
     b.Wheel(-1.f);
-    CHECK(b.scrollY > afterFirst);  // ImGui scrolled the page: the session's
+    CHECK(b.scrollY > after_first);  // ImGui scrolled the page: the session's
     CHECK(b.zooms == 0);
 }
 
@@ -219,11 +219,11 @@ TEST_CASE("Wheel session: an item whose ownership comes one frame late keeps the
           "frames)")
 {
     Bench b;
-    b.shortContent = true;
+    b.short_content = true;
     b.Frames(3);
-    b.ownerLapse = true;  // the hover frame does not claim the wheel yet (the claim is for the next frame)
-    b.MoveTo(b.zoomRect.GetCenter());
-    b.ownerLapse = false;
+    b.owner_lapse = true;  // the hover frame does not claim the wheel yet (the claim is for the next frame)
+    b.MoveTo(b.zoom_rect.GetCenter());
+    b.owner_lapse = false;
     b.Wheel(-1.f);  // nobody owns the wheel at this event: the item reads it, and claims it for the next frame
     b.Wheel(-1.f);  // the item owns it now, nothing scrolled: the session is the item's
     b.Wheel(-1.f);

@@ -31,15 +31,15 @@ constexpr float DRAG_SLOP_FONT_SIZES = 0.6f;  // the fingers' middle moved this 
 
 static float Distance(const ImGuiTouchFinger& a, const ImGuiTouchFinger& b)
 {
-    return ImSqrt(ImLengthSqr(b.pos - a.pos));
+    return ImSqrt(ImLengthSqr(b.Pos - a.Pos));
 }
-static ImVec2 Center(const ImGuiTouchFinger& a, const ImGuiTouchFinger& b) { return (a.pos + b.pos) * 0.5f; }
+static ImVec2 Center(const ImGuiTouchFinger& a, const ImGuiTouchFinger& b) { return (a.Pos + b.Pos) * 0.5f; }
 
 // A button or a wheel event, marked as the test engine marks its own (see the swipe layer), with the mouse
 // source: the touch trickling would separate a button from the positions
-static void MarkLastEvent(ImGuiContext& g, int sizeBefore)
+static void MarkLastEvent(ImGuiContext& g, int size_before)
 {
-    if (g.InputEventsQueue.Size > sizeBefore)
+    if (g.InputEventsQueue.Size > size_before)
         g.InputEventsQueue.back().AddedByTestEngine = true;
 }
 static void ButtonEvent(ImGuiIO& io, ImGuiMouseButton button, bool down)
@@ -75,9 +75,9 @@ static void WheelEvent(ImGuiIO& io, float notches)
 const ImGuiTouchPinchState::PinchTaker* FindTaker(const ImGuiTouchPinchState& s)
 {
     const ImGuiTouchPinchState::PinchTaker* found = nullptr;
-    for (const ImGuiTouchPinchState::PinchTaker& t : s.previousTakers)
-        if (t.rect.Contains(s.fingers[0].pos) && t.rect.Contains(s.fingers[1].pos))
-            if (found == nullptr || t.rect.GetArea() < found->rect.GetArea())
+    for (const ImGuiTouchPinchState::PinchTaker& t : s.PreviousTakers)
+        if (t.Rect.Contains(s.Fingers[0].Pos) && t.Rect.Contains(s.Fingers[1].Pos))
+            if (found == nullptr || t.Rect.GetArea() < found->Rect.GetArea())
                 found = &t;
     return found;
 }
@@ -88,25 +88,25 @@ static ImGuiTouchPinchState::PinchTaker* Claim(ImGuiID id, const ImRect& rect)
 {
     ImGuiContext& g = *GImGui;
     ImGuiTouchContext* touch = FindTouchContext();
-    if (touch == nullptr || touch->Pinch.frameCount != g.FrameCount)
+    if (touch == nullptr || touch->Pinch.FrameCount != g.FrameCount)
         return nullptr;
     ImRect visible = rect;
     visible.ClipWith(g.CurrentWindow->ClipRect);
     if (visible.GetWidth() <= 0.0f || visible.GetHeight() <= 0.0f)
         return nullptr;
     ImGuiTouchPinchState& s = touch->Pinch;
-    for (ImGuiTouchPinchState::PinchTaker& t : s.takers)
+    for (ImGuiTouchPinchState::PinchTaker& t : s.Takers)
     {
-        const bool same = (id != 0) ? (t.id == id)
-                                    : (t.id == 0 && t.rect.Min == visible.Min && t.rect.Max == visible.Max);
+        const bool same = (id != 0) ? (t.Id == id)
+                                    : (t.Id == 0 && t.Rect.Min == visible.Min && t.Rect.Max == visible.Max);
         if (same)
             return &t;
     }
     ImGuiTouchPinchState::PinchTaker t;
-    t.id = id;
-    t.rect = visible;
-    s.takers.push_back(t);
-    return &s.takers.back();
+    t.Id = id;
+    t.Rect = visible;
+    s.Takers.push_back(t);
+    return &s.Takers.back();
 }
 
 static void ClaimWheel(ImGuiID id, const ImRect& rect, float wheelZoomFactor, ImGuiTouchPinchDelivery delivery)
@@ -114,10 +114,10 @@ static void ClaimWheel(ImGuiID id, const ImRect& rect, float wheelZoomFactor, Im
     IM_ASSERT(wheelZoomFactor > 0.0f && wheelZoomFactor != 1.0f && "a zoom per wheel unit, e.g. 1.1 for +10%");
     if (ImGuiTouchPinchState::PinchTaker* t = Claim(id, rect))
     {
-        IM_ASSERT(!t->data && "a widget gets the pinch's data (ItemPinch) or wheel events, not both");
-        t->wheel = true;
-        t->wheelZoomFactor = wheelZoomFactor;
-        t->delivery = delivery;
+        IM_ASSERT(!t->Data && "a widget gets the pinch's data (ItemPinch) or wheel events, not both");
+        t->Wheel = true;
+        t->WheelZoomFactor = wheelZoomFactor;
+        t->Delivery = delivery;
     }
 }
 
@@ -125,18 +125,18 @@ static void ClaimPan(ImGuiID id, const ImRect& rect, ImGuiMouseButton button)
 {
     if (ImGuiTouchPinchState::PinchTaker* t = Claim(id, rect))
     {
-        IM_ASSERT(!t->data && "a widget gets the pinch's data (ItemPinch) or a mouse drag, not both");
-        t->pan = true;
-        t->panButton = button;
+        IM_ASSERT(!t->Data && "a widget gets the pinch's data (ItemPinch) or a mouse drag, not both");
+        t->Pan = true;
+        t->PanButton = button;
     }
 }
 
 // The mouse button that two fingers moved together press: none for a widget that reads the gesture's data
 static bool DragButton(const ImGuiTouchPinchState& s, ImGuiMouseButton* button)
 {
-    if (s.hasTaker && s.taker.data)
+    if (s.HasTaker && s.Taker.Data)
         return false;
-    *button = (s.hasTaker && s.taker.pan) ? s.taker.panButton : ImGuiMouseButton_Right;
+    *button = (s.HasTaker && s.Taker.Pan) ? s.Taker.PanButton : ImGuiMouseButton_Right;
     return true;
 }
 
@@ -144,19 +144,19 @@ static bool DragButton(const ImGuiTouchPinchState& s, ImGuiMouseButton* button)
 static void EndGesture(ImGuiContext& g, ImGuiTouchPinchState& s)
 {
     ImGuiMouseButton button;
-    if (s.gesture == ImGuiTouchPinchGesture_Drag && DragButton(s, &button))
+    if (s.Gesture == ImGuiTouchPinchGesture_Drag && DragButton(s, &button))
         ButtonEvent(g.IO, button, false);
-    if (s.hasTaker && s.taker.data)
+    if (s.HasTaker && s.Taker.Data)
     {
-        s.data.Active = s.data.Started = false;
-        s.data.Ended = true;
-        s.data.CenterDelta = ImVec2(0.0f, 0.0f);
-        s.data.ScaleDelta = 1.0f;
-        s.endedId = s.taker.id;
-        s.endedFrame = g.FrameCount;
+        s.Data.Active = s.Data.Started = false;
+        s.Data.Ended = true;
+        s.Data.CenterDelta = ImVec2(0.0f, 0.0f);
+        s.Data.ScaleDelta = 1.0f;
+        s.EndedId = s.Taker.Id;
+        s.EndedFrame = g.FrameCount;
     }
-    s.gesture = ImGuiTouchPinchGesture_None;
-    s.hasTaker = false;
+    s.Gesture = ImGuiTouchPinchGesture_None;
+    s.HasTaker = false;
 }
 
 static ImGuiTouchPinch DataFor(ImGuiID id)
@@ -165,9 +165,9 @@ static ImGuiTouchPinch DataFor(ImGuiID id)
     if (touch == nullptr || id == 0)
         return ImGuiTouchPinch();
     const ImGuiTouchPinchState& s = touch->Pinch;
-    const bool active = s.hasTaker && s.taker.data && s.taker.id == id && s.gesture != ImGuiTouchPinchGesture_None;
-    const bool ended = s.endedId == id && s.endedFrame == GImGui->FrameCount;
-    return (active || ended) ? s.data : ImGuiTouchPinch();
+    const bool active = s.HasTaker && s.Taker.Data && s.Taker.Id == id && s.Gesture != ImGuiTouchPinchGesture_None;
+    const bool ended = s.EndedId == id && s.EndedFrame == GImGui->FrameCount;
+    return (active || ended) ? s.Data : ImGuiTouchPinch();
 }
 
 //-----------------------------------------------------------------------------
@@ -185,8 +185,8 @@ ImGuiTouchPinch RectPinch(ImGuiID id, const ImVec2& min, const ImVec2& max)
 {
     if (ImGuiTouchPinchState::PinchTaker* t = Claim(id, ImRect(min, max)))
     {
-        IM_ASSERT(!t->wheel && !t->pan && "a widget gets the pinch's data (ItemPinch) or the adapters, not both");
-        t->data = true;
+        IM_ASSERT(!t->Wheel && !t->Pan && "a widget gets the pinch's data (ItemPinch) or the adapters, not both");
+        t->Data = true;
     }
     return DataFor(id);
 }
@@ -220,11 +220,11 @@ void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
     ImGuiTouchPinchState& s = GetTouchContext().Pinch;
     const bool down = (phase == ImGuiTouchPhase_Began || phase == ImGuiTouchPhase_Moved);
     if (phase == ImGuiTouchPhase_Cancelled)
-        s.cancelled = true;
-    bool wasTwo = s.fingers.Size >= 2;
+        s.Cancelled = true;
+    bool was_two = s.Fingers.Size >= 2;
     int index = -1;
-    for (int i = 0; i < s.fingers.Size; i++)
-        if (s.fingers[i].id == id)
+    for (int i = 0; i < s.Fingers.Size; i++)
+        if (s.Fingers[i].Id == id)
             index = i;
     if (!down)
     {
@@ -232,29 +232,29 @@ void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
             return;
         // One of the two fingers of the gesture lifts while a third is down: the third takes its place, and the
         // scale goes on from where it was (no jump), measured from the new pair
-        const bool pairChanges = (index < 2 && s.fingers.Size >= 3);
-        const float scaleBefore = (pairChanges && s.startDistance > 0.0f)
-            ? s.scaleBase * Distance(s.fingers[0], s.fingers[1]) / s.startDistance : 1.0f;
-        s.fingers.erase(s.fingers.Data + index);
-        if (pairChanges)
+        const bool pair_changes = (index < 2 && s.Fingers.Size >= 3);
+        const float scale_before = (pair_changes && s.StartDistance > 0.0f)
+            ? s.ScaleBase * Distance(s.Fingers[0], s.Fingers[1]) / s.StartDistance : 1.0f;
+        s.Fingers.erase(s.Fingers.Data + index);
+        if (pair_changes)
         {
-            s.scaleBase = scaleBefore;
-            s.startDistance = Distance(s.fingers[0], s.fingers[1]);
-            s.startCenter = Center(s.fingers[0], s.fingers[1]);
-            s.lastDistance = s.startDistance;
-            s.lastCenter = s.startCenter;
+            s.ScaleBase = scale_before;
+            s.StartDistance = Distance(s.Fingers[0], s.Fingers[1]);
+            s.StartCenter = Center(s.Fingers[0], s.Fingers[1]);
+            s.LastDistance = s.StartDistance;
+            s.LastCenter = s.StartCenter;
         }
         return;
     }
     if (index >= 0)
-        s.fingers[index].pos = pos;
+        s.Fingers[index].Pos = pos;
     else
-        s.fingers.push_back({id, pos});
-    if (!wasTwo && s.fingers.Size >= 2)  // the second finger landed: the pinch and the drag measure from here
+        s.Fingers.push_back({id, pos});
+    if (!was_two && s.Fingers.Size >= 2)  // the second finger landed: the pinch and the drag measure from here
     {
-        s.scaleBase = 1.0f;
-        s.startDistance = Distance(s.fingers[0], s.fingers[1]);
-        s.startCenter = Center(s.fingers[0], s.fingers[1]);
+        s.ScaleBase = 1.0f;
+        s.StartDistance = Distance(s.Fingers[0], s.Fingers[1]);
+        s.StartCenter = Center(s.Fingers[0], s.Fingers[1]);
     }
 }
 
@@ -262,10 +262,10 @@ void ApplyFingerCancel()
 {
     ImGuiContext& g = *GImGui;
     ImGuiTouchPinchState& s = GetTouchContext().Pinch;
-    if (!s.cancelled)
+    if (!s.Cancelled)
         return;
-    s.cancelled = false;
-    if (s.gesture != ImGuiTouchPinchGesture_None)
+    s.Cancelled = false;
+    if (s.Gesture != ImGuiTouchPinchGesture_None)
         EndGesture(g, s);
     TouchScrollRelease(true);  // the swipe's press, or the widget's: neither clicks when the mouse lifts
 }
@@ -282,9 +282,9 @@ void PinchBeforeNewFrame()
     if (touch == nullptr)
         return;
     ImGuiTouchPinchState& s = touch->Pinch;
-    if (!s.hasTaker || s.gesture == ImGuiTouchPinchGesture_None || s.fingers.Size < 2)
+    if (!s.HasTaker || s.Gesture == ImGuiTouchPinchGesture_None || s.Fingers.Size < 2)
         return;
-    const ImVec2 center = Center(s.fingers[0], s.fingers[1]);
+    const ImVec2 center = Center(s.Fingers[0], s.Fingers[1]);
     const float tolerance = g.FontSize * 0.5f;
     const bool far = ImLengthSqr(g.IO.MousePos - center) > tolerance * tolerance;
     bool moved = false;
@@ -311,43 +311,43 @@ void PinchBeforeNewFrame()
 // [SECTION] UpdateTouchPinch
 //-----------------------------------------------------------------------------
 
-void UpdateTouchPinch(bool scalesFont)
+void UpdateTouchPinch(bool scales_font)
 {
     ImGuiContext& g = *GImGui;
     ImGuiTouchPinchState& s = GetTouchContext().Pinch;
-    s.previousTakers.swap(s.takers);
-    s.takers.resize(0);
-    s.frameCount = g.FrameCount;
-    bool twoFingers = s.fingers.Size >= 2;
+    s.PreviousTakers.swap(s.Takers);
+    s.Takers.resize(0);
+    s.FrameCount = g.FrameCount;
+    bool two_fingers = s.Fingers.Size >= 2;
     // The pinch's scale (their distance over their distance at the start), the move of their middle since the start
-    float pinchScale = 1.0f;
+    float pinch_scale = 1.0f;
     float distance = 0.0f;
     ImVec2 center, move;
-    if (twoFingers)
+    if (two_fingers)
     {
-        distance = Distance(s.fingers[0], s.fingers[1]);
-        center = Center(s.fingers[0], s.fingers[1]);
-        if (s.startDistance > 0.0f)
-            pinchScale = s.scaleBase * distance / s.startDistance;
-        move = center - s.startCenter;
+        distance = Distance(s.Fingers[0], s.Fingers[1]);
+        center = Center(s.Fingers[0], s.Fingers[1]);
+        if (s.StartDistance > 0.0f)
+            pinch_scale = s.ScaleBase * distance / s.StartDistance;
+        move = center - s.StartCenter;
     }
 
     bool started = false;
-    if (twoFingers && s.gesture == ImGuiTouchPinchGesture_None)
+    if (two_fingers && s.Gesture == ImGuiTouchPinchGesture_None)
     {
         const ImGuiTouchPinchState::PinchTaker* taker = FindTaker(s);
-        s.hasTaker = (taker != nullptr);
-        if (s.hasTaker)
+        s.HasTaker = (taker != nullptr);
+        if (s.HasTaker)
         {
             // A widget claims the two fingers: the swipe layer lets go for good, and the first finger's press is
             // released, so that the widget is hovered (it reads the wheel then), and is not dragged by it. The widget's
             // own press (a canvas that took the first finger) is released too.
-            s.taker = *taker;
-            s.notchesSent = 0.0f;
-            const bool itsOwnPress = (s.taker.id != 0 && g.ActiveId == s.taker.id);
-            if (!TouchScrollRelease(itsOwnPress))
+            s.Taker = *taker;
+            s.NotchesSent = 0.0f;
+            const bool its_own_press = (s.Taker.Id != 0 && g.ActiveId == s.Taker.Id);
+            if (!TouchScrollRelease(its_own_press))
             {
-                s.hasTaker = false;
+                s.HasTaker = false;
                 return;  // another widget keeps its drag
             }
             ButtonEvent(g.IO, ImGuiMouseButton_Left, false);
@@ -356,58 +356,58 @@ void UpdateTouchPinch(bool scalesFont)
         // The first finger was a press for the swipe layer, or for a widget: the two fingers take it
         else if (!TouchScrollLetGo(false))
             return;  // a widget keeps its drag: nothing with two fingers this time
-        s.gesture = ImGuiTouchPinchGesture_Undecided;
+        s.Gesture = ImGuiTouchPinchGesture_Undecided;
         started = true;
     }
-    if (s.gesture == ImGuiTouchPinchGesture_Undecided && twoFingers)
+    if (s.Gesture == ImGuiTouchPinchGesture_Undecided && two_fingers)
     {
         float slop = g.FontSize * DRAG_SLOP_FONT_SIZES;
-        if (ImFabs(pinchScale - 1.0f) > PINCH_THRESHOLD)
+        if (ImFabs(pinch_scale - 1.0f) > PINCH_THRESHOLD)
         {
-            s.gesture = ImGuiTouchPinchGesture_Pinch;
-            s.baseScale = ImGui::GetStyle().FontScaleMain;
+            s.Gesture = ImGuiTouchPinchGesture_Pinch;
+            s.BaseScale = ImGui::GetStyle().FontScaleMain;
             // A widget that reads the wheel's value zooms from here, without catching up the threshold at once
-            if (s.hasTaker && s.taker.wheel && s.taker.delivery == ImGuiTouchPinchDelivery_WheelContinuous)
-                s.notchesSent = ImLog(pinchScale) / ImLog(s.taker.wheelZoomFactor);
+            if (s.HasTaker && s.Taker.Wheel && s.Taker.Delivery == ImGuiTouchPinchDelivery_WheelContinuous)
+                s.NotchesSent = ImLog(pinch_scale) / ImLog(s.Taker.WheelZoomFactor);
         }
         else if (ImLengthSqr(move) > slop * slop)
         {
             // A drag with two fingers. Unless the widget reads the data: the swipe layer lets the widgets see the
             // mouse again, the first finger's press is released, and the button goes down a frame later (a plot
             // cancels a box selection started in the frame of a left release)
-            s.gesture = ImGuiTouchPinchGesture_DragStarting;
-            if (!s.hasTaker)  // a taker's: released when the fingers landed
+            s.Gesture = ImGuiTouchPinchGesture_DragStarting;
+            if (!s.HasTaker)  // a taker's: released when the fingers landed
             {
                 TouchScrollRelease(true);
                 ButtonEvent(g.IO, ImGuiMouseButton_Left, false);
             }
         }
     }
-    else if (s.gesture == ImGuiTouchPinchGesture_DragStarting && twoFingers)
+    else if (s.Gesture == ImGuiTouchPinchGesture_DragStarting && two_fingers)
     {
-        s.gesture = ImGuiTouchPinchGesture_Drag;
+        s.Gesture = ImGuiTouchPinchGesture_Drag;
         ImGuiMouseButton button;
         if (DragButton(s, &button))
         {
             if (button == ImGuiMouseButton_Left)
-                GetTouchContext().Scroll.replayedPresses++;  // the layer's own press: the swipe does not claim it
+                GetTouchContext().Scroll.ReplayedPresses++;  // the layer's own press: the swipe does not claim it
             ButtonEvent(g.IO, button, true);
         }
     }
-    if (s.gesture == ImGuiTouchPinchGesture_Pinch && twoFingers && s.hasTaker)
+    if (s.Gesture == ImGuiTouchPinchGesture_Pinch && two_fingers && s.HasTaker)
     {
-        if (s.taker.wheel)
+        if (s.Taker.Wheel)
         {
             // The taker zooms by the wheel: the wheel units its zoom factor gives for the fingers' spread
-            const float target = ImLog(pinchScale) / ImLog(s.taker.wheelZoomFactor);
-            const float missing = target - s.notchesSent;
-            if (s.taker.delivery == ImGuiTouchPinchDelivery_WheelContinuous)
+            const float target = ImLog(pinch_scale) / ImLog(s.Taker.WheelZoomFactor);
+            const float missing = target - s.NotchesSent;
+            if (s.Taker.Delivery == ImGuiTouchPinchDelivery_WheelContinuous)
             {
                 // The exact amount at each frame: the zoom follows the fingers (amounts queued together add up exactly)
                 if (ImFabs(missing) > 0.001f)
                 {
                     WheelEvent(g.IO, missing);
-                    s.notchesSent += missing;
+                    s.NotchesSent += missing;
                 }
             }
             else
@@ -415,52 +415,52 @@ void UpdateTouchPinch(bool scalesFont)
                 // Whole notches, one at a time: a notch queued while another waits would be read with it, in the
                 // same frame (Dear ImGui reads a wheel event queued after a move at the next frame, and the fingers'
                 // moves keep coming), and their sum zooms a plot once: ImPlot reads only the wheel's sign
-                bool notchWaiting = false;
+                bool notch_waiting = false;
                 for (const ImGuiInputEvent& e : g.InputEventsQueue)
                     if (e.Type == ImGuiInputEventType_MouseWheel)
-                        notchWaiting = true;
-                const float notch = notchWaiting ? 0.0f : (missing >= 1.0f) ? 1.0f : (missing <= -1.0f) ? -1.0f : 0.0f;
+                        notch_waiting = true;
+                const float notch = notch_waiting ? 0.0f : (missing >= 1.0f) ? 1.0f : (missing <= -1.0f) ? -1.0f : 0.0f;
                 if (notch != 0.0f)
                 {
                     WheelEvent(g.IO, notch);
-                    s.notchesSent += notch;
+                    s.NotchesSent += notch;
                 }
             }
         }
         // A widget with the pan adapter only: a pinch on it does nothing; one that reads the data: below
     }
-    else if (s.gesture == ImGuiTouchPinchGesture_Pinch && twoFingers && scalesFont)
+    else if (s.Gesture == ImGuiTouchPinchGesture_Pinch && two_fingers && scales_font)
     {
         const ImGuiTouchConfig& config = GetTouchContext().Config;
         ImGui::GetStyle().FontScaleMain =
-            ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
+            ImClamp(s.BaseScale * pinch_scale, config.PinchFontScaleMin, config.PinchFontScaleMax);
     }
 
     // The data, for a widget that reads it: the move and the spread since the last frame, both at each frame
-    if (s.gesture != ImGuiTouchPinchGesture_None && twoFingers && s.hasTaker && s.taker.data)
+    if (s.Gesture != ImGuiTouchPinchGesture_None && two_fingers && s.HasTaker && s.Taker.Data)
     {
-        ImGuiTouchPinch& d = s.data;
+        ImGuiTouchPinch& d = s.Data;
         if (started)
         {
             d = ImGuiTouchPinch();
-            s.lastDistance = distance;
-            s.lastCenter = center;
+            s.LastDistance = distance;
+            s.LastCenter = center;
         }
         d.Active = true;
         d.Started = started;
         d.Ended = false;
         d.Center = center;
-        d.CenterDelta = center - s.lastCenter;
-        d.ScaleDelta = (s.lastDistance > 0.0f) ? distance / s.lastDistance : 1.0f;
-        d.Scale = pinchScale;
-        d.Kind = (s.gesture == ImGuiTouchPinchGesture_Pinch) ? ImGuiTouchPinchKind_Pinch
-               : (s.gesture == ImGuiTouchPinchGesture_Undecided) ? ImGuiTouchPinchKind_Undecided
+        d.CenterDelta = center - s.LastCenter;
+        d.ScaleDelta = (s.LastDistance > 0.0f) ? distance / s.LastDistance : 1.0f;
+        d.Scale = pinch_scale;
+        d.Kind = (s.Gesture == ImGuiTouchPinchGesture_Pinch) ? ImGuiTouchPinchKind_Pinch
+               : (s.Gesture == ImGuiTouchPinchGesture_Undecided) ? ImGuiTouchPinchKind_Undecided
                                                                   : ImGuiTouchPinchKind_Pan;
-        s.lastDistance = distance;
-        s.lastCenter = center;
+        s.LastDistance = distance;
+        s.LastCenter = center;
     }
 
-    if (s.gesture != ImGuiTouchPinchGesture_None && !twoFingers)
+    if (s.Gesture != ImGuiTouchPinchGesture_None && !two_fingers)
         EndGesture(g, s);
 }
 

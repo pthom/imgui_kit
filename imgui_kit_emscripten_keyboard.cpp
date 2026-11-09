@@ -467,10 +467,10 @@ if (!window.imguiKitKeyboard) {
         }
         return units;
     }
-    int BytesOfUtf16Units(const char* text, int textLen, int units)
+    int BytesOfUtf16Units(const char* text, int text_len, int units)
     {
         int i = 0;
-        while (i < textLen && units > 0)
+        while (i < text_len && units > 0)
         {
             unsigned char c = (unsigned char)text[i];
             int len = (c < 0x80) ? 1 : (c < 0xE0) ? 2 : (c < 0xF0) ? 3 : 4;
@@ -516,10 +516,10 @@ if (!window.imguiKitKeyboard) {
     // A tap that opened the keyboard reaches ImGui a few frames later (the touch layer replays it once it is sure it
     // was a tap), when the app has shrunk above the keyboard: a click on nothing would take the focus from every
     // window, and the text widget would lose its keyboard. Such clicks are dropped: a press with its release. Dropped:
-    // all of them (just after a tap opened the keyboard), or those below `belowY` (under the keyboard).
-    void DropClicks(ImGuiContext& g, bool* droppedPress, bool all, float belowY)
+    // all of them (just after a tap opened the keyboard), or those below `below_y` (under the keyboard).
+    void DropClicks(ImGuiContext& g, bool* dropped_press, bool all, float below_y)
     {
-        bool below = all || g.IO.MousePos.y > belowY;
+        bool below = all || g.IO.MousePos.y > below_y;
         bool down[ImGuiMouseButton_COUNT];  // each button's state as the queue goes
         for (int b = 0; b < ImGuiMouseButton_COUNT; ++b)
             down[b] = g.IO.MouseDown[b];
@@ -527,14 +527,14 @@ if (!window.imguiKitKeyboard) {
         {
             const ImGuiInputEvent& e = g.InputEventsQueue[i];
             if (e.Type == ImGuiInputEventType_MousePos)
-                below = all || e.MousePos.PosY > belowY;
+                below = all || e.MousePos.PosY > below_y;
             else if (e.Type == ImGuiInputEventType_MouseButton && e.MouseButton.Button >= 0
                      && e.MouseButton.Button < ImGuiMouseButton_COUNT)
             {
                 int button = e.MouseButton.Button;
-                bool drop = e.MouseButton.Down ? (below && !down[button]) : droppedPress[button];
+                bool drop = e.MouseButton.Down ? (below && !down[button]) : dropped_press[button];
                 if (e.MouseButton.Down || drop)
-                    droppedPress[button] = e.MouseButton.Down && drop;
+                    dropped_press[button] = e.MouseButton.Down && drop;
                 if (drop)
                 {
                     g.InputEventsQueue.erase(g.InputEventsQueue.Data + i);
@@ -558,39 +558,39 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
     const char* poll = emscripten_run_script_string("window.imguiKitKeyboard ? window.imguiKitKeyboard.poll() : ''");
     if (poll == nullptr)
         poll = "";
-    int visibleTop = 0, visibleBottom = 0, dropTap = 0, pending = 0;
-    bool keyboardShown = sscanf(poll, "%d,%d|%d|%d", &visibleTop, &visibleBottom, &dropTap, &pending) == 4;
-    if (!keyboardShown)
-        sscanf(poll, "|%d|%d", &dropTap, &pending);
+    int visible_top = 0, visible_bottom = 0, drop_tap = 0, pending = 0;
+    bool keyboard_shown = sscanf(poll, "%d,%d|%d|%d", &visible_top, &visible_bottom, &drop_tap, &pending) == 4;
+    if (!keyboard_shown)
+        sscanf(poll, "|%d|%d", &drop_tap, &pending);
     // The kit keeps the caret in view from these insets (imgui_kit_touch_keyboard.cpp)
-    SetKeyboardInsets(keyboardShown ? ImGuiTouchKeyboardInsets{ImMax(0.0f, (float)visibleTop),
-                                                                ImMax(0.0f, io.DisplaySize.y - (float)visibleBottom)}
+    SetKeyboardInsets(keyboard_shown ? ImGuiTouchKeyboardInsets{ImMax(0.0f, (float)visible_top),
+                                                                ImMax(0.0f, io.DisplaySize.y - (float)visible_bottom)}
                                     : ImGuiTouchKeyboardInsets{});
-    if (dropTap != 0)
+    if (drop_tap != 0)
         DropClicks(g, b.DroppedPress, true, 0.0f);
-    else if (keyboardShown)
-        DropClicks(g, b.DroppedPress, false, (float)visibleBottom);
+    else if (keyboard_shown)
+        DropClicks(g, b.DroppedPress, false, (float)visible_bottom);
 
     // What ImGui wants, when it changed (the last complete frame's IME data: the cursor's line)
     const ImGuiPlatformImeData& ime = g.PlatformImeDataPrev;
     // Who wants text: an active InputText (the field mirrors its text), or another widget (keys mode).
     // io.WantTextInput comes from the frame before the last one: its widget was active then (ActiveIdPreviousFrame).
     // Keys mode reads the last frame's IME data, not yet reset by NewFrame().
-    const bool inputTextWants = io.WantTextInput && g.ActiveIdPreviousFrame != 0
+    const bool input_text_wants = io.WantTextInput && g.ActiveIdPreviousFrame != 0
                                 && g.ActiveIdPreviousFrame == g.InputTextState.ID;
     // A password field too: its text never goes to the page's field (the keyboard's suggestions, the page's scripts)
     const bool password = (g.InputTextState.Flags & ImGuiInputTextFlags_Password) != 0;
     const bool keysMode = (g.PlatformImeData.WantTextInput && !(g.ActiveId != 0 && g.ActiveId == g.InputTextState.ID))
-                          || (inputTextWants && password);
-    bool want = b.KeyboardWant, wantKeysMode = b.KeyboardKeysMode;
+                          || (input_text_wants && password);
+    bool want = b.KeyboardWant, want_keys_mode = b.KeyboardKeysMode;
     ImGuiID id = b.KeyboardId;
     ImVec2 pos = b.KeyboardPos;
     float lineHeight = b.KeyboardLineHeight;
-    if (inputTextWants || keysMode)
+    if (input_text_wants || keysMode)
     {
         b.FramesWithoutWant = 0;
         want = true;
-        wantKeysMode = keysMode;
+        want_keys_mode = keysMode;
         if (keysMode)
         {
             // Such a widget has no ID that ImGui knows: its window's ID
@@ -610,16 +610,16 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
     else
         want = false;
     const float displayW = io.DisplaySize.x;
-    if (want != b.KeyboardWant || wantKeysMode != b.KeyboardKeysMode || id != b.KeyboardId || pos.x != b.KeyboardPos.x
+    if (want != b.KeyboardWant || want_keys_mode != b.KeyboardKeysMode || id != b.KeyboardId || pos.x != b.KeyboardPos.x
         || pos.y != b.KeyboardPos.y || lineHeight != b.KeyboardLineHeight || displayW != b.KeyboardDisplayW)
     {
         char script[256];
         snprintf(script, sizeof(script),
                  "window.imguiKitKeyboard && window.imguiKitKeyboard.set(%d, %u, %.1f, %.1f, %.1f, %.1f, %d)",
-                 want ? 1 : 0, id, pos.x, pos.y, lineHeight, displayW, wantKeysMode ? 1 : 0);
+                 want ? 1 : 0, id, pos.x, pos.y, lineHeight, displayW, want_keys_mode ? 1 : 0);
         emscripten_run_script(script);
     }
-    b.KeyboardWant = want; b.KeyboardKeysMode = wantKeysMode; b.KeyboardId = id; b.KeyboardPos = pos;
+    b.KeyboardWant = want; b.KeyboardKeysMode = want_keys_mode; b.KeyboardId = id; b.KeyboardPos = pos;
     b.KeyboardLineHeight = lineHeight; b.KeyboardDisplayW = displayW;
     if (!want)
     {
@@ -628,7 +628,7 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
         b.MirrorCaret = -1;
         return;
     }
-    if (wantKeysMode)
+    if (want_keys_mode)
     {
         ApplyKeysModeAction(g);
         return;
@@ -637,7 +637,7 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
     if (state == nullptr)
         return;
 
-    bool edited = false, keysSent = false;
+    bool edited = false, keys_sent = false;
     if (pending != 0)
     {
         // "caret\nkey,key\nat|removed|inserted\n...": the page's answer stays valid until the next script call
@@ -648,12 +648,12 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
         char* p = nullptr;
         int caret = (int)strtol(drained, &p, 10);
         const char* keys = (*p == '\n') ? p + 1 : p;
-        const char* keysEnd = strchr(keys, '\n');
-        if (keysEnd == nullptr)
-            keysEnd = keys + strlen(keys);
+        const char* keys_end = strchr(keys, '\n');
+        if (keys_end == nullptr)
+            keys_end = keys + strlen(keys);
 
         // The edits typed in the field: the caret to the end of the removal, Backspace keys, then the text
-        for (const char* line = (*keysEnd == '\n') ? keysEnd + 1 : keysEnd; *line != '\0';)
+        for (const char* line = (*keys_end == '\n') ? keys_end + 1 : keys_end; *line != '\0';)
         {
             const char* end = strchr(line, '\n');
             if (end == nullptr)
@@ -668,16 +668,16 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
                     const char* inserted = q + 1;
                     if (removed > 0)
                     {
-                        int cursorBytes = BytesOfUtf16Units(state->GetText(), state->TextLen, at + removed);
-                        state->SetSelection(cursorBytes, cursorBytes);
+                        int cursor_bytes = BytesOfUtf16Units(state->GetText(), state->TextLen, at + removed);
+                        state->SetSelection(cursor_bytes, cursor_bytes);
                         for (int i = 0; i < removed; ++i)
                             SendKey(io, ImGuiKey_Backspace);
                     }
                     else
                     {
-                        int cursorBytes = BytesOfUtf16Units(state->GetText(), state->TextLen, at);
-                        if (cursorBytes != state->GetCursorPos())
-                            state->SetSelection(cursorBytes, cursorBytes);
+                        int cursor_bytes = BytesOfUtf16Units(state->GetText(), state->TextLen, at);
+                        if (cursor_bytes != state->GetCursorPos())
+                            state->SetSelection(cursor_bytes, cursor_bytes);
                     }
                     if (inserted < end)
                     {
@@ -694,8 +694,8 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
         // The caret moved in the field
         if (caret >= 0 && !edited)
         {
-            int cursorBytes = BytesOfUtf16Units(state->GetText(), state->TextLen, caret);
-            state->SetSelection(cursorBytes, cursorBytes);
+            int cursor_bytes = BytesOfUtf16Units(state->GetText(), state->TextLen, caret);
+            state->SetSelection(cursor_bytes, cursor_bytes);
             state->CursorAnimReset();
             state->CursorFollow = true;
             // The mirror is in sync with this caret: written back to the field, it would pull a finger that moved on
@@ -703,35 +703,35 @@ static void UpdateKeyboard(ImGuiContext*, ImGuiContextHook*)
             b.MirrorCaret = Utf16Units(state->GetText(), state->GetCursorPos());
         }
         // The keys
-        for (const char* k = keys; k < keysEnd;)
+        for (const char* k = keys; k < keys_end;)
         {
-            const char* comma = (const char*)memchr(k, ',', (size_t)(keysEnd - k));
-            const char* END = comma ? comma : keysEnd;
+            const char* comma = (const char*)memchr(k, ',', (size_t)(keys_end - k));
+            const char* END = comma ? comma : keys_end;
             ImGuiKey key = KeyFromName(k, (int)(END - k));
             if (key != ImGuiKey_None)
                 SendKey(io, key);
-            keysSent = keysSent || END > k;
+            keys_sent = keys_sent || END > k;
             k = END + 1;
         }
     }
 
     // The mirror: ImGui's text and caret into the field, when they changed (not while edits are in flight: the
     // keys above take a frame or two, the mirror would show the text before them)
-    if (!edited && !keysSent)
+    if (!edited && !keys_sent)
     {
         ImGuiID hash = ImHashData(state->GetText(), (size_t)state->TextLen);
-        int caretUnits = Utf16Units(state->GetText(), state->GetCursorPos());
-        if (hash != b.MirrorHash || state->TextLen != b.MirrorLen || caretUnits != b.MirrorCaret)
+        int caret_units = Utf16Units(state->GetText(), state->GetCursorPos());
+        if (hash != b.MirrorHash || state->TextLen != b.MirrorLen || caret_units != b.MirrorCaret)
         {
             b.MirrorHash = hash;
             b.MirrorLen = state->TextLen;
-            b.MirrorCaret = caretUnits;
-            char caretText[32];
-            snprintf(caretText, sizeof(caretText), ", %d)", caretUnits);
+            b.MirrorCaret = caret_units;
+            char caret_text[32];
+            snprintf(caret_text, sizeof(caret_text), ", %d)", caret_units);
             b.Script.resize(0);
             ImGuiTouchScriptAppend(b.Script, "window.imguiKitKeyboard && window.imguiKitKeyboard.mirrorTo(");
             ImGuiTouchScriptAppendString(b.Script, state->GetText(), state->TextLen);
-            ImGuiTouchScriptAppend(b.Script, caretText);
+            ImGuiTouchScriptAppend(b.Script, caret_text);
             emscripten_run_script(ImGuiTouchScriptEnd(b.Script));
         }
     }

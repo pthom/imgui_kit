@@ -13,38 +13,38 @@
 namespace
 {
     // The lab: a window of lines, with a button, a slider, an item that zooms with the wheel, and a context menu
-    const char* kLab = "Touch lab";
-    const ImVec2 kLabPos(20.f, 20.f);  // the window is pinned there
+    const char* k_lab = "Touch lab";
+    const ImVec2 k_lab_pos(20.f, 20.f);  // the window is pinned there
 
     struct Lab
     {
         int clicks = 0;
         float slider = 0.5f;
         float zoom = 1.f;
-        float mapZoom = 1.f;    // the map, which reads the pinch's data (ImGuiTouch::ItemPinch)
-        ImVec2 mapPan;
-        int mapStarted = 0, mapEnded = 0;
-        bool menuShown = false;
-        bool resetScroll = true;
+        float map_zoom = 1.f;    // the map, which reads the pinch's data (ImGuiTouch::ItemPinch)
+        ImVec2 map_pan;
+        int map_started = 0, map_ended = 0;
+        bool menu_shown = false;
+        bool reset_scroll = true;
         float scrollY = 0.f;
     };
-    Lab gLab;
+    Lab g_lab;
 
     void LabGui()
     {
-        ImGui::SetNextWindowPos(kLabPos, ImGuiCond_Always);
+        ImGui::SetNextWindowPos(k_lab_pos, ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(420.f, 420.f), ImGuiCond_Always);
-        ImGui::Begin(kLab, nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
-        if (gLab.resetScroll)
+        ImGui::Begin(k_lab, nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+        if (g_lab.reset_scroll)
         {
             ImGui::SetScrollY(0.f);
-            gLab.resetScroll = false;
+            g_lab.reset_scroll = false;
         }
         for (int i = 0; i < 10; i++)
             ImGui::Text("Line %d", i);
         if (ImGui::Button("Button"))
-            gLab.clicks++;
-        ImGui::SliderFloat("Slider", &gLab.slider, 0.f, 1.f);
+            g_lab.clicks++;
+        ImGui::SliderFloat("Slider", &g_lab.slider, 0.f, 1.f);
         for (int i = 10; i < 16; i++)
             ImGui::Text("Line %d", i);
         // An item that zooms with the wheel, with Dear ImGui's idiom: it claims the wheel while hovered. It takes a
@@ -52,7 +52,7 @@ namespace
         ImGui::Button("Zoomable (the wheel zooms it)", ImVec2(-FLT_MIN, 150.f));
         ImGuiTouch::SetItemPinchAsWheel(1.1f, ImGuiTouchPinchDelivery_WheelNotches);
         if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
-            gLab.zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+            g_lab.zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
         for (int i = 16; i < 80; i++)
             ImGui::Text("Line %d", i);
         // A map: it reads two fingers' gesture, the zoom and the pan at once
@@ -60,18 +60,18 @@ namespace
         ImGuiTouchPinch pinch = ImGuiTouch::ItemPinch();
         if (pinch.Active)
         {
-            gLab.mapZoom *= pinch.ScaleDelta;
-            gLab.mapPan += pinch.CenterDelta;
+            g_lab.map_zoom *= pinch.ScaleDelta;
+            g_lab.map_pan += pinch.CenterDelta;
         }
-        gLab.mapStarted += pinch.Started ? 1 : 0;
-        gLab.mapEnded += pinch.Ended ? 1 : 0;
+        g_lab.map_started += pinch.Started ? 1 : 0;
+        g_lab.map_ended += pinch.Ended ? 1 : 0;
         if (ImGui::BeginPopupContextWindow("##menu"))
         {
-            gLab.menuShown = true;
+            g_lab.menu_shown = true;
             ImGui::TextUnformatted("The context menu");
             ImGui::EndPopup();
         }
-        gLab.scrollY = ImGui::GetScrollY();
+        g_lab.scrollY = ImGui::GetScrollY();
         ImGui::End();
     }
 
@@ -87,13 +87,13 @@ namespace
     {
         ctx->PopupCloseAll();
         ctx->SleepNoSkip(2.f, 1.f / 60.f);
-        gLab = Lab();
+        g_lab = Lab();
         ctx->Yield(2);
-        ctx->SetRef(kLab);
+        ctx->SetRef(k_lab);
     }
 
     // A point of the lab, from its top-left corner
-    ImVec2 LabPos(float x, float y) { return kLabPos + ImVec2(x, y); }
+    ImVec2 LabPos(float x, float y) { return k_lab_pos + ImVec2(x, y); }
 
     // A finger pressed at `from`, moved to `to`, lifted
     void Swipe(ImGuiTestContext* ctx, ImVec2 from, ImVec2 to)
@@ -132,8 +132,8 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ImVec2 button = ctx->ItemInfo("Button").RectFull.GetCenter();
         Swipe(ctx, button, button - ImVec2(0.f, 150.f));
         ctx->Yield(10);
-        IM_CHECK_GT(gLab.scrollY, 100.f);
-        IM_CHECK_EQ(gLab.clicks, 0);
+        IM_CHECK_GT(g_lab.scrollY, 100.f);
+        IM_CHECK_EQ(g_lab.clicks, 0);
     };
 
     // A tap clicks the button (the touch layer replays it, a few frames later)
@@ -146,8 +146,8 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->MouseDown();
         ctx->MouseUp();
         ctx->Yield(5);
-        IM_CHECK_EQ(gLab.clicks, 1);
-        IM_CHECK_EQ(gLab.scrollY, 0.f);
+        IM_CHECK_EQ(g_lab.clicks, 1);
+        IM_CHECK_EQ(g_lab.scrollY, 0.f);
     };
 
     // A finger held still, then moved, drags the slider under it, and the window does not scroll
@@ -163,8 +163,8 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->MouseMoveToPos(slider + ImVec2(60.f, 0.f));
         ctx->MouseUp();
         ctx->Yield(3);
-        IM_CHECK_GT(gLab.slider, 0.6f);
-        IM_CHECK_EQ(gLab.scrollY, 0.f);
+        IM_CHECK_GT(g_lab.slider, 0.6f);
+        IM_CHECK_EQ(g_lab.scrollY, 0.f);
     };
 
     // A finger still for half a second, then lifted, is a right click: the context menu opens
@@ -178,7 +178,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->SleepNoSkip(0.7f, 1.f / 60.f);
         ctx->MouseUp();
         ctx->Yield(5);
-        IM_CHECK(gLab.menuShown);
+        IM_CHECK(g_lab.menu_shown);
         ctx->PopupCloseAll();
     };
 
@@ -194,7 +194,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->MouseMoveToPos(from - ImVec2(0.f, 150.f));
         ctx->MouseUp();
         ctx->Yield(10);
-        IM_CHECK_EQ(gLab.scrollY, 0.f);
+        IM_CHECK_EQ(g_lab.scrollY, 0.f);
     };
 
     // A wheel that scrolls the page keeps scrolling it when the zoomable item comes under the still mouse: the item
@@ -211,15 +211,15 @@ void KitTestsRegister(ImGuiTestEngine* engine)
             ctx->MouseWheelY(-1.f);
             ctx->Yield(2);
         }
-        IM_CHECK_GT(gLab.scrollY, 0.f);
-        IM_CHECK_EQ(gLab.zoom, 1.f);
+        IM_CHECK_GT(g_lab.scrollY, 0.f);
+        IM_CHECK_EQ(g_lab.zoom, 1.f);
         ctx->SleepNoSkip(1.f, 1.f / 60.f);  // the session ends (0.7 s)
         ctx->MouseMoveToPos(ctx->ItemInfo("Zoomable (the wheel zooms it)").RectFull.GetCenter());
-        const float scrolled = gLab.scrollY;
+        const float scrolled = g_lab.scrollY;
         ctx->MouseWheelY(1.f);
         ctx->Yield(2);
-        IM_CHECK_GT(gLab.zoom, 1.f);
-        IM_CHECK_EQ(gLab.scrollY, scrolled);
+        IM_CHECK_GT(g_lab.zoom, 1.f);
+        IM_CHECK_EQ(g_lab.scrollY, scrolled);
     };
 
     // Two fingers that spread on the zoomable item zoom it, by wheel notches, and the font does not scale. The fingers
@@ -228,7 +228,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
     t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
     t->TestFunc = [](ImGuiTestContext* ctx) {
         ResetLab(ctx);
-        const float fontScale = ImGui::GetStyle().FontScaleMain;
+        const float font_scale = ImGui::GetStyle().FontScaleMain;
         UseFinger(ctx);
         ImVec2 c = ctx->ItemInfo("Zoomable (the wheel zooms it)").RectClipped.GetCenter();
         ctx->MouseMoveToPos(c - ImVec2(20.f, 0.f));
@@ -245,10 +245,10 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ctx->Yield(3);
-        IM_CHECK_GT(gLab.zoom, 1.3f);
-        IM_CHECK_LT(gLab.zoom, 1.34f);
-        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, fontScale);
-        IM_CHECK_EQ(gLab.clicks, 0);
+        IM_CHECK_GT(g_lab.zoom, 1.3f);
+        IM_CHECK_LT(g_lab.zoom, 1.34f);
+        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, font_scale);
+        IM_CHECK_EQ(g_lab.clicks, 0);
     };
 
     // Two fingers on an item that reads the pinch's data: it zooms by their spread and pans by their move, both in
@@ -257,7 +257,7 @@ void KitTestsRegister(ImGuiTestEngine* engine)
     t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
     t->TestFunc = [](ImGuiTestContext* ctx) {
         ResetLab(ctx);
-        const float fontScale = ImGui::GetStyle().FontScaleMain;
+        const float font_scale = ImGui::GetStyle().FontScaleMain;
         ctx->ScrollToItemY("Map");
         ctx->Yield(2);
         UseFinger(ctx);
@@ -278,14 +278,14 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
         ctx->Yield(3);
-        IM_CHECK_GT(gLab.mapZoom, 1.48f);
-        IM_CHECK_LT(gLab.mapZoom, 1.52f);
-        IM_CHECK_GT(gLab.mapPan.x, 28.f);
-        IM_CHECK_LT(gLab.mapPan.x, 32.f);
-        IM_CHECK_EQ(gLab.mapStarted, 1);
-        IM_CHECK_EQ(gLab.mapEnded, 1);
-        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, fontScale);
-        IM_CHECK_EQ(gLab.clicks, 0);
+        IM_CHECK_GT(g_lab.map_zoom, 1.48f);
+        IM_CHECK_LT(g_lab.map_zoom, 1.52f);
+        IM_CHECK_GT(g_lab.map_pan.x, 28.f);
+        IM_CHECK_LT(g_lab.map_pan.x, 32.f);
+        IM_CHECK_EQ(g_lab.map_started, 1);
+        IM_CHECK_EQ(g_lab.map_ended, 1);
+        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, font_scale);
+        IM_CHECK_EQ(g_lab.clicks, 0);
     };
 
     // The kit's demo: in its Touch section, a sideways swipe on the row of cards scrolls the row (a child in a child,

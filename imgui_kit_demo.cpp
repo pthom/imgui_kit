@@ -562,7 +562,7 @@ ImGuiTouch::SetupEmscripten();  // in a browser: which pointer is a finger, the 
 // - A widget that a finger drags: ImGuiTouch::SetItemTakesDrags() right after it.
 // - A widget that zooms: ImGuiTouch::ItemPinch() right after it (SetItemPinchAsWheel() if it zooms by the wheel).
 // - A widget that reads the wheel claims it: if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY)) ...
-// Hello ImGui does the setup itself (RunnerParams::touchConfig).)";
+// Hello ImGui does the setup itself (RunnerParams::touch_config).)";
 
 // The settings change the application's touch layer, live. "Simulate a touch source" lets the mouse play a finger.
 // Without the touch layer (an app that shows this demo without ImGuiTouch::Setup()), a note instead of the section

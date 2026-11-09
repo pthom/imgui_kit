@@ -178,10 +178,10 @@ static void PushUrlZones(ImGuiIO& io, ImGuiTouchBrowserState& b)
                  && io.DisplaySize.x == b.UrlZonesDisplayW);
     for (int i = 0; same && i < b.UrlZones.Size; i++)
     {
-        const ImRect& r = b.UrlZones[i].rect;
-        const ImRect& p = b.UrlZonesPushed[i].rect;
+        const ImRect& r = b.UrlZones[i].Rect;
+        const ImRect& p = b.UrlZonesPushed[i].Rect;
         same = (r.Min.x == p.Min.x && r.Min.y == p.Min.y && r.Max.x == p.Max.x && r.Max.y == p.Max.y
-                && b.UrlZones[i].urlOffset == b.UrlZonesPushed[i].urlOffset);
+                && b.UrlZones[i].UrlOffset == b.UrlZonesPushed[i].UrlOffset);
     }
     if (same && b.UrlZoneUrls.Size > 0)
         same = (memcmp(b.UrlZoneUrls.Data, b.UrlZoneUrlsPushed.Data, (size_t)b.UrlZoneUrls.Size) == 0);
@@ -198,10 +198,10 @@ static void PushUrlZones(ImGuiIO& io, ImGuiTouchBrowserState& b)
     char buffer[96];
     for (const ImGuiTouchUrlZone& z : b.UrlZonesPushed)
     {
-        snprintf(buffer, sizeof(buffer), "{x0:%.1f,y0:%.1f,x1:%.1f,y1:%.1f,url:", z.rect.Min.x, z.rect.Min.y,
-                 z.rect.Max.x, z.rect.Max.y);
+        snprintf(buffer, sizeof(buffer), "{x0:%.1f,y0:%.1f,x1:%.1f,y1:%.1f,url:", z.Rect.Min.x, z.Rect.Min.y,
+                 z.Rect.Max.x, z.Rect.Max.y);
         ImGuiTouchScriptAppend(s, buffer);
-        const char* url = b.UrlZoneUrlsPushed.Data + z.urlOffset;
+        const char* url = b.UrlZoneUrlsPushed.Data + z.UrlOffset;
         ImGuiTouchScriptAppendString(s, url, (int)strlen(url));
         ImGuiTouchScriptAppend(s, "},");
     }
@@ -221,7 +221,7 @@ static void BeforeNewFrame(ImGuiContext* ctx, ImGuiContextHook*)
         frame = "";
     char* p = nullptr;
     int type = (int)strtol(frame, &p, 10);
-    bool pointerDown = strtol(p, &p, 10) != 0;
+    bool pointer_down = strtol(p, &p, 10) != 0;
     float cssWidth = strtof(p, &p);
     ImGuiMouseSource source = (type == 1) ? ImGuiMouseSource_TouchScreen : (type == 2) ? ImGuiMouseSource_Pen
                                                                           : ImGuiMouseSource_Mouse;
@@ -231,7 +231,7 @@ static void BeforeNewFrame(ImGuiContext* ctx, ImGuiContextHook*)
     // There is no pointer between two touches: the position is invalid, as when a mouse leaves the window.
     // Otherwise the last touch keeps hovering what passes under it (the content that coasts after a fling), and
     // the GLFW backend re-adds that position at each frame (a finger triggers no mouseenter).
-    if (source == ImGuiMouseSource_TouchScreen && !pointerDown)
+    if (source == ImGuiMouseSource_TouchScreen && !pointer_down)
         g.IO.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
     RelayFingers(g.IO, b, p, cssWidth);
 }
