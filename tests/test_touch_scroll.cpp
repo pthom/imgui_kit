@@ -1066,7 +1066,7 @@ TEST_CASE("Touch scroll: a release at an invalid position (a backend that lost t
     CHECK(b.scrollY == dragged);  // nothing coasted
     // Without the guard, the lift speed is infinite: the overscroll goes to infinity, then NaN, the content is
     // drawn there and the bounce never ends
-    CHECK(ImGuiTouch::GetCurrentContext().Scroll.overscroll == 0.f);
+    CHECK(ImGuiTouch::GetTouchContext().Scroll.overscroll == 0.f);
     ImGuiTouch::ConsumeAnimationRequest();  // (the bench has no hook that clears the flag at each frame)
     b.Frame();
     CHECK(!ImGuiTouch::ConsumeAnimationRequest());
@@ -1080,12 +1080,12 @@ TEST_CASE("Touch scroll: the long press watch ends when the layer turns off (the
     b.Frames(3);
     b.Press(b.buttonRect.GetCenter());
     b.Frames(2);
-    CHECK(ImGuiTouch::GetCurrentContext().Scroll.watchingLongPress);
+    CHECK(ImGuiTouch::GetTouchContext().Scroll.watchingLongPress);
     b.Source(ImGuiMouseSource_Mouse);  // a mouse takes over while the finger is down (the source tags the next event)
     const ImVec2 p = b.buttonRect.GetCenter();
     ImGui::GetIO().AddMousePosEvent(p.x + 1.f, p.y);  // a move below the slop: the watch would stay, but for the mouse
     b.Frames(2);
-    CHECK(!ImGuiTouch::GetCurrentContext().Scroll.watchingLongPress);
+    CHECK(!ImGuiTouch::GetTouchContext().Scroll.watchingLongPress);
     b.Release();
 }
 

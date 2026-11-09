@@ -440,14 +440,20 @@ const char* FitText(const char* text, float wrap_width, int max_lines)
     const char* ellipsis = "\xE2\x80\xA6";  // U+2026, 3 bytes
     const int len = (int)strlen(text);
     buffer.resize(len + 4);
-    // Words leave from the end, until the rest and the ellipsis fit
+    // Words leave from the end, until the rest and the ellipsis fit; a word that is alone and too long (a URL, a
+    // path) loses characters instead
     int end = len;
     while (true)
     {
-        while (end > 0 && text[end - 1] != ' ')  // back to the start of the last word
-            end--;
-        while (end > 0 && text[end - 1] == ' ')  // and before the spaces that precede it
-            end--;
+        int word_start = end;
+        while (word_start > 0 && text[word_start - 1] != ' ')  // back to the start of the last word
+            word_start--;
+        while (word_start > 0 && text[word_start - 1] == ' ')  // and before the spaces that precede it
+            word_start--;
+        if (word_start > 0)
+            end = word_start;
+        else
+            for (end--; end > 0 && (text[end] & 0xC0) == 0x80; end--) {}  // one character: back to its lead byte
         memcpy(buffer.Data, text, (size_t)end);
         memcpy(buffer.Data + end, ellipsis, 4);  // with its terminating zero
         if (end == 0 || ImGui::CalcTextSize(buffer.Data, nullptr, false, wrap_width).y <= max_height)

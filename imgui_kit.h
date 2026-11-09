@@ -232,6 +232,8 @@ IMGUI_API const char* FitText(const char* text, float wrap_width, int max_lines)
 
 // Resize handle: a grip at the bottom-right corner of the last item, which resizes it. Call it right after the item,
 // which takes *size; dragging the grip changes *size (at least min_size). Returns true when *size changed.
+// The grip lies over the item's corner: an item that acts on a bare press (a button) also sees the press that starts
+// a resize, unless ImGui::SetNextItemAllowOverlap() is called before it. Plots, fields and child windows need nothing.
 //
 //     static ImVec2 size = ImGuiKit::EmToVec2(24, 12);
 //     if (ImPlot::BeginPlot("Plot", size)) { ...; ImPlot::EndPlot(); }

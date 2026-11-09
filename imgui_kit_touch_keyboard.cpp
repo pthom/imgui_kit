@@ -77,7 +77,7 @@ void SetKeyboardInsets(const ImGuiTouchKeyboardInsets& insets)
 ImGuiTouchKeyboardInsets GetKeyboardInsets()
 {
     ImGuiTouchKeyboardInsets none;  // no keyboard reported yet: an app reads its insets at each frame
-    ImGuiTouchContext* state = FindCurrentContext();
+    ImGuiTouchContext* state = FindTouchContext();
     return state ? state->KeyboardInsets : none;
 }
 
@@ -92,7 +92,7 @@ void SetupKeepCaretInView(ImGuiContext* ctx)
     hook.Type = ImGuiContextHookType_NewFramePre;
     hook.Owner = owner;
     hook.Callback = [](ImGuiContext* g, ImGuiContextHook*) {
-        ImGuiTouchContext& tc = GetCurrentContext();
+        ImGuiTouchContext& tc = GetTouchContext();
         const ImGuiTouchKeyboardInsets& insets = tc.KeyboardInsets;
         bool shown = insets.Top > 0.f || insets.Bottom > 0.f;
         KeepCaretInView(*g, tc.CaretView, shown, insets.Top, g->IO.DisplaySize.y - insets.Bottom);

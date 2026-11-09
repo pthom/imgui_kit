@@ -75,7 +75,7 @@ namespace
     Taker* Claim(ImGuiID id, const ImRect& rect)
     {
         ImGuiContext& g = *GImGui;
-        ImGuiTouchContext* touch = FindCurrentContext();
+        ImGuiTouchContext* touch = FindTouchContext();
         if (touch == nullptr || touch->Pinch.frameCount != g.FrameCount)
             return nullptr;
         ImRect visible = rect;
@@ -149,7 +149,7 @@ namespace
 
     ImGuiTouchPinch DataFor(ImGuiID id)
     {
-        ImGuiTouchContext* touch = FindCurrentContext();
+        ImGuiTouchContext* touch = FindTouchContext();
         if (touch == nullptr || id == 0)
             return ImGuiTouchPinch();
         const State& s = touch->Pinch;
@@ -198,7 +198,7 @@ void SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiM
 
 void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
 {
-    State& s = GetCurrentContext().Pinch;
+    State& s = GetTouchContext().Pinch;
     const bool down = (phase == ImGuiTouchPhase_Began || phase == ImGuiTouchPhase_Moved);
     if (phase == ImGuiTouchPhase_Cancelled)
         s.cancelled = true;
@@ -242,7 +242,7 @@ void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
 void ApplyFingerCancel()
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Pinch;
+    State& s = GetTouchContext().Pinch;
     if (!s.cancelled)
         return;
     s.cancelled = false;
@@ -258,7 +258,7 @@ void ApplyFingerCancel()
 // Events marked as the layer's or the Test Engine's are left as they are.
 void PinchBeforeNewFrame(ImGuiContext& g)
 {
-    ImGuiTouchContext* touch = FindCurrentContext();
+    ImGuiTouchContext* touch = FindTouchContext();
     if (touch == nullptr)
         return;
     State& s = touch->Pinch;
@@ -290,7 +290,7 @@ void PinchBeforeNewFrame(ImGuiContext& g)
 void UpdateTouchPinch(bool scalesFont)
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Pinch;
+    State& s = GetTouchContext().Pinch;
     s.previousTakers.swap(s.takers);
     s.takers.resize(0);
     s.frameCount = g.FrameCount;
@@ -366,7 +366,7 @@ void UpdateTouchPinch(bool scalesFont)
         if (DragButton(s, &button))
         {
             if (button == ImGuiMouseButton_Left)
-                GetCurrentContext().Scroll.replayedPresses++;  // the layer's own press: the swipe does not claim it
+                GetTouchContext().Scroll.replayedPresses++;  // the layer's own press: the swipe does not claim it
             ButtonEvent(g.IO, button, true);
         }
     }
@@ -407,7 +407,7 @@ void UpdateTouchPinch(bool scalesFont)
     }
     else if (s.gesture == Gesture::Pinch && twoFingers && scalesFont)
     {
-        const ImGuiTouchConfig& config = GetCurrentContext().Config;
+        const ImGuiTouchConfig& config = GetTouchContext().Config;
         ImGui::GetStyle().FontScaleMain =
             ImClamp(s.baseScale * pinchScale, config.PinchFontScaleMin, config.PinchFontScaleMax);
     }

@@ -78,6 +78,13 @@ namespace
 
     // The feedback of the hold: a ring that grows and fades around the finger, so that the user knows the widget
     // under it has the press, and the drag can start
+    // The viewport under the pointer (a window on a second monitor, with viewports enabled), else the main one
+    ImDrawList* ForegroundDrawList()
+    {
+        ImGuiContext& g = *GImGui;
+        return ImGui::GetForegroundDrawList(g.HoveredWindow ? g.HoveredWindow->Viewport : ImGui::GetMainViewport());
+    }
+
     void DrawHoldRipple(const State& s)
     {
         ImGuiContext& g = *GImGui;
@@ -86,7 +93,7 @@ namespace
             return;
         float radius = g.FontSize * (2.f + 1.5f * t);  // from past a fingertip
         ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, 0.9f * (1.f - t));
-        ImGui::GetForegroundDrawList()->AddCircle(s.ripplePos, radius, col, 0, g.FontSize * 0.25f);
+        ForegroundDrawList()->AddCircle(s.ripplePos, radius, col, 0, g.FontSize * 0.25f);
     }
 
     // The long press: while the finger stays still, an arc fills around it (from the top, clockwise); once armed, a
@@ -96,7 +103,7 @@ namespace
         ImGuiContext& g = *GImGui;
         if (!s.watchingLongPress || !ImGui::IsMousePosValid())
             return;
-        ImDrawList* draw_list = ImGui::GetForegroundDrawList();
+        ImDrawList* draw_list = ForegroundDrawList();
         float radius = g.FontSize * kLongPressRingRadius;
         float thickness = g.FontSize * 0.3f;
         if (s.longPressArmed)
@@ -105,7 +112,7 @@ namespace
             return;
         }
         // The arc shows after a short delay: a tap does not flash it
-        const float longPress = ImMax(GetCurrentContext().Config.LongPressSeconds, kLongPressArcDelay + 0.01f);
+        const float longPress = ImMax(GetTouchContext().Config.LongPressSeconds, kLongPressArcDelay + 0.01f);
         float t = ((float)g.Time - s.pressTime - kLongPressArcDelay) / (longPress - kLongPressArcDelay);
         if (t <= 0.f)
             return;
@@ -434,7 +441,7 @@ namespace
         }
         else if (lifted || moved || (s.owning && s.swiping) || s.parked || widgetActed)
             s.watchingLongPress = s.longPressArmed = false;  // the widget under the finger keeps its press
-        else if (!s.owning && (float)g.Time - s.pressTime >= GetCurrentContext().Config.LongPressSeconds)
+        else if (!s.owning && (float)g.Time - s.pressTime >= GetTouchContext().Config.LongPressSeconds)
             s.longPressArmed = true;
     }
 
@@ -477,7 +484,7 @@ namespace
                     EndPress(s);
                 }
             }
-            else if (io.MouseDownDuration[ImGuiMouseButton_Left] >= GetCurrentContext().Config.HoldSeconds)
+            else if (io.MouseDownDuration[ImGuiMouseButton_Left] >= GetTouchContext().Config.HoldSeconds)
             {
                 // The hold: the widget under the finger gets the press, and the finger's drag from now on
                 ImGui::ClearActiveID();
@@ -543,7 +550,7 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    State& s = GetCurrentContext().Scroll;
+    State& s = GetTouchContext().Scroll;
     if (s.context != &g || g.FrameCount < s.frameCount)
     {
         s = State{};
@@ -636,7 +643,7 @@ namespace
 
 void ApplyTouchOverscroll()
 {
-    State& s = GetCurrentContext().Scroll;
+    State& s = GetTouchContext().Scroll;
     ImGuiWindow* w = s.window;
     if (s.overscroll == 0.f || w == nullptr || s.context != GImGui || !w->Active)
         return;
@@ -662,7 +669,7 @@ void ApplyTouchOverscroll()
 bool TouchScrollLetGo(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Scroll;
+    State& s = GetTouchContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.pull = 0.f;
@@ -685,7 +692,7 @@ bool TouchScrollLetGo(bool evenAWidget)
 bool TouchScrollRelease(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Scroll;
+    State& s = GetTouchContext().Scroll;
     const ImGuiID id = SentinelId();
     s.inertia = ImVec2(0.f, 0.f);
     s.watchingLongPress = s.longPressArmed = false;
@@ -710,7 +717,7 @@ bool TouchScrollRelease(bool evenAWidget)
 void DrawTouchScrollbarGrab()
 {
     ImGuiContext& g = *GImGui;
-    State& s = GetCurrentContext().Scroll;
+    State& s = GetTouchContext().Scroll;
     ImGuiWindow* w = g.ActiveIdWindow;
     ImGuiAxis axis = ImGuiAxis_None;
     if (s.thinScrollbars && w != nullptr && g.ActiveId != 0)
@@ -771,7 +778,7 @@ void DrawTouchScrollbarGrab()
 void AddDragTaker(const ImRect& itemRect, bool longPressIsRightClick, ImGuiAxis axis)
 {
     ImGuiContext& g = *GImGui;
-    ImGuiTouchContext* touch = FindCurrentContext();  // none without the touch layer: the widget just draws
+    ImGuiTouchContext* touch = FindTouchContext();  // none without the touch layer: the widget just draws
     if (touch == nullptr)
         return;
     State& s = touch->Scroll;

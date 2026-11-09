@@ -8,7 +8,7 @@
 // The layer's state, ImGuiTouchContext: one per Dear ImGui context, as Dear ImGui's own state is in ImGuiContext. Dear
 // ImGui has no slot for an extension's state: the kit keeps it in its own per-context state (ImGuiKitContext, see
 // imgui_kit_internal.h). Only imgui_kit_touch.cpp knows that: the layer's other sources reach the state through
-// ImGuiTouch::GetCurrentContext(). The setups (ImGuiTouch::Setup(), SetKeyboardInsets(), SetupEmscripten(),
+// ImGuiTouch::GetTouchContext(). The setups (ImGuiTouch::Setup(), SetKeyboardInsets(), SetupEmscripten(),
 // SetupEmscriptenKeyboard()) create it; the other ImGuiTouch functions assert that a setup was called.
 #pragma once
 #include "imgui_kit.h"
@@ -216,9 +216,9 @@ namespace ImGuiTouch
     void PinchBeforeNewFrame(ImGuiContext& g);
 
     // The current Dear ImGui context's touch state (see this file's top): created by the setups, freed with the Dear
-    // ImGui context. GetCurrentContext() asserts that a setup was called; FindCurrentContext() returns nullptr.
-    ImGuiTouchContext& GetCurrentContext();
-    ImGuiTouchContext* FindCurrentContext();
+    // ImGui context. GetTouchContext() asserts that a setup was called; FindTouchContext() returns nullptr.
+    ImGuiTouchContext& GetTouchContext();
+    ImGuiTouchContext* FindTouchContext();
     ImGuiTouchContext& CreateCurrentContextIfNeeded();
     // A widget that takes a finger's drags (SetItemTakesDrags, or Dear ImGui's draggable widgets
     // through ImGuiItemDragAxisCallback when the build has it); ImGuiAxis_None: all, at once

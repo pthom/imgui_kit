@@ -151,7 +151,7 @@ namespace
         if (ImStrnicmp(url, "http://", 7) != 0 && ImStrnicmp(url, "https://", 8) != 0
             && ImStrnicmp(url, "mailto:", 7) != 0)
             return false;
-        ImVector<char>& script = ImGuiTouch::GetCurrentContext().Browser.Script;
+        ImVector<char>& script = ImGuiTouch::GetTouchContext().Browser.Script;
         script.resize(0);
         ImGuiTouchScriptAppend(script, "(u => {"
             " const o = window.imguiKitUrlOpened; if (o && o.url === u && performance.now() - o.at < 1500) return;"
@@ -198,7 +198,7 @@ namespace
     void BeforeNewFrame(ImGuiContext* ctx, ImGuiContextHook*)
     {
         ImGuiContext& g = *ctx;
-        ImGuiTouchBrowserState& b = ImGuiTouch::GetCurrentContext().Browser;
+        ImGuiTouchBrowserState& b = ImGuiTouch::GetTouchContext().Browser;
         PushUrlZones(g.IO, b);
         // The frame's state: "type down cssWidth;id x y;...|cancelled ids"
         const char* frame = emscripten_run_script_string("window.imguiKitFrame ? window.imguiKitFrame() : ''");
@@ -268,7 +268,7 @@ namespace ImGuiTouch
 {
 bool SetRectOpensUrl(const ImVec2& min, const ImVec2& max, const char* url)
 {
-    ImGuiTouchContext* touch = FindCurrentContext();
+    ImGuiTouchContext* touch = FindTouchContext();
     if (touch == nullptr || !touch->Browser.Installed)
         return false;
     if (ImStrnicmp(url, "http://", 7) != 0 && ImStrnicmp(url, "https://", 8) != 0 && ImStrnicmp(url, "mailto:", 7) != 0)

@@ -4,7 +4,7 @@
 #include "imgui_internal.h"
 #include "imgui_impl_null.h"
 #include "imgui_kit.h"
-#include "imgui_kit_internal.h"  // FindCurrentContext
+#include "imgui_kit_internal.h"  // FindTouchContext
 
 namespace
 {
@@ -160,7 +160,7 @@ TEST_CASE("Touch context: each Dear ImGui context has its own touch state, freed
 
     ImGuiContext* b = ImGui::CreateContext();
     ImGui::SetCurrentContext(b);
-    CHECK(ImGuiTouch::FindCurrentContext() == nullptr);  // no touch state before a setup
+    CHECK(ImGuiTouch::FindTouchContext() == nullptr);  // no touch state before a setup
     ImGuiTouch::Setup();
     CHECK(ImGuiTouch::GetConfig().ScrollMode == ImGuiTouchScrollMode_Auto);  // b starts afresh
     CHECK(ImGuiTouch::GetKeyboardInsets().Bottom == 0.f);
@@ -173,7 +173,7 @@ TEST_CASE("Touch context: each Dear ImGui context has its own touch state, freed
     ImGui::DestroyContext(a);
 
     ImGuiContext* c = ImGui::CreateContext();  // may reuse a destroyed context's address: it still starts afresh
-    CHECK(ImGuiTouch::FindCurrentContext() == nullptr);
+    CHECK(ImGuiTouch::FindTouchContext() == nullptr);
     ImGuiTouch::Setup();
     CHECK(ImGuiTouch::GetConfig().ScrollMode == ImGuiTouchScrollMode_Auto);
     ImGui::DestroyContext(c);

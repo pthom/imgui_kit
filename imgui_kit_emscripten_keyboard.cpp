@@ -556,7 +556,7 @@ static void UpdateKeyboard()
 {
     ImGuiContext& g = *GImGui;
     ImGuiIO& io = g.IO;
-    ImGuiTouchBrowserState& b = ImGuiTouch::GetCurrentContext().Browser;
+    ImGuiTouchBrowserState& b = ImGuiTouch::GetTouchContext().Browser;
 
     // The page's state: the visible area while the keyboard is shown (the full-screen window shrinks to it, the clicks
     // under the keyboard are dropped, the caret stays in view), the tap's clicks to drop, and whether input waits

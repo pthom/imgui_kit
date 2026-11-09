@@ -429,6 +429,15 @@ TEST_CASE("Fit text: the text itself when it fits, else cut at a word, with an e
     CHECK(fitted_long.compare(fitted_long.size() - 3, 3, "\xE2\x80\xA6") == 0);
     CHECK(std::string(long_text).rfind(fitted_long.substr(0, fitted_long.size() - 3), 0) == 0);  // a prefix
     CHECK(fitted_height <= 2 * line_height + 1);
+
+    // A word alone, too long for the width (a URL): characters leave, not the whole word
+    const char* url = "https://example.org/a/very/long/path/that/no/space/breaks/anywhere/at/all";
+    std::string fitted_url;
+    auto gui_url = [&] { fitted_url = ImGuiKit::FitText(url, 120.0f, 1); };
+    bench.Frame(400, gui_url);
+    CHECK(fitted_url.size() > 3);  // not a bare ellipsis
+    CHECK(fitted_url.compare(fitted_url.size() - 3, 3, "\xE2\x80\xA6") == 0);
+    CHECK(std::string(url).rfind(fitted_url.substr(0, fitted_url.size() - 3), 0) == 0);
 }
 
 TEST_CASE("Group panel: the frame holds the content, and is at least the size asked")
