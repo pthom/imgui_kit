@@ -1,0 +1,2 @@
+# The script embedded in a .cpp by tools/embed_js.py must match the file byte for byte, on every platform
+*.js text eol=lf

@@ -43,7 +43,9 @@ endif()
 if (PROJECT_IS_TOP_LEVEL)
     # The page's script (imgui_kit_emscripten_keyboard.js) is copied into its .cpp by tools/embed_js.py, which writes
     # the file's sha1 in the marker line: a stale copy stops a developer's build here, not in the CI
-    file(SHA1 ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit_emscripten_keyboard.js IMGUI_KIT_KEYBOARD_JS_SHA1)
+    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit_emscripten_keyboard.js IMGUI_KIT_KEYBOARD_JS)
+    string(REPLACE "\r\n" "\n" IMGUI_KIT_KEYBOARD_JS "${IMGUI_KIT_KEYBOARD_JS}")  # a checkout with CRLF: the same file
+    string(SHA1 IMGUI_KIT_KEYBOARD_JS_SHA1 "${IMGUI_KIT_KEYBOARD_JS}")
     file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/imgui_kit_emscripten_keyboard.cpp IMGUI_KIT_KEYBOARD_JS_MARKER
          REGEX "<embedded file=\"imgui_kit_emscripten_keyboard.js\" sha1=\"")
     if (NOT IMGUI_KIT_KEYBOARD_JS_MARKER MATCHES "sha1=\"${IMGUI_KIT_KEYBOARD_JS_SHA1}\"")
@@ -99,7 +101,10 @@ if (IMGUI_KIT_BUILD_EXAMPLES)
     endif()
 endif()
 
-if (IMGUI_KIT_INSTALL)
+if (IMGUI_KIT_INSTALL AND IMGUI_KIT_BUILT_IMGUI AND IMGUI_KIT_BUILD_TEST_ENGINE_TESTS)
+    # That Dear ImGui is a test build (the Test Engine's hooks and imconfig): not a package
+    message(STATUS "imgui_kit: no install with IMGUI_KIT_BUILD_TEST_ENGINE_TESTS (its Dear ImGui is a test build)")
+elseif (IMGUI_KIT_INSTALL)
     # The package: find_package(imgui_kit) gives imgui_kit::imgui_kit. With a Dear ImGui the kit built itself, it is
     # installed too (its target and headers); with one from a package (imgui::imgui), the config finds that package.
     include(GNUInstallDirs)

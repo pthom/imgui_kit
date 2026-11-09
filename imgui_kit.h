@@ -34,9 +34,9 @@ Index of this file:
 #include <vector>
 #endif
 
-typedef int ImGuiKitIcon;           // -> enum ImGuiKitIcon_
-typedef int ImGuiTouchScrollMode;   // -> enum ImGuiTouchScrollMode_
-typedef int ImGuiTouchPinchDelivery;  // -> enum ImGuiTouchPinchDelivery_
+typedef int ImGuiKitIcon;            // -> enum ImGuiKitIcon_
+typedef int ImGuiTouchScrollMode;    // -> enum ImGuiTouchScrollMode_
+typedef int ImGuiTouchPinchDelivery; // -> enum ImGuiTouchPinchDelivery_
 typedef int ImGuiTouchAxis;          // -> enum ImGuiTouchAxis_
 typedef int ImGuiTouchPhase;         // -> enum ImGuiTouchPhase_
 typedef int ImGuiTouchPinchKind;     // -> enum ImGuiTouchPinchKind_
@@ -230,7 +230,7 @@ IMGUI_API bool   SegmentedSwitch(const char* str_id, int* current, const std::ve
 //     ImGui::PopTextWrapPos();
 IMGUI_API const char* FitText(const char* text, float wrap_width, int max_lines);
 
-// Resize handle: a grip at the bottom-right corner of the last item, which resizes it. Call it right after the item,
+// Resize handle: a grip in the bottom-right corner of the last item, which resizes it. Call it right after the item,
 // which takes *size; dragging the grip changes *size (at least min_size). Returns true when *size changed.
 // The grip lies over the item's corner: an item that acts on a bare press (a button) also sees the press that starts
 // a resize, unless ImGui::SetNextItemAllowOverlap() is called before it. Plots, fields and child windows need nothing.
