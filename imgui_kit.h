@@ -212,7 +212,8 @@ IMGUI_API bool   IconButton(const char* str_id, ImGuiKitIcon icon, const ImVec2&
 //
 //     ( Demo | Code )        <- current = 1: "Code" is filled
 //
-// It reacts at the press, not the release, which suits touch screens. Returns true when *current changed.
+// It reacts at the press, not the release, which suits touch screens. With the keyboard or a gamepad: activated
+// (Space, Enter), Left and Right move the choice, and the same key leaves it. Returns true when *current changed.
 IMGUI_API bool   SegmentedSwitch(const char* str_id, int* current, const char* const labels[], int labels_count);
 // The width a segmented switch takes, to place it: e.g. on the next line when the current one is too short
 IMGUI_API float  SegmentedSwitchWidth(const char* const labels[], int labels_count);

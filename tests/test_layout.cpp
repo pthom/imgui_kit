@@ -206,6 +206,49 @@ TEST_CASE("Help marker, icon button, segmented switch: they draw, and the switch
     CHECK(changed);
 }
 
+TEST_CASE("Segmented switch: activated with the keyboard, Right and Left move the choice, Space leaves it")
+{
+    Bench bench;
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    int current = 0;
+    bool changed = false, focus = true;
+    ImGuiID id = 0;
+    auto gui = [&] {
+        const char* labels[] = { "A", "B", "C" };
+        if (focus)
+            ImGui::SetKeyboardFocusHere();
+        changed = ImGuiKit::SegmentedSwitch("##s", &current, labels, 3);
+        id = ImGui::GetItemID();
+    };
+    auto key = [&](ImGuiKey k) {
+        io.AddKeyEvent(k, true);
+        bench.Frame(400, gui);
+        io.AddKeyEvent(k, false);
+        bench.Frame(400, gui);
+    };
+    bench.Frame(400, gui);
+    focus = false;
+    bench.Frame(400, gui);
+    CHECK(ImGui::GetCurrentContext()->NavId == id);
+    key(ImGuiKey_RightArrow);  // not active yet: the arrow navigates, the choice stays
+    CHECK(current == 0);
+    key(ImGuiKey_Space);
+    CHECK(ImGui::GetActiveID() == id);
+    key(ImGuiKey_RightArrow);
+    CHECK(current == 1);
+    key(ImGuiKey_RightArrow);
+    CHECK(current == 2);
+    key(ImGuiKey_RightArrow);  // the last: no wrap
+    CHECK(current == 2);
+    key(ImGuiKey_LeftArrow);
+    CHECK(current == 1);
+    CHECK(ImGui::GetActiveID() == id);
+    key(ImGuiKey_Space);  // leaves
+    CHECK(ImGui::GetActiveID() == 0);
+    (void)changed;
+}
+
 TEST_CASE("Segmented switch: its slide makes ImGuiKit::IsAnimating() true, without the touch layer, until it lands")
 {
     Bench bench;

@@ -314,16 +314,42 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     ImGui::ItemSize(size, style.FramePadding.y);
     if (!ImGui::ItemAdd(bb, id))
         return false;
-    // The press, rather than the release: a touch screen may not report the latter where it started
-    bool hovered_unused, held_unused;
-    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered_unused, &held_unused, ImGuiButtonFlags_PressedOnClick);
-    bool changed = false;
-    if (pressed)
+    // The press, rather than the release: a touch screen may not report the latter where it started. A nav activation
+    // (Space, Enter, a gamepad's button) makes it active, as a slider: Left and Right then move the choice, and the
+    // same key leaves it.
+    ImGuiContext& g = *GImGui;
+    const bool hovered = ImGui::ItemHoverable(bb, id, g.LastItemData.ItemFlags);
+    const bool clicked = hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, ImGuiInputFlags_None, id);
+    if (clicked || g.NavActivateId == id)
     {
-        int clicked = ImClamp((int)((ImGui::GetIO().MouseClickedPos[0].x - p0.x) / segment_width), 0, labels_count - 1);
-        changed = (clicked != *current);
-        *current = clicked;
+        if (clicked)
+            ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+        ImGui::SetActiveID(id, window);
+        ImGui::SetFocusID(id, window);
+        ImGui::FocusWindow(window);
+        g.ActiveIdUsingNavDirMask |= (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
     }
+    int picked = *current;
+    if (clicked)
+        picked = ImClamp((int)((ImGui::GetIO().MouseClickedPos[0].x - p0.x) / segment_width), 0, labels_count - 1);
+    if (g.ActiveId == id)
+    {
+        if (g.ActiveIdSource == ImGuiInputSource_Mouse)
+        {
+            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                ImGui::ClearActiveID();
+        }
+        else
+        {
+            const float tweak = ImGui::GetNavTweakPressedAmount(ImGuiAxis_X);
+            if (tweak != 0.0f)
+                picked = ImClamp(*current + ((tweak > 0.0f) ? 1 : -1), 0, labels_count - 1);
+            if (g.NavActivatePressedId == id && !g.ActiveIdIsJustActivated)
+                ImGui::ClearActiveID();
+        }
+    }
+    const bool changed = (picked != *current);
+    *current = picked;
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 p1 = p0 + size;
@@ -351,6 +377,7 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
         draw_list->AddRectFilled(ImVec2(x0, p0.y), ImVec2(x0 + segment_width, p1.y), ImGui::GetColorU32(col), rounding,
                                  flags);
     };
+    ImGui::RenderNavCursor(bb, id);
     draw_list->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_FrameBg), rounding);
     if (ImGui::IsItemHovered())
     {
