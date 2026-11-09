@@ -21,6 +21,9 @@ namespace
         int clicks = 0;
         float slider = 0.5f;
         float zoom = 1.f;
+        float mapZoom = 1.f;    // the map, which reads the pinch's data (ImGuiTouch::ItemPinch)
+        ImVec2 mapPan;
+        int mapStarted = 0, mapEnded = 0;
         bool menuShown = false;
         bool resetScroll = true;
         float scrollY = 0.f;
@@ -47,11 +50,21 @@ namespace
         // An item that zooms with the wheel, with Dear ImGui's idiom: it claims the wheel while hovered. It takes a
         // pinch too, as wheel notches of 10%
         ImGui::Button("Zoomable (the wheel zooms it)", ImVec2(-FLT_MIN, 150.f));
-        ImGuiTouch::SetItemTakesPinch(0.1f);
+        ImGuiTouch::SetItemPinchAsWheel(1.1f, ImGuiTouchPinchDelivery_WheelNotches);
         if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
             gLab.zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
         for (int i = 16; i < 80; i++)
             ImGui::Text("Line %d", i);
+        // A map: it reads two fingers' gesture, the zoom and the pan at once
+        ImGui::InvisibleButton("Map", ImVec2(-FLT_MIN, 150.f));
+        ImGuiTouchPinch pinch = ImGuiTouch::ItemPinch();
+        if (pinch.Active)
+        {
+            gLab.mapZoom *= pinch.ScaleDelta;
+            gLab.mapPan += pinch.CenterDelta;
+        }
+        gLab.mapStarted += pinch.Started ? 1 : 0;
+        gLab.mapEnded += pinch.Ended ? 1 : 0;
         if (ImGui::BeginPopupContextWindow("##menu"))
         {
             gLab.menuShown = true;
@@ -233,6 +246,43 @@ void KitTestsRegister(ImGuiTestEngine* engine)
         ctx->Yield(3);
         IM_CHECK_GT(gLab.zoom, 1.3f);
         IM_CHECK_LT(gLab.zoom, 1.34f);
+        IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, fontScale);
+        IM_CHECK_EQ(gLab.clicks, 0);
+    };
+
+    // Two fingers on an item that reads the pinch's data: it zooms by their spread and pans by their move, both in
+    // the same gesture; the font does not scale, nothing is clicked
+    t = IM_REGISTER_TEST(engine, "touch", "pinch_data_zooms_and_pans_at_once");
+    t->GuiFunc = [](ImGuiTestContext*) { LabGui(); };
+    t->TestFunc = [](ImGuiTestContext* ctx) {
+        ResetLab(ctx);
+        const float fontScale = ImGui::GetStyle().FontScaleMain;
+        ctx->ScrollToItemY("Map");
+        ctx->Yield(2);
+        UseFinger(ctx);
+        ImVec2 c = ctx->ItemInfo("Map").RectClipped.GetCenter();
+        ctx->MouseMoveToPos(c - ImVec2(20.f, 0.f));
+        ctx->MouseDown();
+        ImGuiTouch::AddFingerEvent(1, c - ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);
+        ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f, 0.f), ImGuiTouchPhase_Began);  // 40 px apart
+        ctx->Yield(2);
+        ctx->MouseUp();  // the layer released the first finger's press (see pinch_on_a_widget_zooms_it)
+        for (int i = 1; i <= 10; i++)  // spread to 60 px (a scale of 1.5) while their middle moves 30 px right
+        {
+            const float k = (float)i / 10.f;
+            ImGuiTouch::AddFingerEvent(1, c + ImVec2(-20.f + 20.f * k, 0.f), ImGuiTouchPhase_Moved);
+            ImGuiTouch::AddFingerEvent(2, c + ImVec2(20.f + 40.f * k, 0.f), ImGuiTouchPhase_Moved);
+            ctx->Yield();
+        }
+        ImGuiTouch::AddFingerEvent(1, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
+        ImGuiTouch::AddFingerEvent(2, ImVec2(0.f, 0.f), ImGuiTouchPhase_Ended);
+        ctx->Yield(3);
+        IM_CHECK_GT(gLab.mapZoom, 1.48f);
+        IM_CHECK_LT(gLab.mapZoom, 1.52f);
+        IM_CHECK_GT(gLab.mapPan.x, 28.f);
+        IM_CHECK_LT(gLab.mapPan.x, 32.f);
+        IM_CHECK_EQ(gLab.mapStarted, 1);
+        IM_CHECK_EQ(gLab.mapEnded, 1);
         IM_CHECK_EQ(ImGui::GetStyle().FontScaleMain, fontScale);
         IM_CHECK_EQ(gLab.clicks, 0);
     };

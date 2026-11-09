@@ -39,9 +39,16 @@ struct Bench
     bool canvasLongPressIsRightClick = true;  // its argument
     int canvasDragAxis = -1;   // >= 0: it calls SetItemTakesDrags(axis) instead
     bool wideContent = false;  // the window's content is wider than it: it scrolls sideways too
-    bool canvasTakesPinch = false;  // it calls SetItemTakesPinch(), and zooms with the wheel (1.1 per notch)
+    bool canvasTakesPinch = false;  // the adapters: SetItemPinchAsWheel() (1.1 per notch), SetItemTwoFingerPanAsMouseDrag()
+    bool canvasPanOnly = false;     // only SetItemTwoFingerPanAsMouseDrag()
     ImGuiMouseButton canvasPanButton = ImGuiMouseButton_Right;
     ImGuiTouchPinchDelivery canvasDelivery = ImGuiTouchPinchDelivery_WheelNotches;
+    bool canvasPinchData = false;   // it reads the gesture (ItemPinch) instead
+    ImGuiTouchPinch canvasPinch;    // the last frame's
+    float canvasDataZoom = 1.f;     // the products of ScaleDelta, the sums of CenterDelta
+    ImVec2 canvasDataPan;
+    int canvasStarted = 0, canvasEnded = 0, canvasActiveFrames = 0;
+    ImGuiTouchPinchKind canvasFirstKind = -1;  // the first Kind other than Undecided
     float canvasZoom = 1.f;
     ImVec2 canvasWheelPos;  // the mouse when the canvas last zoomed
     ImGuiID canvasId = 0;
@@ -130,9 +137,26 @@ struct Bench
                 ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_Any, canvasLongPressIsRightClick);
             if (canvasDragAxis >= 0)
                 ImGuiTouch::SetItemTakesDrags(canvasDragAxis, canvasLongPressIsRightClick);
+            if (canvasPinchData)
+            {
+                canvasPinch = ImGuiTouch::ItemPinch();
+                if (canvasPinch.Active)
+                {
+                    canvasDataZoom *= canvasPinch.ScaleDelta;
+                    canvasDataPan += canvasPinch.CenterDelta;
+                    canvasActiveFrames++;
+                    if (canvasFirstKind < 0 && canvasPinch.Kind != ImGuiTouchPinchKind_Undecided)
+                        canvasFirstKind = canvasPinch.Kind;
+                }
+                canvasStarted += canvasPinch.Started ? 1 : 0;
+                canvasEnded += canvasPinch.Ended ? 1 : 0;
+            }
+            if (canvasPanOnly)
+                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvasPanButton);
             if (canvasTakesPinch)
             {
-                ImGuiTouch::SetItemTakesPinch(0.1f, canvasPanButton, canvasDelivery);
+                ImGuiTouch::SetItemPinchAsWheel(1.1f, canvasDelivery);
+                ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvasPanButton);
                 if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
                 {
                     canvasZoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
@@ -905,6 +929,86 @@ TEST_CASE("Touch pinch: outside the widgets that take it, the pinch scales the f
     LiftFingers();
     b.Release();
     ImGui::GetStyle().FontScaleMain = 1.f;
+}
+
+TEST_CASE("Touch pinch: a widget that reads the data zooms and pans at once, from Started to Ended")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasPinchData = true;
+    b.Frames(3);
+    ImGui::GetStyle().FontScaleMain = 1.f;
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));  // 40 px apart
+    b.Frame();
+    CHECK(b.canvasStarted == 1);
+    CHECK(b.canvasPinch.Active);
+    CHECK(b.canvasPinch.ScaleDelta == 1.f);
+    for (int i = 1; i <= 10; i++)  // spread to 60 px (a scale of 1.5) while their middle moves 30 px right
+    {
+        const float k = (float)i / 10.f;
+        Fingers(c + ImVec2(-20.f + 20.f * k, 0.f), c + ImVec2(20.f + 40.f * k, 0.f));
+        b.Frame();
+    }
+    CHECK(b.canvasPinch.Scale == doctest::Approx(1.5f));
+    CHECK(b.canvasDataZoom == doctest::Approx(1.5f));
+    CHECK(b.canvasDataPan.x == doctest::Approx(30.f));
+    CHECK(b.canvasDataPan.y == doctest::Approx(0.f));
+    CHECK(b.canvasPinch.Center.x == doctest::Approx(c.x + 30.f));
+    CHECK(b.canvasFirstKind == ImGuiTouchPinchKind_Pinch);  // the spread passed 12% before the middle passed 0.6 em
+    LiftFingers();
+    b.Frame();
+    CHECK(b.canvasEnded == 1);
+    CHECK(!b.canvasPinch.Active);
+    b.Release();
+    CHECK(b.canvasEnded == 1);  // one frame only
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+    CHECK(b.clicks == 0);
+    CHECK(b.canvasDrag.x == 0.f);  // the first finger's press did not drag the canvas
+}
+
+TEST_CASE("Touch pinch: the data's Kind is Pan for two fingers that move together, and a cancel ends the gesture")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasPinchData = true;
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frame();
+    CHECK(b.canvasPinch.Kind == ImGuiTouchPinchKind_Undecided);
+    Fingers(c + ImVec2(-20.f, 15.f), c + ImVec2(20.f, 15.f));  // together, 15 px down
+    b.Frame();
+    CHECK(b.canvasPinch.Kind == ImGuiTouchPinchKind_Pan);
+    CHECK(b.canvasDataPan.y == doctest::Approx(15.f));
+    CHECK(b.canvasDataZoom == doctest::Approx(1.f));
+    ImGuiTouch::AddFingerEvent(2, c, ImGuiTouchPhase_Cancelled);
+    b.Frame();
+    CHECK(b.canvasEnded == 1);
+    LiftFingers();
+    b.Release();
+    CHECK(b.clicks == 0);
+}
+
+TEST_CASE("Touch pinch: a widget with the pan adapter only: a pinch on it does nothing, not even the font")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvasPanOnly = true;
+    b.Frames(3);
+    ImGui::GetStyle().FontScaleMain = 1.f;
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c - ImVec2(20.f, 0.f));
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frame();
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(40.f, 0.f));  // a scale of 1.5
+    b.Frames(3);
+    CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+    CHECK(b.canvasZoom == 1.f);
+    LiftFingers();
+    b.Release();
 }
 
 TEST_CASE("Touch pinch: without PinchScalesFont, a pinch outside the widgets leaves the font, and a widget still zooms")

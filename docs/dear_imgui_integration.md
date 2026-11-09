@@ -51,7 +51,7 @@ Most of them are already available in Hello ImGui and Dear ImGui Bundle. This re
 - *Hold, then drag*: the widget under the finger takes the drag (a slider, a text selection).
 - *Long press*: a right click (the context menus), shown by a ring around the finger.
 - *Pinch*: two fingers scale the font. Two fingers moved together are a right drag (a node editor's pan).
-- *A pinch for a widget*: a widget that zooms (a plot, an image) calls `ImGuiTouch::SetItemTakesPinch()` after itself. A pinch on it then zooms it, as wheel events (it zooms as it does with the wheel, no other change): whole notches for a widget that reads only the wheel's sign (ImPlot), the exact value at each frame for one that uses it (an image viewer), and two fingers moved together drag it with its pan button.
+- *Two fingers on a widget*: a widget claims them with a call after itself. `ImGuiTouch::ItemPinch()` returns the gesture (its center, its spread and move since the last frame): the widget zooms and pans at once. For an existing widget, two adapters instead: `SetItemPinchAsWheel()`, a pinch as wheel events (whole notches for a widget that reads only the wheel's sign, ImPlot; the exact value at each frame for an image viewer), and `SetItemTwoFingerPanAsMouseDrag()`, two fingers moved together as a drag with a mouse button. The claims of the last frame decide where the fingers land.
 - *Thin scrollbars* on a touch screen: indicators, since a swipe scrolls anywhere.
 - *The phone's keyboard*: the caret stays above it (`SetKeyboardInsets()`, `GetKeyboardInsets()`).
 
@@ -142,7 +142,7 @@ Two kinds, for both parts. All of them run headless, through Dear ImGui's null b
 
 ### Unit tests: `tests/`
 
-- 33 tests for the swipe, the long press and the pinch (`test_touch_scroll.cpp`), 4 for the setup and the hooks (`test_touch_setup.cpp`), 10 for the wheel session (`test_wheel_session.cpp`).
+- 39 tests for the swipe, the long press and the pinch (`test_touch_scroll.cpp`), 4 for the setup and the hooks (`test_touch_setup.cpp`), 10 for the wheel session (`test_wheel_session.cpp`).
 - They call the layer's steps frame by frame, with events queued by hand (positions, buttons, fingers): each one checks one rule. For example: "a long press on a slider, with a touch source, does not move it", "a flick that reaches the end overshoots, then springs back to the end", "an item whose ownership comes one frame late keeps the wheel when nothing scrolls (fast frames)".
 - Run: `cmake -B build && cmake --build build && ctest --test-dir build`.
 
@@ -157,7 +157,8 @@ The same features, driven as a user would, by [Dear ImGui's Test Engine](https:/
 | touch | `hold_then_drag_moves_a_slider` | a finger held still, then moved, drags the slider; the window does not scroll |
 | touch | `long_press_opens_the_context_menu` | a finger still for half a second, then lifted, opens the context menu |
 | touch | `mouse_drag_does_not_scroll` | the same drag with a mouse moves nothing (the swipe is for fingers) |
-| touch | `pinch_on_a_widget_zooms_it` | two fingers that spread on an item that takes the pinch zoom it, by wheel notches; the font does not scale |
+| touch | `pinch_on_a_widget_zooms_it` | two fingers that spread on an item with the wheel adapter zoom it, by wheel notches; the font does not scale |
+| touch | `pinch_data_zooms_and_pans_at_once` | two fingers that spread and move on an item that reads the gesture (`ItemPinch()`) zoom it and pan it in the same gesture; the font does not scale, nothing is clicked |
 | wheel | `session_keeps_the_page` | a page scrolled with the wheel keeps scrolling over a zoomable item, which does not zoom; once the session ended, a wheel that starts on the item zooms it |
 | demo | `touch_cards_swipe_sideways` | in the kit's demo, a sideways swipe scrolls the row of cards (a child in a child) |
 | demo | `touch_row_slider_takes_sideways_drag` | in the same row, a sideways drag on its slider moves the slider, and the row does not scroll (`SetItemTakesDrags(ImGuiTouchAxis_X)`) |
