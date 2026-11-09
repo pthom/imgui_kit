@@ -40,7 +40,7 @@ Coming later, from [Hello ImGui](https://github.com/pthom/hello_imgui): tweakabl
 
 ## Use it
 
-Copy the `imgui_kit*.h` and `imgui_kit*.cpp` files beside Dear ImGui, and compile them with your project. Leave out `imgui_kit_demo.cpp`, or define `IMGUI_KIT_DISABLE_DEMO`, if you do not want the demo. (The `.js` file is the source of a script embedded in a `.cpp`: not needed to build.) The git tags are the versions (`v0.5.0`); `IMGUI_KIT_VERSION` says which one you have.
+Copy the `imgui_kit*.h` and `imgui_kit*.cpp` files beside Dear ImGui, and compile them with your project. Leave out `imgui_kit_demo.cpp`, or define `IMGUI_KIT_DISABLE_DEMO`, if you do not want the demo. (The `.js` file is the source of a script embedded in a `.cpp`: not needed to build.) The git tags are the versions (`v0.5.1`); `IMGUI_KIT_VERSION` says which one you have.
 
 Or with CMake:
 
