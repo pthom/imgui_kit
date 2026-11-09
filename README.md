@@ -108,7 +108,7 @@ ImGuiTouch::SetupEmscriptenKeyboard();  // the phone's keyboard, for the text fi
 
 The touch layer needs four things from the platform. Checked in each backend's source (Dear ImGui 1.93, Nov 2026):
 - *Finger or mouse*: `io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen)` for a finger's mouse events. Without it, a swipe does not scroll (unless `ScrollMode_Always`) and a long press is no right click.
-- *Touch screen*: `io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen` (the thin scroll bars).
+- *Touch screen*: `io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen` (the thin scroll bars, while the pointer in use is a finger).
 - *The fingers*: `ImGuiTouch::AddFingerEvent()` for each finger, with its phase. Without them: no pinch, no two-finger drag, and a touch the system takes over can end as a click.
 - *The keyboard* (phones): `ImGuiTouch::SetKeyboardInsets()`. Without it, a text field can hide under the keyboard.
 

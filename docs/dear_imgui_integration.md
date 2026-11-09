@@ -52,7 +52,7 @@ Most of them are already available in Hello ImGui and Dear ImGui Bundle. This re
 - *Long press*: a right click (the context menus), shown by a ring around the finger.
 - *Pinch*: two fingers scale the font. Two fingers moved together are a right drag (a node editor's pan).
 - *Two fingers on a widget*: a widget claims them with a call after itself. `ImGuiTouch::ItemPinch()` returns the gesture (its center, its spread and move since the last frame): the widget zooms and pans at once. For an existing widget, two adapters instead: `SetItemPinchAsWheel()`, a pinch as wheel events (whole notches for a widget that reads only the wheel's sign, ImPlot; the exact value at each frame for an image viewer), and `SetItemTwoFingerPanAsMouseDrag()`, two fingers moved together as a drag with a mouse button. The claims of the last frame decide where the fingers land.
-- *Thin scrollbars* on a touch screen: indicators, since a swipe scrolls anywhere.
+- *Thin scrollbars* on a touch screen, while the pointer in use is a finger (a touch laptop driven by its mouse keeps the theme's bars): indicators, since a swipe scrolls anywhere.
 - *The phone's keyboard*: the caret stays above it (`SetKeyboardInsets()`, `GetKeyboardInsets()`).
 
 ### How a press reaches the widgets

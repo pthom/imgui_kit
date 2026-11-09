@@ -723,6 +723,25 @@ TEST_CASE("Touch scroll: thin scroll bars on a touch screen, when asked")
     ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
 }
 
+TEST_CASE("Touch scroll: a touch laptop driven by its mouse keeps the theme's bars, thin again at the next finger")
+{
+    Bench b;
+    b.thinScrollbars = true;
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+    b.Frames(2);
+    const float thinSize = ImGui::GetStyle().ScrollbarSize;
+    b.Source(ImGuiMouseSource_Mouse);
+    b.MoveTo(ImVec2(100.f, 100.f));
+    b.MoveTo(ImVec2(110.f, 100.f));
+    b.Frames(2);
+    CHECK(ImGui::GetStyle().ScrollbarSize > thinSize);  // the theme's
+    b.Source(ImGuiMouseSource_TouchScreen);  // tags the next event: a finger that moves
+    b.MoveTo(ImVec2(111.f, 100.f));
+    b.Frames(2);
+    CHECK(ImGui::GetStyle().ScrollbarSize == thinSize);
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+}
+
 TEST_CASE("Touch scroll: thin scroll bars turned off give the theme's bars back, a theme applied meanwhile included")
 {
     Bench b;

@@ -390,8 +390,10 @@ struct ImGuiTouchConfig
     bool LongPressIsRightClick = true;
     // On a touch screen (ImGuiConfigFlags_IsTouchScreen): thin scroll bars (0.3 em, rounded), indicators rather than
     // controls, since a swipe scrolls anywhere. Applied at each frame (after a theme, a pinch). A hold on a bar hands
-    // its thumb over, drawn wider while held (as on iOS). False keeps the theme's bars: turned off (or when the input
-    // stops being a touch screen), the layer puts back the style's ScrollbarSize and ScrollbarRounding.
+    // its thumb over, drawn wider while held (as on iOS). While the pointer in use is a mouse (io.MouseSource: a touch
+    // laptop driven by its mouse), the theme's bars; thin again at the next finger. False keeps the theme's bars:
+    // turned off (or when the input stops being a touch screen), the layer puts back the style's ScrollbarSize and
+    // ScrollbarRounding.
     bool ThinScrollbars = true;
 
     //

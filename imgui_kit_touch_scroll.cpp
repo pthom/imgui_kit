@@ -324,7 +324,12 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     // Thin bars on a touch screen: indicators, not controls. At each frame, before any window: a theme applied later,
     // or a pinch (the font size), would change them. The style's own values are kept, and put back when the bars
     // stop being thin; values that differ from the ones written last come from the app (a theme): they are its own.
-    s.thinScrollbars = thinScrollbars && (io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen);
+    // The pointer in use decides too: a touch laptop driven by its mouse keeps the theme's bars, until a finger comes.
+    if (io.MouseSource == ImGuiMouseSource_TouchScreen)
+        s.mouseInUse = false;
+    else if (ImGui::IsMousePosValid() && (io.MouseDelta.x != 0.f || io.MouseDelta.y != 0.f || io.MouseDown[0]))
+        s.mouseInUse = true;
+    s.thinScrollbars = thinScrollbars && (io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) && !s.mouseInUse;
     const bool styleChanged = s.barsWritten && (g.Style.ScrollbarSize != s.writtenBarSize
                                                 || g.Style.ScrollbarRounding != s.writtenBarRounding);
     if (s.thinScrollbars)
