@@ -1,0 +1,9 @@
+build/
+.gradle/
+.idea/
+.cxx/
+*.iml
+local.properties
+# Android Studio or `gradle wrapper` puts the wrapper here
+gradle/
+gradlew*

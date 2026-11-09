@@ -1,0 +1,2 @@
+rootProject.name = "imgui_kit_touch_demo"
+include ':app'

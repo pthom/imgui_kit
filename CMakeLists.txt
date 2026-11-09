@@ -36,7 +36,8 @@ if (NOT TARGET ${IMGUI_KIT_IMGUI_TARGET})
         include(FetchContent)
         FetchContent_Declare(imgui GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG ${IMGUI_KIT_FETCH_IMGUI_TAG})
         FetchContent_MakeAvailable(imgui)
-        set(IMGUI_KIT_IMGUI_DIR ${imgui_SOURCE_DIR})
+        # Written to the (empty) cache entry: a parent project builds Dear ImGui's backends from the same folder
+        set(IMGUI_KIT_IMGUI_DIR ${imgui_SOURCE_DIR} CACHE PATH "A Dear ImGui folder, used when no target `imgui` exists" FORCE)
     endif()
     add_library(imgui STATIC
         ${IMGUI_KIT_IMGUI_DIR}/imgui.cpp ${IMGUI_KIT_IMGUI_DIR}/imgui_demo.cpp ${IMGUI_KIT_IMGUI_DIR}/imgui_draw.cpp
