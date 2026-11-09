@@ -21,6 +21,13 @@ namespace
 {
     const ImGuiID kEmscriptenHooksOwner = ImHashStr("ImGuiTouch_Emscripten");
 
+    // The schemes the page opens; anything else (a javascript: url) would run in the page
+    bool IsWebUrl(const char* url)
+    {
+        return ImStrnicmp(url, "http://", 7) == 0 || ImStrnicmp(url, "https://", 8) == 0
+            || ImStrnicmp(url, "mailto:", 7) == 0;
+    }
+
     void InstallProbe()
     {
         const char* script =
@@ -106,7 +113,7 @@ namespace
     // cancelled when the browser took them over (a system gesture: their press must not click), else as ended
     void RelayFingers(ImGuiIO& io, ImGuiTouchBrowserState& b, const char* list, float cssWidth)
     {
-        float scale = (cssWidth > 0.f) ? io.DisplaySize.x / cssWidth : 1.f;
+        float scale = (cssWidth > 0.0f) ? io.DisplaySize.x / cssWidth : 1.0f;
         b.FingersNow.resize(0);
         for (const char* p = list; p != nullptr && *p == ';'; p = strchr(p + 1, ';'))
         {
@@ -134,7 +141,7 @@ namespace
             if (b.FingersNow.contains(id))
                 continue;
             const bool cancelled = b.FingersCancelled.contains(id);
-            ImGuiTouch::AddFingerEvent(id, ImVec2(0.f, 0.f),
+            ImGuiTouch::AddFingerEvent(id, ImVec2(0.0f, 0.0f),
                                        cancelled ? ImGuiTouchPhase_Cancelled : ImGuiTouchPhase_Ended);
         }
         b.FingersDown.swap(b.FingersNow);
@@ -148,8 +155,7 @@ namespace
     // Web addresses only: a javascript: url would run script in the page.
     bool OpenUrl(ImGuiContext*, const char* url)
     {
-        if (ImStrnicmp(url, "http://", 7) != 0 && ImStrnicmp(url, "https://", 8) != 0
-            && ImStrnicmp(url, "mailto:", 7) != 0)
+        if (!IsWebUrl(url))
             return false;
         ImVector<char>& script = ImGuiTouch::GetTouchContext().Browser.Script;
         script.resize(0);
@@ -166,33 +172,44 @@ namespace
         return true;
     }
 
-    // The last frame's url zones, to the page (when they changed), in one script: "[{x0, y0, x1, y1, url}, ...]"
+    // The last frame's url zones, to the page, in one script: "[{x0, y0, x1, y1, url}, ...]". Only when they changed:
+    // the zones (and the display width) are compared to the last frame's before anything is formatted
     void PushUrlZones(ImGuiIO& io, ImGuiTouchBrowserState& b)
     {
+        bool same = (b.UrlZones.Size == b.UrlZonesPushed.Size && b.UrlZoneUrls.Size == b.UrlZoneUrlsPushed.Size
+                     && io.DisplaySize.x == b.UrlZonesDisplayW);
+        for (int i = 0; same && i < b.UrlZones.Size; i++)
+        {
+            const ImRect& r = b.UrlZones[i].rect;
+            const ImRect& p = b.UrlZonesPushed[i].rect;
+            same = (r.Min.x == p.Min.x && r.Min.y == p.Min.y && r.Max.x == p.Max.x && r.Max.y == p.Max.y
+                    && b.UrlZones[i].urlOffset == b.UrlZonesPushed[i].urlOffset);
+        }
+        if (same && b.UrlZoneUrls.Size > 0)
+            same = (memcmp(b.UrlZoneUrls.Data, b.UrlZoneUrlsPushed.Data, (size_t)b.UrlZoneUrls.Size) == 0);
+        b.UrlZones.swap(b.UrlZonesPushed);
+        b.UrlZoneUrls.swap(b.UrlZoneUrlsPushed);
+        b.UrlZonesDisplayW = io.DisplaySize.x;
+        b.UrlZones.resize(0);
+        b.UrlZoneUrls.resize(0);
+        if (same)
+            return;
         ImVector<char>& s = b.UrlZonesScript;
         s.resize(0);
         ImGuiTouchScriptAppend(s, "window.imguiKitUrlZones = [");
         char buffer[96];
-        for (const ImGuiTouchUrlZone& z : b.UrlZones)
+        for (const ImGuiTouchUrlZone& z : b.UrlZonesPushed)
         {
             snprintf(buffer, sizeof(buffer), "{x0:%.1f,y0:%.1f,x1:%.1f,y1:%.1f,url:", z.rect.Min.x, z.rect.Min.y,
                      z.rect.Max.x, z.rect.Max.y);
             ImGuiTouchScriptAppend(s, buffer);
-            const char* url = b.UrlZoneUrls.Data + z.urlOffset;
+            const char* url = b.UrlZoneUrlsPushed.Data + z.urlOffset;
             ImGuiTouchScriptAppendString(s, url, (int)strlen(url));
             ImGuiTouchScriptAppend(s, "},");
         }
         snprintf(buffer, sizeof(buffer), "]; window.imguiKitUrlZonesDisplayW = %.1f;", io.DisplaySize.x);
         ImGuiTouchScriptAppend(s, buffer);
-        const char* script = ImGuiTouchScriptEnd(s);
-        const ImGuiID hash = ImHashStr(script);
-        if (hash != b.UrlZonesPushed)
-        {
-            b.UrlZonesPushed = hash;
-            emscripten_run_script(script);
-        }
-        b.UrlZones.resize(0);
-        b.UrlZoneUrls.resize(0);
+        emscripten_run_script(ImGuiTouchScriptEnd(s));
     }
 
     void BeforeNewFrame(ImGuiContext* ctx, ImGuiContextHook*)
@@ -271,12 +288,12 @@ bool SetRectOpensUrl(const ImVec2& min, const ImVec2& max, const char* url)
     ImGuiTouchContext* touch = FindTouchContext();
     if (touch == nullptr || !touch->Browser.Installed)
         return false;
-    if (ImStrnicmp(url, "http://", 7) != 0 && ImStrnicmp(url, "https://", 8) != 0 && ImStrnicmp(url, "mailto:", 7) != 0)
+    if (!IsWebUrl(url))
         return false;
     // Its visible part only (a link scrolled out of a child: no zone, and nothing to click either)
     ImRect visible(min, max);
     visible.ClipWith(GImGui->CurrentWindow->ClipRect);
-    if (visible.GetWidth() > 0.f && visible.GetHeight() > 0.f)
+    if (visible.GetWidth() > 0.0f && visible.GetHeight() > 0.0f)
     {
         ImGuiTouchBrowserState& b = touch->Browser;
         const int len = (int)strlen(url);

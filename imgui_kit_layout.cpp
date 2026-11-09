@@ -38,7 +38,7 @@ using Flow = ImGuiKitFlow;
 // [SECTION] Helpers
 //-----------------------------------------------------------------------------
 // The layout helpers keep what they measured in the window's state storage, under a key made of their str_id's ID
-// and the helper's name: the bare ID would be Dear ImGui's own key for an item with that label (a tree node's open
+// and a seed per helper: the bare ID would be Dear ImGui's own key for an item with that label (a tree node's open
 // state), and two helpers with one str_id would share a value.
 // A value never measured reads as kUnknown: the helper then draws hidden on that frame (Alpha = 0, no input) and
 // keeps its overflow out of the window's content size, so that a first frame neither flashes nor adds a scrollbar.
@@ -46,10 +46,15 @@ using Flow = ImGuiKitFlow;
 
 constexpr float kUnknown = ImGuiKitUnknown;
 
-ImGuiID StorageKey(const char* str_id, const char* helper)
+ImGuiID StorageKey(const char* str_id, ImGuiID helper_seed)
 {
-    return ImHashStr(helper, 0, ImGui::GetID(str_id));
+    return ImHashData(&helper_seed, sizeof(helper_seed), ImGui::GetID(str_id));
 }
+const ImGuiID kFillRowSeed = ImHashStr("##kit_fill_row");
+const ImGuiID kAlignedGroupSeed = ImHashStr("##kit_aligned_group");
+const ImGuiID kColumnSeed = ImHashStr("##kit_column");
+const ImGuiID kLabelColumnSeed = ImHashStr("##kit_label_column");
+const ImGuiID kFlowSeed = ImHashStr("##kit_flow");
 
 float StoredFloat(ImGuiID key)
 {
@@ -61,37 +66,7 @@ void StoreFloat(ImGuiID key, float v)
     ImGui::GetStateStorage()->SetFloat(key, v);
 }
 
-
-//-----------------------------------------------------------------------------
-// [SECTION] Fill row
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// [SECTION] Aligned group
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// [SECTION] Column
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// [SECTION] Label column
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// [SECTION] Group panel
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// [SECTION] Flow
-//-----------------------------------------------------------------------------
-
-
+// A flow's item, by its rank
 ImGuiID FlowItemKey(const Flow& flow, int index)
 {
     return ImHashData(&index, sizeof(index), flow.id);
@@ -111,7 +86,7 @@ bool IsInFillRowTail()
 float BeginFillRow(const char* str_id)
 {
     FillRow row;
-    row.id = StorageKey(str_id, "##kit_fill_row");
+    row.id = StorageKey(str_id, kFillRowSeed);
     float tail = StoredFloat(row.id);
     float width = ImMax(1.0f, ImGui::GetContentRegionAvail().x - (tail == kUnknown ? 0.0f : tail));
     ImGui::SetNextItemWidth(width);
@@ -149,7 +124,7 @@ void EndFillRow()
 void BeginAlignedGroup(const char* str_id, float align_x)
 {
     AlignedGroup group;
-    group.id = StorageKey(str_id, "##kit_aligned_group");
+    group.id = StorageKey(str_id, kAlignedGroupSeed);
     float width = StoredFloat(group.id);
     // The room to align in: up to the innermost column's right edge, else up to the line's end
     float room = ImGui::GetContentRegionAvail().x;
@@ -189,7 +164,7 @@ void EndAlignedGroup()
 void BeginColumn(const char* str_id)
 {
     Column column;
-    column.id = StorageKey(str_id, "##kit_column");
+    column.id = StorageKey(str_id, kColumnSeed);
     column.left = ImGui::GetCursorScreenPos().x;
     column.width = StoredFloat(column.id);
     GetCurrentContext().Columns.push_back(column);
@@ -211,7 +186,7 @@ void EndColumn()
 void BeginLabelColumn(const char* str_id, float labels_align_x)
 {
     LabelColumn lc;
-    lc.id = StorageKey(str_id, "##kit_label_column");
+    lc.id = StorageKey(str_id, kLabelColumnSeed);
     lc.left = ImGui::GetCursorScreenPos().x;
     lc.alignX = labels_align_x;
     lc.column = StoredFloat(lc.id);
@@ -318,7 +293,7 @@ void EndGroupPanel()
 void BeginFlow(const char* str_id)
 {
     Flow flow;
-    flow.id = StorageKey(str_id, "##kit_flow");
+    flow.id = StorageKey(str_id, kFlowSeed);
     flow.rightEdge = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
     if (StoredFloat(flow.id) == kUnknown)  // never drawn: no widths yet
         flow.hidden.Begin();

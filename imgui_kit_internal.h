@@ -17,18 +17,19 @@
 #include "imgui_kit_touch_internal.h"
 #include "imgui_internal.h"  // ImRect, ImGuiWindow, ImGuiAxis
 
-namespace ImGuiKit
-{
-    // True between FillRowTail() and EndFillRow(): the fill row makes the room, a widget must not wrap
-    bool IsInFillRowTail();
-}
-
 struct ImGuiKitContext;
 namespace ImGuiKit
 {
     // The current Dear ImGui context's kit state (see this file's top), created at its first use: the widgets need no
     // setup. Freed with the Dear ImGui context.
     ImGuiKitContext& GetCurrentContext();
+    // True between FillRowTail() and EndFillRow(): the fill row makes the room, a widget must not wrap
+    bool IsInFillRowTail();
+    // The wheel session's two steps, which SetupWheelSession() calls through Dear ImGui's context hooks (the tests call
+    // them directly): right before ImGui::NewFrame() (the item that claimed the wheel in the last frame, before
+    // NewFrame() gives it back to a window), and right after it, before any widget
+    void WheelSessionBeforeNewFrame();
+    void UpdateWheelSession(bool enabled);
 }
 
 //-----------------------------------------------------------------------------
@@ -44,22 +45,13 @@ struct ImGuiKitWheelSessionState
     ImGuiID itemId = 0;             // that item
     ImGuiWindow* window = nullptr;  // the window the session scrolls
     bool scrolled = false;          // the page scrolled during the session (by ImGui, or by the session)
-    float timer = 0.f;              // s: the session ends when it runs out; each event adds its amount's worth
+    float timer = 0.0f;              // s: the session ends when it runs out; each event adds its amount's worth
                                     // (ImGui's rule: a trackpad's small momentum events extend it by little)
     ImVec2 refMousePos;             // the mouse at the last wheel event: a move past ImGui's drag threshold ends the
                                     // session
     ImGuiID ownerBeforeNewFrame = 0;  // the wheel's owner as the widgets of the frame ownerFrame left it
     int ownerFrame = -1;
 };
-
-namespace ImGuiKit
-{
-    // The wheel session's two steps, which SetupWheelSession() calls through Dear ImGui's context hooks (the tests call
-    // them directly): right before ImGui::NewFrame() (the item that claimed the wheel in the last frame, before
-    // NewFrame() gives it back to a window), and right after it, before any widget
-    void WheelSessionBeforeNewFrame();
-    void UpdateWheelSession(bool enabled);
-}
 
 //-----------------------------------------------------------------------------
 // The kit's state, one per Dear ImGui context

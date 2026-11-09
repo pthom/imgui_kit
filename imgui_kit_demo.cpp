@@ -108,11 +108,11 @@ void DemoEmUnits()
     ImGui::TextWrapped("Sizes in em follow the font: the first button is 8 em wide and 2 em high, on any screen. "
                        "Change the font size at the top: it grows with the text, as a standard button does. "
                        "The last button keeps its size in pixels: at a large font, its label gets cut.");
-    ImGui::Button("8 x 2 em", ImGuiKit::EmToVec2(8.f, 2.f));
+    ImGui::Button("8 x 2 em", ImGuiKit::EmToVec2(8.0f, 2.0f));
     ImGui::SameLine();
     ImGui::Button("A standard button");
     ImGui::SameLine();
-    ImGui::Button("100 x 30 px", ImVec2(100.f, 30.f));
+    ImGui::Button("100 x 30 px", ImVec2(100.0f, 30.0f));
     ImGui::SameLine();
     ImGuiKit::HelpMarker("EmToVec2(8, 2) gives the size in pixels, from the current font size.");
     ImGui::Text("1 em = %.1f px", ImGuiKit::EmSize());
@@ -190,7 +190,7 @@ void DemoColumn()
         ImGuiKit::BeginColumn("column");
         ImGui::Text("%s", labels[i]);
         ImGuiKit::BeginAlignedGroup("slider", 0.5f);
-        ImGui::VSliderFloat("##v", ImGuiKit::EmToVec2(1.6f, 6.f), &values[i], 0.0f, 1.0f, "");
+        ImGui::VSliderFloat("##v", ImGuiKit::EmToVec2(1.6f, 6.0f), &values[i], 0.0f, 1.0f, "");
         ImGuiKit::EndAlignedGroup();
         ImGuiKit::BeginAlignedGroup("help", 0.5f);
         ImGuiKit::HelpMarker(helps[i]);
@@ -248,7 +248,7 @@ void DemoGroupPanel()
     ImGuiKit::BeginGroupPanel("Display");
     ImGuiKit::BeginLabelColumn("display");
     ImGuiKit::Label("Gamma");
-    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.0f));
     ImGui::SliderFloat("##gamma", &gamma, 0.2f, 3.0f);
     ImGuiKit::Label("Flip");
     ImGui::Checkbox("##flip", &flip);
@@ -385,10 +385,10 @@ void DemoFitText()
     static int max_lines = 2;
     ImGuiKit::BeginLabelColumn("fit_text");
     ImGuiKit::Label("Width");
-    ImGui::SetNextItemWidth(ImGuiKit::EmSize(10.f));
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(10.0f));
     ImGui::SliderFloat("##width", &width_em, 4.0f, 40.0f, "%.0f em");
     ImGuiKit::Label("Lines");
-    ImGui::SetNextItemWidth(ImGuiKit::EmSize(10.f));
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(10.0f));
     ImGui::SliderInt("##lines", &max_lines, 1, 5);
     ImGuiKit::EndLabelColumn();
 
@@ -414,15 +414,15 @@ void DemoResizeHandle()
     ImGui::TextWrapped("Drag the grip at the bottom-right corner: the widget before it takes the new size. "
                        "Any widget that takes a size: a text field, a child window, a plot.");
     static char text[512] = "A text field that the reader can make larger.\nDrag its corner.";
-    static ImVec2 text_size = ImGuiKit::EmToVec2(20.f, 4.f);
+    static ImVec2 text_size = ImGuiKit::EmToVec2(20.0f, 4.0f);
     ImGui::InputTextMultiline("##text", text, IM_ARRAYSIZE(text), text_size);
-    ImGuiKit::ResizeHandle("##text_size", &text_size, ImGuiKit::EmToVec2(6.f, 2.f));
+    ImGuiKit::ResizeHandle("##text_size", &text_size, ImGuiKit::EmToVec2(6.0f, 2.0f));
 
-    static ImVec2 child_size = ImGuiKit::EmToVec2(20.f, 6.f);
+    static ImVec2 child_size = ImGuiKit::EmToVec2(20.0f, 6.0f);
     ImGui::BeginChild("##child", child_size, ImGuiChildFlags_Borders);
     ImGui::Text("A child window, %.0f x %.0f px", child_size.x, child_size.y);
     ImGui::EndChild();
-    ImGuiKit::ResizeHandle("##child_size", &child_size, ImGuiKit::EmToVec2(10.f, 3.f));
+    ImGuiKit::ResizeHandle("##child_size", &child_size, ImGuiKit::EmToVec2(10.0f, 3.0f));
     ImGui::TreePop();
 }
 
@@ -609,21 +609,21 @@ void DemoTouch()
     ImGuiKit::Label("Pinch");
     ImGui::Checkbox("scales the font", &config.PinchScalesFont);
     ImGuiKit::Label("Hold");
-    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
-    ImGui::SliderFloat("##hold", &config.HoldSeconds, 0.f, 1.f, "%.2f s");
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.0f));
+    ImGui::SliderFloat("##hold", &config.HoldSeconds, 0.0f, 1.0f, "%.2f s");
     ImGui::SameLine();
     ImGuiKit::HelpMarker("A finger still for this long hands its press to the widget under it, which then gets the "
                          "drag (a slider, a text selection). At zero, the widgets get every press at once.");
     ImGuiKit::Label("Long press");
     ImGui::Checkbox("is a right click", &config.LongPressIsRightClick);
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
-    ImGui::SliderFloat("##long_press", &config.LongPressSeconds, 0.3f, 2.f, "%.2f s");
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.0f));
+    ImGui::SliderFloat("##long_press", &config.LongPressSeconds, 0.3f, 2.0f, "%.2f s");
     ImGuiKit::Label("Scroll bars");
     ImGui::Checkbox("thin", &config.ThinScrollbars);
     ImGuiKit::EndLabelColumn();
 
-    ImGui::BeginChild("##touch_zone", ImVec2(0.0f, ImGuiKit::EmSize(16.f)), ImGuiChildFlags_Borders);
+    ImGui::BeginChild("##touch_zone", ImVec2(0.0f, ImGuiKit::EmSize(16.0f)), ImGuiChildFlags_Borders);
     ImGui::Bullet();
     ImGui::TextWrapped("Swipe: a finger that drags this zone scrolls it, with inertia, and a bounce at the end.");
     ImGui::Bullet();
@@ -640,10 +640,10 @@ void DemoTouch()
     static char text[] = "Napoleon's army crossed the Niemen in June 1812, with more than four hundred thousand men. "
                          "Six months later, fewer than ten thousand came back.";
     ImGui::TextWrapped("Select a few words: a short hold, then a drag.");
-    ImGui::InputTextMultiline("##select", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGuiKit::EmSize(4.f)),
+    ImGui::InputTextMultiline("##select", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGuiKit::EmSize(4.0f)),
                               ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap);
 
-    ZoomableCanvas("##canvas", ImGuiKit::EmToVec2(16.f, 8.f));
+    ZoomableCanvas("##canvas", ImGuiKit::EmToVec2(16.0f, 8.0f));
     ImGui::SameLine();
     ImGuiKit::HelpMarker("A canvas that zooms and pans, as a plot or an image viewer does:\n\n"
                          "- It calls ImGuiTouch::SetItemTakesDrags() right after it: a drag that starts on it pans it "
@@ -663,11 +663,11 @@ void DemoTouch()
     // takes the sideways drags (ImGuiTouch::SetItemTakesDrags(ImGuiTouchAxis_X)): a sideways drag on it moves it at
     // once
     ImGui::TextWrapped("A sideways swipe scrolls this row; a tap clicks a button; a sideways drag moves the slider:");
-    ImGui::BeginChild("##sideways", ImVec2(0.0f, ImGuiKit::EmSize(5.f)), ImGuiChildFlags_Borders,
+    ImGui::BeginChild("##sideways", ImVec2(0.0f, ImGuiKit::EmSize(5.0f)), ImGuiChildFlags_Borders,
                       ImGuiWindowFlags_HorizontalScrollbar);
     static int taps[8] = {};
     // Three per screen: the row scrolls
-    float card_width = ImMax(ImGuiKit::EmSize(6.f), ImGui::GetContentRegionAvail().x * 0.3f);
+    float card_width = ImMax(ImGuiKit::EmSize(6.0f), ImGui::GetContentRegionAvail().x * 0.3f);
     static float row_value = 0.5f;
     ImGui::SetNextItemWidth(card_width);
     ImGui::SliderFloat("##row_slider", &row_value, 0.0f, 1.0f);
@@ -677,7 +677,7 @@ void DemoTouch()
         ImGui::SameLine();
         char label[32];
         ImFormatString(label, IM_ARRAYSIZE(label), "Card %d\n%d taps###card%d", i + 1, taps[i], i);
-        if (ImGui::Button(label, ImVec2(card_width, ImGuiKit::EmSize(3.f))))
+        if (ImGui::Button(label, ImVec2(card_width, ImGuiKit::EmSize(3.0f))))
             taps[i]++;
     }
     ImGui::EndChild();
@@ -709,10 +709,10 @@ void DemoTouchKeyboard()
     static char line[128] = "";
     ImGui::InputTextWithHint("text", "type here", line, IM_ARRAYSIZE(line));
     static char lines[1024] = "Several lines:\nmove the caret from the keyboard's space bar.";
-    ImGui::InputTextMultiline("lines", lines, IM_ARRAYSIZE(lines), ImVec2(0.0f, ImGuiKit::EmSize(5.f)));
+    ImGui::InputTextMultiline("lines", lines, IM_ARRAYSIZE(lines), ImVec2(0.0f, ImGuiKit::EmSize(5.0f)));
 
     ImGui::TextWrapped("A field in a child that scrolls: it stays above the keyboard.");
-    ImGui::BeginChild("##keyboard_child", ImVec2(0.0f, ImGuiKit::EmSize(10.f)), ImGuiChildFlags_Borders);
+    ImGui::BeginChild("##keyboard_child", ImVec2(0.0f, ImGuiKit::EmSize(10.0f)), ImGuiChildFlags_Borders);
     for (int i = 1; i <= 12; i++)
         ImGui::Text("Content above the field (%d)", i);
     static char deep[128] = "";
@@ -730,7 +730,7 @@ void DemoTouchKeyboard()
 
 void ImGuiKit::ShowDemoWindow(bool* p_open)
 {
-    ImGui::SetNextWindowSize(ImGuiKit::EmToVec2(36.f, 30.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImGuiKit::EmToVec2(36.0f, 30.0f), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("ImGuiKit Demo", p_open))
     {
         ImGui::End();

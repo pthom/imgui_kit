@@ -36,10 +36,10 @@ struct ImGuiTouchScrollState
                                                              // comes from them
     int nbSamples = 0, nextSample = 0;
     ImVec2 inertia;                 // px/s, after the release
-    float pull = 0.f;               // px: how far the finger dragged past the end of the scroll (the rubber band)
-    float overscroll = 0.f;         // px: the content is drawn this far past its end, along the axis (positive:
+    float pull = 0.0f;               // px: how far the finger dragged past the end of the scroll (the rubber band)
+    float overscroll = 0.0f;         // px: the content is drawn this far past its end, along the axis (positive:
                                     // toward the start)
-    float overscrollSpeed = 0.f;    // px/s, while it springs back
+    float overscrollSpeed = 0.0f;    // px/s, while it springs back
     int replayedPresses = 0;        // presses queued by the layer, which it must not claim
     bool watchingLongPress = false; // a touch press, still so far: a long press when it stays
     bool longPressArmed = false;    // it stayed: a right click when it lifts, unless it moves (a ring shows it)
@@ -48,16 +48,16 @@ struct ImGuiTouchScrollState
                                     // theme's bars
     // While the bars are thin: the style's own values, put back when they stop, and the values written last
     bool barsWritten = false;
-    float themeBarSize = 0.f, themeBarRounding = 0.f;
-    float writtenBarSize = 0.f, writtenBarRounding = 0.f;
+    float themeBarSize = 0.0f, themeBarRounding = 0.0f;
+    float writtenBarSize = 0.0f, writtenBarRounding = 0.0f;
     ImGuiID heldBar = 0;            // the scroll bar held by a finger, since heldBarTime: it widens
-    float heldBarTime = 0.f;
+    float heldBarTime = 0.0f;
     double lastReplayTime = -1e9;   // the previous replayed press: the next one pairs with it (a double tap)
     double rippleTime = -1e9;       // when the hold handed the press over: a ring around the finger, briefly
     ImVec2 ripplePos;
     ImVec2 lastReplayPos;
     int lastReplayCount = 0;
-    float pressTime = 0.f;
+    float pressTime = 0.0f;
     struct DragTaker
     {
         ImGuiID window;  // the widget's window
@@ -81,12 +81,12 @@ struct ImGuiTouchPinchState
 {
     ImVector<ImGuiTouchFinger> fingers;  // the fingers down, in the order they landed
     bool cancelled = false;     // a finger was cancelled since the last frame: its press ends with no click
-    float startDistance = 0.f;  // between the first two fingers, when the second one landed (or the pair changed)
+    float startDistance = 0.0f;  // between the first two fingers, when the second one landed (or the pair changed)
     ImVec2 startCenter;         // their middle, then
-    float scaleBase = 1.f;      // the scale reached when the pair last changed: the scale is
+    float scaleBase = 1.0f;      // the scale reached when the pair last changed: the scale is
                                 // scaleBase * distance / startDistance
     ImGuiTouchPinchGesture gesture = ImGuiTouchPinchGesture::None;
-    float baseScale = 1.f;  // style.FontScaleMain when the pinch began
+    float baseScale = 1.0f;  // style.FontScaleMain when the pinch began
     // A widget that claims two fingers (ItemPinch, the adapters): the claims of one item, or of one rectangle, merge
     struct PinchTaker
     {
@@ -103,10 +103,10 @@ struct ImGuiTouchPinchState
     int frameCount = -1;                          // the frame UpdateTouchPinch() ran: the takers are noted then only
     bool hasTaker = false;                        // the two fingers landed on a taker: the gesture is its
     PinchTaker taker;
-    float notchesSent = 0.f;                      // the wheel notches sent to the taker during this pinch
+    float notchesSent = 0.0f;                      // the wheel notches sent to the taker during this pinch
     // The gesture's data for its taker (ItemPinch), at this frame; ended: the taker's id, for the frame after the lift
     ImGuiTouchPinch data;
-    float lastDistance = 0.f;
+    float lastDistance = 0.0f;
     ImVec2 lastCenter;
     ImGuiID endedId = 0;
     int endedFrame = -1;
@@ -116,7 +116,7 @@ struct ImGuiTouchPinchState
 struct ImGuiTouchCaretView
 {
     ImGuiID window = 0;
-    ImVec2 inContent = ImVec2(-1.f, -1.f);
+    ImVec2 inContent = ImVec2(-1.0f, -1.0f);
     ImVec2 visible;  // the visible area's top and bottom
     int framesLeft = 0;
 };
@@ -133,11 +133,12 @@ struct ImGuiTouchBrowserState
 {
     bool Installed = false;  // SetupEmscripten() was called: the page has the probe (and takes the url zones)
     ImGuiMouseSource LastPointerSource = ImGuiMouseSource_Mouse;
-    // The links the page opens itself (SetItemOpensUrl): this frame's, pushed to the page before the next frame
-    ImVector<ImGuiTouchUrlZone> UrlZones;
-    ImVector<char> UrlZoneUrls;      // their urls, each zero-terminated
-    ImVector<char> UrlZonesScript;   // the script that tells the page, reused
-    ImGuiID UrlZonesPushed = 0;      // its hash as last run: run again only when the zones changed
+    // The links the page opens itself (SetItemOpensUrl): this frame's, pushed to the page before the next frame when
+    // they differ from the last frame's (kept in ...Pushed)
+    ImVector<ImGuiTouchUrlZone> UrlZones, UrlZonesPushed;
+    ImVector<char> UrlZoneUrls, UrlZoneUrlsPushed;  // their urls, each zero-terminated
+    float UrlZonesDisplayW = 0.0f;                  // the display width the zones were pushed with
+    ImVector<char> UrlZonesScript;                  // the script that tells the page, reused
     ImVector<int> FingersDown, FingersNow;  // the fingers' ids at the last frame, at this one
     ImVector<int> FingersCancelled;         // the fingers the browser cancelled since the last frame
     // The keyboard: what the page was last told
@@ -145,8 +146,8 @@ struct ImGuiTouchBrowserState
     bool KeyboardKeysMode = false;  // the widget is not an InputText
     ImGuiID KeyboardId = 0;         // the active widget
     ImVec2 KeyboardPos;
-    float KeyboardLineHeight = 0.f;
-    float KeyboardDisplayW = 0.f;
+    float KeyboardLineHeight = 0.0f;
+    float KeyboardDisplayW = 0.0f;
     ImGuiID MirrorHash = 0;  // the text last mirrored into the page's field (its hash and length), and its caret
     int MirrorLen = -1;
     int MirrorCaret = -1;
@@ -213,7 +214,7 @@ namespace ImGuiTouch
     void ApplyFingerCancel();
 
     // While a widget's pinch lasts, the mouse is the fingers' center: right before ImGui::NewFrame()
-    void PinchBeforeNewFrame(ImGuiContext& g);
+    void PinchBeforeNewFrame();
 
     // The current Dear ImGui context's touch state (see this file's top): created by the setups, freed with the Dear
     // ImGui context. GetTouchContext() asserts that a setup was called; FindTouchContext() returns nullptr.

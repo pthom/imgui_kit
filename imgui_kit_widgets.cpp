@@ -138,7 +138,7 @@ void DrawIcon(ImDrawList* draw_list, const ImRect& bb, ImGuiKitIcon icon, ImU32 
         DrawFit(draw_list, c, size, color);
         break;
     default:
-        IM_ASSERT(false && "Unknown ImGuiKitIcon");
+        IM_ASSERT(0); // an unknown ImGuiKitIcon
     }
 }
 
@@ -389,7 +389,8 @@ bool SegmentedSwitch(const char* str_id, int* current, const char* const labels[
     if (*current >= 0 && *current < labels_count)
     {
         ImGuiStorage* storage = ImGui::GetStateStorage();
-        const ImGuiID pos_id = ImHashStr("##fill_pos", 0, id);
+        static const ImGuiID fill_pos_seed = ImHashStr("##fill_pos");
+        const ImGuiID pos_id = ImHashData(&fill_pos_seed, sizeof(fill_pos_seed), id);
         float target = (float)*current;
         float pos = storage->GetFloat(pos_id, target);
         float step = ImMin(1.0f, ImGui::GetIO().DeltaTime * 18.0f);

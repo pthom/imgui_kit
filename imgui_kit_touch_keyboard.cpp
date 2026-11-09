@@ -46,19 +46,19 @@ namespace
             ImRect clip = w->InnerClipRect;
             clip.Min.y = ImMax(clip.Min.y, visibleTop);
             clip.Max.y = ImMin(clip.Max.y, visibleBottom);
-            float delta = (bottom > clip.Max.y) ? bottom - clip.Max.y : (top < clip.Min.y) ? top - clip.Min.y : 0.f;
+            float delta = (bottom > clip.Max.y) ? bottom - clip.Max.y : (top < clip.Min.y) ? top - clip.Min.y : 0.0f;
             // A window moves the field at most to its own top (a child whose top is under the keyboard cannot show
             // it): its parents scroll for the rest. A field out of its window's view is not drawn, and Dear ImGui then
             // wants no text: the keyboard would close.
-            if (delta > 0.f)
-                delta = ImMin(delta, ImMax(0.f, top - w->InnerClipRect.Min.y));
+            if (delta > 0.0f)
+                delta = ImMin(delta, ImMax(0.0f, top - w->InnerClipRect.Min.y));
             // A top-level window that reaches below the keyboard shrinks above it (the app's full-screen window), and
             // can then scroll that much further than the previous frame's ScrollMax
             float growth = (w->Flags & ImGuiWindowFlags_ChildWindow)
-                           ? 0.f : ImMax(0.f, w->InnerClipRect.Max.y - visibleBottom);
-            float target = ImClamp(w->Scroll.y + delta, 0.f, w->ScrollMax.y + growth);
+                           ? 0.0f : ImMax(0.0f, w->InnerClipRect.Max.y - visibleBottom);
+            float target = ImClamp(w->Scroll.y + delta, 0.0f, w->ScrollMax.y + growth);
             float moved = target - w->Scroll.y;
-            if (moved == 0.f)
+            if (moved == 0.0f)
                 continue;
             ImGui::SetScrollY(w, target);
             top -= moved;
@@ -94,7 +94,7 @@ void SetupKeepCaretInView(ImGuiContext* ctx)
     hook.Callback = [](ImGuiContext* g, ImGuiContextHook*) {
         ImGuiTouchContext& tc = GetTouchContext();
         const ImGuiTouchKeyboardInsets& insets = tc.KeyboardInsets;
-        bool shown = insets.Top > 0.f || insets.Bottom > 0.f;
+        bool shown = insets.Top > 0.0f || insets.Bottom > 0.0f;
         KeepCaretInView(*g, tc.CaretView, shown, insets.Top, g->IO.DisplaySize.y - insets.Bottom);
     };
     ImGui::AddContextHook(ctx, &hook);

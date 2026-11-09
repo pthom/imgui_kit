@@ -1,4 +1,19 @@
 // imgui_kit: the swipe of a touch screen (ImGuiTouch)
+// https://github.com/pthom/imgui_kit (MIT license)
+
+/*
+
+Index of this file:
+// [SECTION] Tunables and helpers
+// [SECTION] The phases of a frame
+// [SECTION] UpdateTouchScroll
+// [SECTION] The overscroll (ApplyTouchOverscroll)
+// [SECTION] Let go, release (the pinch)
+// [SECTION] The scroll bar held by a finger
+// [SECTION] The widgets that take the drags
+
+*/
+
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
@@ -7,6 +22,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include <math.h>  // expf
 
 
 // The swipe, and the delayed press of the mobile toolkits, as a layer above the backends and below the widgets.
@@ -38,20 +54,24 @@ namespace ImGuiTouch
 {
 namespace
 {
+    //-----------------------------------------------------------------------------
+    // [SECTION] Tunables and helpers
+    //-----------------------------------------------------------------------------
+
     // Tunables. The slop is in font sizes, so that it follows the DPI and the font scale.
     // A press that moved less than the slop is a tap, not a swipe: a mouse's, and a finger's (it jitters more, and is
     // a finger wide)
     constexpr float kSlopFontSizes = 0.5f;
-    constexpr float kSlopFontSizesTouch = 1.f;
+    constexpr float kSlopFontSizesTouch = 1.0f;
     constexpr float kHoldRippleSeconds = 0.35f;  // the ring drawn around the finger when the hold hands it the press
     // Two taps closer than this in time and in distance are a double click (ImGui's 0.3 s and 6 px suit a mouse)
     constexpr float kDoubleTapSeconds = 0.4f;
     constexpr float kDoubleTapFontSizes = 1.5f;
     constexpr float kLongPressArcDelay = 0.15f;  // s: the long press's arc shows after this, so that a tap does not
                                                  // flash it
-    constexpr float kLongPressRingRadius = 3.f;  // font sizes: the long press's ring, past a fingertip
-    constexpr float kInertiaDecay = 2.f;         // speed *= exp(-decay * dt) after the release (iOS: 0.998 per ms)
-    constexpr float kInertiaMinSpeedEm = 3.f;    // font sizes per second: below this, a release starts no inertia, and
+    constexpr float kLongPressRingRadius = 3.0f;  // font sizes: the long press's ring, past a fingertip
+    constexpr float kInertiaDecay = 2.0f;         // speed *= exp(-decay * dt) after the release (iOS: 0.998 per ms)
+    constexpr float kInertiaMinSpeedEm = 3.0f;    // font sizes per second: below this, a release starts no inertia, and
                                                  // the inertia ends
     constexpr float kFlickWindow = 0.05f;        // s: the lift speed is the finger's motion over this long before the
                                                  // lift
@@ -62,14 +82,15 @@ namespace
     constexpr float kHeldScrollbarFontSizes = 0.8f;  // a bar held by a finger widens to this, over the content (iOS
                                                      // too)
     constexpr float kHeldScrollbarGrowSeconds = 0.15f;
-    constexpr float kBounceOmega = 12.f;  // 1/s: the content past its end springs back as a critically damped spring
+    constexpr float kBounceOmega = 12.0f;  // 1/s: the content past its end springs back as a critically damped spring
                                           // (settled in about 0.4 s)
 
 
     using Sample = ImGuiTouchScrollSample;
     using State = ImGuiTouchScrollState;
 
-    ImGuiID SentinelId() { return ImHashStr("##ImGuiTouch_Scroll"); }
+    const ImGuiID kSentinelId = ImHashStr("##ImGuiTouch_Scroll");  // the active id the layer holds during a press
+    ImGuiID SentinelId() { return kSentinelId; }
 
     float Slop(const ImGuiContext& g)
     {
@@ -89,10 +110,10 @@ namespace
     {
         ImGuiContext& g = *GImGui;
         float t = (float)(g.Time - s.rippleTime) / kHoldRippleSeconds;
-        if (t < 0.f || t > 1.f || !ImGui::IsMousePosValid(&s.ripplePos))
+        if (t < 0.0f || t > 1.0f || !ImGui::IsMousePosValid(&s.ripplePos))
             return;
-        float radius = g.FontSize * (2.f + 1.5f * t);  // from past a fingertip
-        ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, 0.9f * (1.f - t));
+        float radius = g.FontSize * (2.0f + 1.5f * t);  // from past a fingertip
+        ImU32 col = ImGui::GetColorU32(ImGuiCol_Text, 0.9f * (1.0f - t));
         ForegroundDrawList()->AddCircle(s.ripplePos, radius, col, 0, g.FontSize * 0.25f);
     }
 
@@ -114,11 +135,11 @@ namespace
         // The arc shows after a short delay: a tap does not flash it
         const float longPress = ImMax(GetTouchContext().Config.LongPressSeconds, kLongPressArcDelay + 0.01f);
         float t = ((float)g.Time - s.pressTime - kLongPressArcDelay) / (longPress - kLongPressArcDelay);
-        if (t <= 0.f)
+        if (t <= 0.0f)
             return;
         draw_list->AddCircle(g.IO.MousePos, radius, ImGui::GetColorU32(ImGuiCol_Text, 0.08f), 0, thickness);
         float a0 = -IM_PI * 0.5f;
-        draw_list->PathArcTo(g.IO.MousePos, radius, a0, a0 + 2.f * IM_PI * ImMin(t, 1.f));
+        draw_list->PathArcTo(g.IO.MousePos, radius, a0, a0 + 2.0f * IM_PI * ImMin(t, 1.0f));
         draw_list->PathStroke(ImGui::GetColorU32(ImGuiCol_Text, 0.3f), thickness);
     }
 
@@ -141,7 +162,7 @@ namespace
     {
         for (; w->Flags & ImGuiWindowFlags_ChildWindow; w = w->ParentWindow)
         {
-            bool canScroll = (axis == ImGuiAxis_X) ? (w->ScrollMax.x != 0.f) : (w->ScrollMax.y != 0.f);
+            bool canScroll = (axis == ImGuiAxis_X) ? (w->ScrollMax.x != 0.0f) : (w->ScrollMax.y != 0.0f);
             if (canScroll && ScrollsWithPointer(w))
                 break;
         }
@@ -176,7 +197,7 @@ namespace
     {
         for (;; w = w->ParentWindow)
         {
-            bool canScroll = (w->ScrollMax.x != 0.f || w->ScrollMax.y != 0.f) && ScrollsWithPointer(w);
+            bool canScroll = (w->ScrollMax.x != 0.0f || w->ScrollMax.y != 0.0f) && ScrollsWithPointer(w);
             if (canScroll)
                 return true;
             if (!(w->Flags & ImGuiWindowFlags_ChildWindow))
@@ -190,23 +211,23 @@ namespace
     float ScrollBy(ImGuiWindow* w, ImGuiAxis axis, float motion)
     {
         float scroll = w->Scroll[axis], scrollMax = w->ScrollMax[axis];
-        float room = (motion > 0.f) ? scroll : scrollMax - scroll;  // how far the content can still go that way
+        float room = (motion > 0.0f) ? scroll : scrollMax - scroll;  // how far the content can still go that way
         float absorbed = ImMin(ImFabs(motion), room);
         if (axis == ImGuiAxis_X)
             ImGui::SetScrollX(w, scroll - motion);
         else
             ImGui::SetScrollY(w, scroll - motion);
-        return motion - ((motion > 0.f) ? absorbed : -absorbed);
+        return motion - ((motion > 0.0f) ? absorbed : -absorbed);
     }
 
     // The rubber band of iOS: the content follows a finger past the end, by less and less, never past the window
     float RubberBand(float pull, const ImGuiWindow* w, ImGuiAxis axis)
     {
         float size = (axis == ImGuiAxis_X) ? w->InnerRect.GetWidth() : w->InnerRect.GetHeight();
-        if (pull == 0.f || size <= 0.f)
-            return 0.f;
-        float d = (1.f - 1.f / (ImFabs(pull) * kRubberBandResistance / size + 1.f)) * size;
-        return (pull > 0.f) ? d : -d;
+        if (pull == 0.0f || size <= 0.0f)
+            return 0.0f;
+        float d = (1.0f - 1.0f / (ImFabs(pull) * kRubberBandResistance / size + 1.0f)) * size;
+        return (pull > 0.0f) ? d : -d;
     }
 
     void AddSample(State& s, float time, ImVec2 pos)
@@ -222,7 +243,7 @@ namespace
     ImVec2 LiftSpeed(const State& s, float now, ImVec2 pos)
     {
         if (!ImGui::IsMousePosValid(&pos))  // a backend that lost the pointer before the release: no fling from it
-            return ImVec2(0.f, 0.f);
+            return ImVec2(0.0f, 0.0f);
         const Sample* oldest = nullptr;
         for (int i = 0; i < s.nbSamples; ++i)
         {
@@ -234,8 +255,8 @@ namespace
             for (int i = 0; i < s.nbSamples; ++i)
                 if (oldest == nullptr || s.samples[i].time < oldest->time)
                     oldest = &s.samples[i];
-        float span = oldest ? now - oldest->time : 0.f;
-        return (span > 0.f) ? (pos - oldest->pos) / span : ImVec2(0.f, 0.f);
+        float span = oldest ? now - oldest->time : 0.0f;
+        return (span > 0.0f) ? (pos - oldest->pos) / span : ImVec2(0.0f, 0.0f);
     }
 
     void EndPress(State& s)
@@ -243,7 +264,7 @@ namespace
         s.owning = false;
         s.swiping = false;
         s.parked = false;
-        s.pull = 0.f;  // a content pulled past its end springs back
+        s.pull = 0.0f;  // a content pulled past its end springs back
     }
 
     // A replayed event: AddedByTestEngine means "not from the backend". The Test Engine, when it drives the app, erases
@@ -316,6 +337,10 @@ namespace
 
 namespace
 {
+    //-----------------------------------------------------------------------------
+    // [SECTION] The phases of a frame
+    //-----------------------------------------------------------------------------
+
     // Thin bars on a touch screen: indicators, not controls. At each frame, before any window: a theme applied later,
     // or a pinch (the font size), would change them. The style's own values are kept, and put back when the bars
     // stop being thin; values that differ from the ones written last come from the app (a theme): they are its own.
@@ -326,7 +351,7 @@ namespace
         ImGuiIO& io = g.IO;
         if (io.MouseSource == ImGuiMouseSource_TouchScreen)
             s.mouseInUse = false;
-        else if (ImGui::IsMousePosValid() && (io.MouseDelta.x != 0.f || io.MouseDelta.y != 0.f || io.MouseDown[0]))
+        else if (ImGui::IsMousePosValid() && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f || io.MouseDown[0]))
             s.mouseInUse = true;
         s.thinScrollbars = thinScrollbars && (io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) && !s.mouseInUse;
         const bool styleChanged = s.barsWritten && (g.Style.ScrollbarSize != s.writtenBarSize
@@ -338,7 +363,7 @@ namespace
                 s.themeBarSize = g.Style.ScrollbarSize;
                 s.themeBarRounding = g.Style.ScrollbarRounding;
             }
-            g.Style.ScrollbarSize = ImMax(1.f, ImFloor(g.FontSize * kThinScrollbarFontSizes));
+            g.Style.ScrollbarSize = ImMax(1.0f, ImFloor(g.FontSize * kThinScrollbarFontSizes));
             g.Style.ScrollbarRounding = g.Style.ScrollbarSize;  // round ends
             s.writtenBarSize = g.Style.ScrollbarSize;
             s.writtenBarRounding = g.Style.ScrollbarRounding;
@@ -367,8 +392,8 @@ namespace
             s.replayedPresses--;
         else
         {
-            s.inertia = ImVec2(0.f, 0.f);
-            s.overscroll = s.overscrollSpeed = 0.f;  // a bounce ends at once: the widgets are where they are drawn
+            s.inertia = ImVec2(0.0f, 0.0f);
+            s.overscroll = s.overscrollSpeed = 0.0f;  // a bounce ends at once: the widgets are where they are drawn
             s.pressTime = (float)g.Time;
             s.pressPos = io.MousePos;
             ImGuiWindow* w = g.HoveredWindow;
@@ -408,10 +433,10 @@ namespace
         ImGui::ClearActiveID();
         ImVec2 speed = LiftSpeed(s, (float)g.Time, io.MousePos);
         const float minSpeed = kInertiaMinSpeedEm * g.FontSize;
-        bool flick = s.swiping && s.pull == 0.f && ImLengthSqr(speed) > minSpeed * minSpeed;  // not from past the end
+        bool flick = s.swiping && s.pull == 0.0f && ImLengthSqr(speed) > minSpeed * minSpeed;  // not from past the end
         if (!s.swiping && !s.parked)
             ReplayPress(io, s, false);
-        s.inertia = flick ? speed : ImVec2(0.f, 0.f);
+        s.inertia = flick ? speed : ImVec2(0.0f, 0.0f);
         EndPress(s);
         s.watchingLongPress = s.longPressArmed = false;
     }
@@ -467,7 +492,8 @@ namespace
             {
                 s.axis = SwipeAxis(fromPress);
                 ImGuiWindow* target = ScrollTarget(s.window, s.axis);
-                bool canScroll = (s.axis == ImGuiAxis_X) ? (target->ScrollMax.x != 0.f) : (target->ScrollMax.y != 0.f);
+                bool canScroll =
+                    (s.axis == ImGuiAxis_X) ? (target->ScrollMax.x != 0.0f) : (target->ScrollMax.y != 0.0f);
                 if (canScroll && s.axis != s.takerAxis)
                 {
                     s.swiping = true;
@@ -497,17 +523,17 @@ namespace
         if (s.swiping)
         {
             float motion = delta[s.axis];
-            if (s.pull * motion < 0.f)  // the finger comes back: the rubber band gives way before the content scrolls
+            if (s.pull * motion < 0.0f)  // the finger comes back: the rubber band gives way before the content scrolls
             {
                 float left = s.pull + motion;
-                bool stillPulled = (left * s.pull > 0.f);
-                s.pull = stillPulled ? left : 0.f;
-                motion = stillPulled ? 0.f : left;
+                bool stillPulled = (left * s.pull > 0.0f);
+                s.pull = stillPulled ? left : 0.0f;
+                motion = stillPulled ? 0.0f : left;
             }
-            if (motion != 0.f)
+            if (motion != 0.0f)
                 s.pull += ScrollBy(s.window, s.axis, motion);
             s.overscroll = RubberBand(s.pull, s.window, s.axis);
-            s.overscrollSpeed = 0.f;
+            s.overscrollSpeed = 0.0f;
         }
     }
 
@@ -515,36 +541,40 @@ namespace
     void Coast(State& s, float dt)
     {
         ImGuiContext& g = *GImGui;
-        if (!(s.inertia.x != 0.f || s.inertia.y != 0.f))
+        if (!(s.inertia.x != 0.0f || s.inertia.y != 0.0f))
             return;
         float speed = s.inertia[s.axis];
         float past = ScrollBy(s.window, s.axis, speed * dt);
         s.inertia = s.inertia * expf(-kInertiaDecay * dt);
         const float minSpeed = kInertiaMinSpeedEm * g.FontSize;
-        if (past != 0.f)  // the end: the content overshoots at the speed it had, then springs back
+        if (past != 0.0f)  // the end: the content overshoots at the speed it had, then springs back
         {
             s.overscroll = past;
             s.overscrollSpeed = speed;
-            s.inertia = ImVec2(0.f, 0.f);
+            s.inertia = ImVec2(0.0f, 0.0f);
         }
         else if (ImLengthSqr(s.inertia) < minSpeed * minSpeed)
-            s.inertia = ImVec2(0.f, 0.f);
+            s.inertia = ImVec2(0.0f, 0.0f);
     }
 
     // The content past its end springs back, unless a finger holds it there. The step is bounded: a long frame
     // would make the integration overshoot
     void Bounce(State& s, float dt)
     {
-        if (!(s.pull == 0.f && (s.overscroll != 0.f || s.overscrollSpeed != 0.f)))
+        if (!(s.pull == 0.0f && (s.overscroll != 0.0f || s.overscrollSpeed != 0.0f)))
             return;
-        float step = ImMin(dt, 1.f / 30.f);
+        float step = ImMin(dt, 1.0f / 30.0f);
         s.overscrollSpeed +=
-            (-2.f * kBounceOmega * s.overscrollSpeed - kBounceOmega * kBounceOmega * s.overscroll) * step;
+            (-2.0f * kBounceOmega * s.overscrollSpeed - kBounceOmega * kBounceOmega * s.overscroll) * step;
         s.overscroll += s.overscrollSpeed * step;
         if (ImFabs(s.overscroll) < 0.5f && ImFabs(s.overscrollSpeed) < kBounceOmega)
-            s.overscroll = s.overscrollSpeed = 0.f;
+            s.overscroll = s.overscrollSpeed = 0.0f;
     }
 }  // namespace
+
+//-----------------------------------------------------------------------------
+// [SECTION] UpdateTouchScroll
+//-----------------------------------------------------------------------------
 
 void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bool thinScrollbars)
 {
@@ -569,12 +599,12 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
         if (s.owning && g.ActiveId == id)
             ImGui::ClearActiveID();
         EndPress(s);
-        s.inertia = ImVec2(0.f, 0.f);
-        s.overscroll = s.overscrollSpeed = 0.f;
+        s.inertia = ImVec2(0.0f, 0.0f);
+        s.overscroll = s.overscrollSpeed = 0.0f;
         s.watchingLongPress = s.longPressArmed = false;
         return;
     }
-    const float dt = (io.DeltaTime > 0.f) ? io.DeltaTime : 1.f / 60.f;
+    const float dt = (io.DeltaTime > 0.0f) ? io.DeltaTime : 1.0f / 60.0f;
 
     // The phases, in the order the gesture goes through them in a frame; each one knows whether it applies
     OnPress(s, id, longPressIsRightClick);
@@ -599,10 +629,14 @@ void UpdateTouchScroll(ImGuiTouchScrollMode mode, bool longPressIsRightClick, bo
     // The inertia, the bounce and the ripple move without input events: the app does not idle meanwhile
     bool rippling = g.Time - s.rippleTime < kHoldRippleSeconds;
     // The long press's arc fills while the finger stays still, with no input event either
-    if (s.inertia.x != 0.f || s.inertia.y != 0.f || s.overscroll != 0.f || s.overscrollSpeed != 0.f || rippling
+    if (s.inertia.x != 0.0f || s.inertia.y != 0.0f || s.overscroll != 0.0f || s.overscrollSpeed != 0.0f || rippling
         || (s.watchingLongPress && !s.longPressArmed))
         RequestAnimation();
 }
+
+//-----------------------------------------------------------------------------
+// [SECTION] The overscroll (ApplyTouchOverscroll)
+//-----------------------------------------------------------------------------
 
 namespace
 {
@@ -645,9 +679,9 @@ void ApplyTouchOverscroll()
 {
     State& s = GetTouchContext().Scroll;
     ImGuiWindow* w = s.window;
-    if (s.overscroll == 0.f || w == nullptr || s.context != GImGui || !w->Active)
+    if (s.overscroll == 0.0f || w == nullptr || s.context != GImGui || !w->Active)
         return;
-    ImVec2 offset = (s.axis == ImGuiAxis_X) ? ImVec2(s.overscroll, 0.f) : ImVec2(0.f, s.overscroll);
+    ImVec2 offset = (s.axis == ImGuiAxis_X) ? ImVec2(s.overscroll, 0.0f) : ImVec2(0.0f, s.overscroll);
     const ImRect clip = w->InnerClipRect;
     // The window's decorations are clipped to its outer rect, its content to the inner rect: the content starts at
     // the first command clipped inside it
@@ -666,13 +700,17 @@ void ApplyTouchOverscroll()
     TranslateChildren(w, offset, clip);
 }
 
+//-----------------------------------------------------------------------------
+// [SECTION] Let go, release (the pinch)
+//-----------------------------------------------------------------------------
+
 bool TouchScrollLetGo(bool evenAWidget)
 {
     ImGuiContext& g = *GImGui;
     State& s = GetTouchContext().Scroll;
     const ImGuiID id = SentinelId();
-    s.inertia = ImVec2(0.f, 0.f);
-    s.pull = 0.f;
+    s.inertia = ImVec2(0.0f, 0.0f);
+    s.pull = 0.0f;
     if (s.owning)
     {
         s.swiping = false;
@@ -694,7 +732,7 @@ bool TouchScrollRelease(bool evenAWidget)
     ImGuiContext& g = *GImGui;
     State& s = GetTouchContext().Scroll;
     const ImGuiID id = SentinelId();
-    s.inertia = ImVec2(0.f, 0.f);
+    s.inertia = ImVec2(0.0f, 0.0f);
     s.watchingLongPress = s.longPressArmed = false;
     if (s.owning)
     {
@@ -710,6 +748,10 @@ bool TouchScrollRelease(bool evenAWidget)
     ImGui::ClearActiveID();
     return true;
 }
+
+//-----------------------------------------------------------------------------
+// [SECTION] The scroll bar held by a finger
+//-----------------------------------------------------------------------------
 
 // A thin scroll bar held by a finger (the hold handed it the press) widens over the content, as on iOS: its thumb is
 // drawn again, wider, where ImGui::ScrollbarEx() placed it. The bar itself keeps its width: ImGui reserves it in the
@@ -744,18 +786,18 @@ void DrawTouchScrollbarGrab()
     bb.Expand(-IM_TRUNC(ImMin(style.ScrollbarPadding, ImMin(bb.GetWidth(), bb.GetHeight()) * 0.5f)));
     const float barLength = (axis == ImGuiAxis_Y) ? bb.GetHeight() : bb.GetWidth();
     const float visible = IM_TRUNC(w->InnerRect.Max[axis] - w->InnerRect.Min[axis]);
-    const float contents = IM_TRUNC(w->ContentSize[axis] + w->WindowPadding[axis] * 2.f);
-    const float total = ImMax(ImMax(contents, visible), 1.f);
+    const float contents = IM_TRUNC(w->ContentSize[axis] + w->WindowPadding[axis] * 2.0f);
+    const float total = ImMax(ImMax(contents, visible), 1.0f);
     const float thumbLength =
         (float)(int)ImClamp(barLength * visible / total, ImMin(barLength, style.GrabMinSize), barLength);
-    const float scrollRatio = ImSaturate(IM_TRUNC(w->Scroll[axis]) / ImMax(1.f, contents - visible));
+    const float scrollRatio = ImSaturate(IM_TRUNC(w->Scroll[axis]) / ImMax(1.0f, contents - visible));
     const float thumbStart = bb.Min[axis] + scrollRatio * (barLength - thumbLength);
 
     // Wider, toward the content, growing for a moment. A few widths long at least (the thumb of a long list is short:
     // it would be a dot), around ImGui's thumb
     const float t = ImSaturate(((float)g.Time - s.heldBarTime) / kHeldScrollbarGrowSeconds);
     const float thin = (axis == ImGuiAxis_Y) ? bb.GetWidth() : bb.GetHeight();
-    const float width = ImLerp(thin, g.FontSize * kHeldScrollbarFontSizes, t * (2.f - t));  // eased out
+    const float width = ImLerp(thin, g.FontSize * kHeldScrollbarFontSizes, t * (2.0f - t));  // eased out
     const float length = ImMin(ImMax(thumbLength, width * 2.5f), barLength);
     const float start = ImClamp(thumbStart + (thumbLength - length) * 0.5f, bb.Min[axis], bb.Max[axis] - length);
     ImRect thumb = (axis == ImGuiAxis_Y) ? ImRect(bb.Max.x - width, start, bb.Max.x, start + length)
@@ -764,14 +806,18 @@ void DrawTouchScrollbarGrab()
     // Opaque (the theme's color over the window's background): the content and the thin thumb do not show through
     ImVec4 color = ImLerp(style.Colors[ImGuiCol_WindowBg], style.Colors[ImGuiCol_ScrollbarGrabActive],
                           style.Colors[ImGuiCol_ScrollbarGrabActive].w);
-    color.w = 1.f;
+    color.w = 1.0f;
     ImDrawList* drawList = ImGui::GetForegroundDrawList(w->Viewport);
     drawList->PushClipRect(w->Rect().Min, w->Rect().Max);
     drawList->AddRectFilled(thumb.Min, thumb.Max, ImGui::GetColorU32(color), width * 0.5f);
     drawList->PopClipRect();
-    if (t < 1.f)
+    if (t < 1.0f)
         RequestAnimation();
 }
+
+//-----------------------------------------------------------------------------
+// [SECTION] The widgets that take the drags
+//-----------------------------------------------------------------------------
 
 // The widget just drawn: its visible part, noted for the press of the next frame. Nothing when the layer did not run
 // this frame (ImGuiTouch::Setup() not called): the notes would pile up, never read.
@@ -787,7 +833,7 @@ void AddDragTaker(const ImRect& itemRect, bool longPressIsRightClick, ImGuiAxis 
     ImGuiWindow* window = g.CurrentWindow;
     ImRect rect = itemRect;
     rect.ClipWith(window->ClipRect);
-    if (rect.GetWidth() > 0.f && rect.GetHeight() > 0.f)
+    if (rect.GetWidth() > 0.0f && rect.GetHeight() > 0.0f)
     {
         State::DragTaker taker = {window->ID, rect, longPressIsRightClick, axis};
         s.takers.push_back(taker);

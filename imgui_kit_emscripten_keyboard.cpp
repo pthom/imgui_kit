@@ -568,11 +568,11 @@ static void UpdateKeyboard()
     if (!keyboardShown)
         sscanf(poll, "|%d|%d", &dropTap, &pending);
     // The kit keeps the caret in view from these insets (imgui_kit_touch_keyboard.cpp)
-    SetKeyboardInsets(keyboardShown ? ImGuiTouchKeyboardInsets{ImMax(0.f, (float)visibleTop),
-                                                                ImMax(0.f, io.DisplaySize.y - (float)visibleBottom)}
+    SetKeyboardInsets(keyboardShown ? ImGuiTouchKeyboardInsets{ImMax(0.0f, (float)visibleTop),
+                                                                ImMax(0.0f, io.DisplaySize.y - (float)visibleBottom)}
                                     : ImGuiTouchKeyboardInsets{});
     if (dropTap != 0)
-        DropClicks(g, b.DroppedPress, true, 0.f);
+        DropClicks(g, b.DroppedPress, true, 0.0f);
     else if (keyboardShown)
         DropClicks(g, b.DroppedPress, false, (float)visibleBottom);
 

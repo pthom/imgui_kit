@@ -75,7 +75,7 @@ struct Bench
 
     void Frame()
     {
-        ImGuiTouch::PinchBeforeNewFrame(*GImGui);  // as the hooks do, before ImGui::NewFrame()
+        ImGuiTouch::PinchBeforeNewFrame();  // as the hooks do, before ImGui::NewFrame()
         ImGui_ImplNull_NewFrame();
         ImGui::NewFrame();
         // As the hooks do: the layer runs before any widget (it acts on the frame's input before the widgets see it)

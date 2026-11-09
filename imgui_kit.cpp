@@ -24,9 +24,9 @@ float EmSize()
     return ImGui::GetFontSize();
 }
 
-float EmSize(float nb_lines)
+float EmSize(float lines)
 {
-    return EmSize() * nb_lines;
+    return EmSize() * lines;
 }
 
 ImVec2 EmToVec2(float x, float y)

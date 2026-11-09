@@ -87,10 +87,10 @@ void UpdateWheelSession(bool enabled)
         const float dx = io.MousePos.x - s.refMousePos.x, dy = io.MousePos.y - s.refMousePos.y;
         const bool moved = ImGui::IsMousePosValid()
                            && dx * dx + dy * dy > io.MouseDragThreshold * io.MouseDragThreshold;
-        if (s.timer <= 0.f || moved)
+        if (s.timer <= 0.0f || moved)
             s.active = false;
     }
-    if (io.MouseWheel == 0.f)
+    if (io.MouseWheel == 0.0f)
         return;
     if (!s.active)
     {
@@ -135,7 +135,7 @@ void UpdateWheelSession(bool enabled)
         ScrollByWheel(s.window, io.MouseWheel);
         s.scrolled = true;
     }
-    io.MouseWheel = 0.f;
+    io.MouseWheel = 0.0f;
 }
 
 // Installs the two steps once, in the current context (their owner tells); a later call changes `enabled`

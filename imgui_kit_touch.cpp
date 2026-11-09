@@ -106,7 +106,7 @@ void Setup(const ImGuiTouchConfig& config)
     AddHook(ctx, kTouchHooksOwner, ImGuiContextHookType_NewFramePre,
             [](ImGuiContext* g, ImGuiContextHook*) {
                 ApplySimulatedTouch(*g, Ctx());
-                PinchBeforeNewFrame(*g);
+                PinchBeforeNewFrame();
             });
     AddHook(ctx, kTouchHooksOwner, ImGuiContextHookType_NewFramePost, [](ImGuiContext*, ImGuiContextHook*) {
         ImGuiTouchContext& tc = Ctx();

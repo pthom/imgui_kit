@@ -1,4 +1,16 @@
 // imgui_kit: the pinch of a touch screen (ImGuiTouch)
+// https://github.com/pthom/imgui_kit (MIT license)
+
+/*
+
+Index of this file:
+// [SECTION] Helpers: the events, the takers
+// [SECTION] The claims (ItemPinch, the adapters)
+// [SECTION] The fingers (AddFingerEvent)
+// [SECTION] UpdateTouchPinch
+
+*/
+
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
@@ -12,6 +24,10 @@ namespace ImGuiTouch
 {
 namespace
 {
+    //-----------------------------------------------------------------------------
+    // [SECTION] Helpers: the events, the takers
+    //-----------------------------------------------------------------------------
+
     constexpr float kPinchThreshold = 0.12f;  // the distance between the fingers changed by this much: a pinch
     constexpr float kDragSlopFontSizes = 0.6f;  // the fingers' middle moved this far: a drag (the two apart)
 
@@ -53,7 +69,7 @@ namespace
         ImGuiMouseSource source = io.MouseSource;
         io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
         int before = g.InputEventsQueue.Size;
-        io.AddMouseWheelEvent(0.f, notches);
+        io.AddMouseWheelEvent(0.0f, notches);
         MarkLastEvent(g, before);
         io.AddMouseSourceEvent(source);
     }
@@ -80,7 +96,7 @@ namespace
             return nullptr;
         ImRect visible = rect;
         visible.ClipWith(g.CurrentWindow->ClipRect);
-        if (visible.GetWidth() <= 0.f || visible.GetHeight() <= 0.f)
+        if (visible.GetWidth() <= 0.0f || visible.GetHeight() <= 0.0f)
             return nullptr;
         State& s = touch->Pinch;
         for (Taker& t : s.takers)
@@ -99,7 +115,7 @@ namespace
 
     void ClaimWheel(ImGuiID id, const ImRect& rect, float wheelZoomFactor, ImGuiTouchPinchDelivery delivery)
     {
-        IM_ASSERT(wheelZoomFactor > 0.f && wheelZoomFactor != 1.f && "a zoom per wheel unit, e.g. 1.1 for +10%");
+        IM_ASSERT(wheelZoomFactor > 0.0f && wheelZoomFactor != 1.0f && "a zoom per wheel unit, e.g. 1.1 for +10%");
         if (Taker* t = Claim(id, rect))
         {
             IM_ASSERT(!t->data && "a widget gets the pinch's data (ItemPinch) or wheel events, not both");
@@ -138,8 +154,8 @@ namespace
         {
             s.data.Active = s.data.Started = false;
             s.data.Ended = true;
-            s.data.CenterDelta = ImVec2(0.f, 0.f);
-            s.data.ScaleDelta = 1.f;
+            s.data.CenterDelta = ImVec2(0.0f, 0.0f);
+            s.data.ScaleDelta = 1.0f;
             s.endedId = s.taker.id;
             s.endedFrame = g.FrameCount;
         }
@@ -158,6 +174,10 @@ namespace
         return (active || ended) ? s.data : ImGuiTouchPinch();
     }
 }  // namespace
+
+//-----------------------------------------------------------------------------
+// [SECTION] The claims (ItemPinch, the adapters)
+//-----------------------------------------------------------------------------
 
 ImGuiTouchPinch ItemPinch()
 {
@@ -196,6 +216,10 @@ void SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiM
     ClaimPan(0, ImRect(min, max), button);
 }
 
+//-----------------------------------------------------------------------------
+// [SECTION] The fingers (AddFingerEvent)
+//-----------------------------------------------------------------------------
+
 void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
 {
     State& s = GetTouchContext().Pinch;
@@ -214,8 +238,8 @@ void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
         // One of the two fingers of the gesture lifts while a third is down: the third takes its place, and the
         // scale goes on from where it was (no jump), measured from the new pair
         const bool pairChanges = (index < 2 && s.fingers.Size >= 3);
-        const float scaleBefore = (pairChanges && s.startDistance > 0.f)
-            ? s.scaleBase * Distance(s.fingers[0], s.fingers[1]) / s.startDistance : 1.f;
+        const float scaleBefore = (pairChanges && s.startDistance > 0.0f)
+            ? s.scaleBase * Distance(s.fingers[0], s.fingers[1]) / s.startDistance : 1.0f;
         s.fingers.erase(s.fingers.Data + index);
         if (pairChanges)
         {
@@ -233,7 +257,7 @@ void AddFingerEvent(int id, const ImVec2& pos, ImGuiTouchPhase phase)
         s.fingers.push_back({id, pos});
     if (!wasTwo && s.fingers.Size >= 2)  // the second finger landed: the pinch and the drag measure from here
     {
-        s.scaleBase = 1.f;
+        s.scaleBase = 1.0f;
         s.startDistance = Distance(s.fingers[0], s.fingers[1]);
         s.startCenter = Center(s.fingers[0], s.fingers[1]);
     }
@@ -256,8 +280,9 @@ void ApplyFingerCancel()
 // away from it, and stays still otherwise. A move holds the next wheel event back a frame (Dear ImGui reads a wheel
 // event queued after a move at the next frame): a mouse that followed each small move would halve the zoom's pace.
 // Events marked as the layer's or the Test Engine's are left as they are.
-void PinchBeforeNewFrame(ImGuiContext& g)
+void PinchBeforeNewFrame()
 {
+    ImGuiContext& g = *GImGui;
     ImGuiTouchContext* touch = FindTouchContext();
     if (touch == nullptr)
         return;
@@ -287,6 +312,10 @@ void PinchBeforeNewFrame(ImGuiContext& g)
         PosEvent(g.IO, center);
 }
 
+//-----------------------------------------------------------------------------
+// [SECTION] UpdateTouchPinch
+//-----------------------------------------------------------------------------
+
 void UpdateTouchPinch(bool scalesFont)
 {
     ImGuiContext& g = *GImGui;
@@ -296,14 +325,14 @@ void UpdateTouchPinch(bool scalesFont)
     s.frameCount = g.FrameCount;
     bool twoFingers = s.fingers.Size >= 2;
     // The pinch's scale (their distance over their distance at the start), the move of their middle since the start
-    float pinchScale = 1.f;
-    float distance = 0.f;
+    float pinchScale = 1.0f;
+    float distance = 0.0f;
     ImVec2 center, move;
     if (twoFingers)
     {
         distance = Distance(s.fingers[0], s.fingers[1]);
         center = Center(s.fingers[0], s.fingers[1]);
-        if (s.startDistance > 0.f)
+        if (s.startDistance > 0.0f)
             pinchScale = s.scaleBase * distance / s.startDistance;
         move = center - s.startCenter;
     }
@@ -319,7 +348,7 @@ void UpdateTouchPinch(bool scalesFont)
             // released, so that the widget is hovered (it reads the wheel then), and is not dragged by it. The widget's
             // own press (a canvas that took the first finger) is released too.
             s.taker = *taker;
-            s.notchesSent = 0.f;
+            s.notchesSent = 0.0f;
             const bool itsOwnPress = (s.taker.id != 0 && g.ActiveId == s.taker.id);
             if (!TouchScrollRelease(itsOwnPress))
             {
@@ -338,7 +367,7 @@ void UpdateTouchPinch(bool scalesFont)
     if (s.gesture == Gesture::Undecided && twoFingers)
     {
         float slop = g.FontSize * kDragSlopFontSizes;
-        if (ImFabs(pinchScale - 1.f) > kPinchThreshold)
+        if (ImFabs(pinchScale - 1.0f) > kPinchThreshold)
         {
             s.gesture = Gesture::Pinch;
             s.baseScale = ImGui::GetStyle().FontScaleMain;
@@ -395,8 +424,8 @@ void UpdateTouchPinch(bool scalesFont)
                 for (const ImGuiInputEvent& e : g.InputEventsQueue)
                     if (e.Type == ImGuiInputEventType_MouseWheel)
                         notchWaiting = true;
-                const float notch = notchWaiting ? 0.f : (missing >= 1.f) ? 1.f : (missing <= -1.f) ? -1.f : 0.f;
-                if (notch != 0.f)
+                const float notch = notchWaiting ? 0.0f : (missing >= 1.0f) ? 1.0f : (missing <= -1.0f) ? -1.0f : 0.0f;
+                if (notch != 0.0f)
                 {
                     WheelEvent(g.IO, notch);
                     s.notchesSent += notch;
@@ -427,7 +456,7 @@ void UpdateTouchPinch(bool scalesFont)
         d.Ended = false;
         d.Center = center;
         d.CenterDelta = center - s.lastCenter;
-        d.ScaleDelta = (s.lastDistance > 0.f) ? distance / s.lastDistance : 1.f;
+        d.ScaleDelta = (s.lastDistance > 0.0f) ? distance / s.lastDistance : 1.0f;
         d.Scale = pinchScale;
         d.Kind = (s.gesture == Gesture::Pinch) ? ImGuiTouchPinchKind_Pinch
                : (s.gesture == Gesture::Undecided) ? ImGuiTouchPinchKind_Undecided : ImGuiTouchPinchKind_Pan;

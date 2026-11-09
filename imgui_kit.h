@@ -13,7 +13,7 @@ Index of this file:
 // [SECTION] Widgets
 // [SECTION] Wheel session
 // [SECTION] Idling
-// [SECTION] Enums
+// [SECTION] Enums (ImGuiKit)
 // [SECTION] Touch (ImGuiTouch)
 
 */
@@ -58,9 +58,13 @@ IMGUI_API void ShowDemoContents();
 //-----------------------------------------------------------------------------
 // Sizes in multiples of the current font size, as the em unit of CSS: they follow the font,
 // so they stay right on high-DPI screens and when the user zooms the text.
-
+// Size your widgets in em rather than in bare pixels (whose size in millimeters varies with the DPI):
+//     ImGui::Button("Click", ImVec2(130, 39));                 // 130 x 39 pixels: small on a high-DPI screen
+//     ImGui::Button("Click", ImGuiKit::EmToVec2(10, 3));       // 10 em x 3 em (the same at the default font size of
+//                                                              // 13 px): the same size on every screen, it follows
+//                                                              // the font
 IMGUI_API float  EmSize();                          // The current font size, in pixels
-IMGUI_API float  EmSize(float nb_lines);            // The height of nb_lines lines of text, in pixels
+IMGUI_API float  EmSize(float lines);               // The height of this many lines of text, in pixels
 IMGUI_API ImVec2 EmToVec2(float x, float y);        // A size or a position in em, in pixels
 IMGUI_API ImVec2 EmToVec2(ImVec2 v);
 IMGUI_API ImVec2 PixelsToEm(ImVec2 pixels);         // Pixels, in em
@@ -252,14 +256,10 @@ IMGUI_API bool   ResizeHandle(const char* str_id, ImVec2* size, const ImVec2& mi
 // Call it once, after ImGui::CreateContext(); a later call changes `enabled` (false: Dear ImGui's own behavior).
 IMGUI_API void   SetupWheelSession(bool enabled = true);
 
-} // namespace ImGuiKit
-
 //-----------------------------------------------------------------------------
 // [SECTION] Idling
 //-----------------------------------------------------------------------------
 
-namespace ImGuiKit
-{
 // True while something of the kit moves on its own: a widget's animation (a segmented switch that slides), or the
 // touch layer's (ImGuiTouch::IsAnimating(): a fling, a bounce, a long press's ring). An app that sleeps when nothing
 // happens keeps drawing frames meanwhile; one that draws every frame can ignore it. With or without the touch layer.
@@ -269,7 +269,7 @@ IMGUI_API void   RequestAnimation();
 } // namespace ImGuiKit
 
 //-----------------------------------------------------------------------------
-// [SECTION] Enums
+// [SECTION] Enums (ImGuiKit)
 //-----------------------------------------------------------------------------
 
 // The symbols of IconButton()
