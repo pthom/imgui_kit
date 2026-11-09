@@ -18,7 +18,7 @@ Most of them are already available in Hello ImGui and Dear ImGui Bundle. This re
 **Try it, see its manual**
 - Try it inside the ImGui Explorer (together with code): https://pthom.github.io/imgui_explorer/?lib=imguikit
 - Try it online (no code): https://pthom.github.io/imgui_kit/
-- Phone and iOS demos: `examples/touch_demo` (GLFW, desktop and web), `examples/sdl3_touch_demo` (SDL3, desktop and iOS, the fingers from SDL) and `examples/ios_touch_demo` (Metal, iOS, UIKit's touches).
+- Phone demos: `examples/touch_demo` (GLFW, desktop and web), `examples/sdl3_touch_demo` (SDL3, desktop and iOS, the fingers from SDL), `examples/ios_touch_demo` (Metal, iOS, UIKit's touches) and `examples/android_touch_demo` (imgui_impl_android, the pointers of the motion events, the keyboard's height).
 
 
 **Context**
