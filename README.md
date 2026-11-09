@@ -122,25 +122,36 @@ The touch layer needs four things from the platform. Checked in each backend's s
 | GLFW on Linux and macOS | no: GLFW does not tell a finger from a mouse | no | no | - | not possible through GLFW: `ScrollMode_Always` lets the mouse swipe |
 | macOS (`imgui_impl_osx`) | mouse and pen | - | - | - | a Mac has no touch screen |
 
-The fingers from SDL, in the app's event loop (SDL2; SDL3 has `SDL_EVENT_FINGER_DOWN`, `_MOTION`, `_UP` and `_CANCELED`, the same fields):
+### The fingers from SDL
+
+SDL already reports every finger of a touch screen, as events of its own (SDL2: `SDL_FINGERDOWN`, `SDL_FINGERMOTION`, `SDL_FINGERUP`; SDL3: `SDL_EVENT_FINGER_DOWN`, `_MOTION`, `_UP` and `_CANCELED`), next to the mouse events it makes from the first finger. Dear ImGui's SDL backends ignore them. The app's event loop hands them to the kit, after `ImGui_ImplSDL2_ProcessEvent(&event)`:
 
 ```cpp
-// After ImGui_ImplSDL2_ProcessEvent(&event). SDL gives a finger's position as a fraction of the window; a trackpad is a
-// touch device too (an indirect one): only the screens. The first finger is also the mouse, through SDL.
 if (event.type == SDL_FINGERDOWN || event.type == SDL_FINGERMOTION || event.type == SDL_FINGERUP)
 {
     const SDL_TouchFingerEvent& finger = event.tfinger;
-    if (SDL_GetTouchDeviceType(finger.touchId) == SDL_TOUCH_DEVICE_DIRECT)
+    bool direct = (SDL_GetTouchDeviceType(finger.touchId) == SDL_TOUCH_DEVICE_DIRECT)
+                  || (finger.touchId == SDL_MOUSE_TOUCHID);
+    if (direct)
     {
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
         ImGuiTouchPhase phase = (finger.type == SDL_FINGERDOWN) ? ImGuiTouchPhase_Began
                               : (finger.type == SDL_FINGERUP) ? ImGuiTouchPhase_Ended : ImGuiTouchPhase_Moved;
-        ImGuiTouch::AddFingerEvent((int)finger.fingerId, ImVec2(finger.x * w, finger.y * h), phase);
+        int id = (int)(finger.fingerId ^ (finger.fingerId >> 32));
+        ImGuiTouch::AddFingerEvent(id, ImVec2(finger.x * w, finger.y * h), phase);
     }
 }
 ```
+
+Four details carry it:
+- *Which devices*: a trackpad is a touch device too, an indirect one (its fingers would become phantom pinches on a laptop): only `SDL_TOUCH_DEVICE_DIRECT`, the screens; and `SDL_MOUSE_TOUCHID`, the mouse made a touch device by the hint `SDL_MOUSE_TOUCH_EVENTS` (how to try it on a desktop).
+- *The coordinates*: SDL gives a finger's position as a fraction of the window (0 to 1); the kit wants the mouse's coordinates, the window's size in points, the same units as the backend's mouse events.
+- *The id*: SDL's `fingerId` is 64 bits (a pointer, on iOS); the kit's is an `int`, so the two halves are folded. Any number stable while the finger is down does.
+- *The phases*: the kit's four map one to one. `Cancelled` (SDL3's `SDL_EVENT_FINGER_CANCELED`; SDL2 has none) matters when the system takes the touch over, a notification swipe: the press ends with no click.
+
+The kit does the rest from its hooks: with two fingers down it decides pinch or pan, scales the font or feeds the widget that claimed the gesture, and parks the first finger's press (the mouse, for Dear ImGui) so that no widget is dragged by it. The whole code, for SDL3 and a desktop or iOS app: `examples/sdl3_touch_demo/main.cpp`.
 
 Hello ImGui (and Dear ImGui Bundle): in a browser, its runners call both Emscripten setups (complete). Its SDL2 runner forwards the fingers as above (the desktop, iOS and Android through SDL): the pinch works there. Its GLFW runner cannot: GLFW reports no fingers.
 
