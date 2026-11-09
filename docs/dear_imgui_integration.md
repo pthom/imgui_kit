@@ -85,6 +85,18 @@ The answer to the mouse-down point in #3379 ([2025-06-05](https://github.com/oco
 - *Scrolling and drawing*: `SetScrollX`, `SetScrollY`, `GetWindowScrollbarRect`, `GetForegroundDrawList`, `ImGuiWindow::Scroll`, `ScrollMax`, `InnerRect`, `ContentSize`.
 - *Text input (the phone's keyboard)*: `GetInputTextState`, `g.InputTextState`, `g.PlatformImeData`, `g.PlatformImeDataPrev`, `g.NavWindow`.
 
+### What the kit copies from Dear ImGui
+
+These rules are copied, not called (they are inside functions of Dear ImGui that do more). At a Dear ImGui bump, each one is checked against its source; the tests named catch a drift in the behaviour.
+
+| Where in the kit | What | From (`imgui.cpp`) | Test |
+|---|---|---|---|
+| `imgui_kit_wheel_session.cpp`, `ScrollByWheel` | the wheel's step: 5 lines of `FontRefSize`, at most 67% of the inner height | `UpdateMouseWheel` | `test_wheel_session.cpp` ("the page scrolls the zooming item under it, and keeps scrolling") |
+| `imgui_kit_wheel_session.cpp`, the lock's delay | 0.7 s | `WINDOWS_MOUSE_WHEEL_SCROLL_LOCK_TIMER` | `test_wheel_session.cpp` ("a session ends after a pause") |
+| `imgui_kit_touch_scroll.cpp`, `ScrollTarget` and `ScrollsWithPointer` | the window a wheel scrolls: the hovered one, or the first parent that can scroll that way; `NoScrollWithMouse` refuses, unless `NoMouseInputs` | `FindBestWheelingWindow` | `test_touch_scroll.cpp` ("a child scrolls itself, and its parent when it cannot scroll that way") |
+| `imgui_kit_touch_scroll.cpp`, `DrawTouchScrollbarGrab` | the thumb's position and length along the bar | `ScrollbarEx` | `test_touch_scroll.cpp` ("a thin scroll bar held by a finger widens over the content") |
+| `imgui_kit_touch_scroll.cpp`, `ReplayPress` | the double click's bookkeeping: `MouseClickedTime`, `MouseClickedPos`, `MouseClickedLastCount` | `UpdateMouseInputs` | `test_touch_scroll.cpp` ("two taps are a double click, a tap after a pause is not") |
+
 ### What Dear ImGui could offer
 
 Each item would replace a workaround in the layer:

@@ -608,8 +608,17 @@ void DemoTouch()
                          "content too, while the mouse stays a mouse.");
     ImGuiKit::Label("Pinch");
     ImGui::Checkbox("scales the font", &config.PinchScalesFont);
+    ImGuiKit::Label("Hold");
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
+    ImGui::SliderFloat("##hold", &config.HoldSeconds, 0.f, 1.f, "%.2f s");
+    ImGui::SameLine();
+    ImGuiKit::HelpMarker("A finger still for this long hands its press to the widget under it, which then gets the "
+                         "drag (a slider, a text selection). At zero, the widgets get every press at once.");
     ImGuiKit::Label("Long press");
     ImGui::Checkbox("is a right click", &config.LongPressIsRightClick);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(ImGuiKit::EmSize(8.f));
+    ImGui::SliderFloat("##long_press", &config.LongPressSeconds, 0.2f, 2.f, "after %.2f s");
     ImGuiKit::Label("Scroll bars");
     ImGui::Checkbox("thin", &config.ThinScrollbars);
     ImGuiKit::EndLabelColumn();
