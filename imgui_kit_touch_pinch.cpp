@@ -90,8 +90,7 @@ static ImGuiTouchPinchState::PinchTaker* Claim(ImGuiID id, const ImRect& rect)
     ImGuiTouchContext* touch = FindTouchContext();
     if (touch == nullptr || touch->Pinch.FrameCount != g.FrameCount)
         return nullptr;
-    ImRect visible = rect;
-    visible.ClipWith(g.CurrentWindow->ClipRect);
+    ImRect visible = ClaimRectOnScreen(rect);
     if (visible.GetWidth() <= 0.0f || visible.GetHeight() <= 0.0f)
         return nullptr;
     ImGuiTouchPinchState& s = touch->Pinch;
@@ -212,6 +211,45 @@ void SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiM
     ClaimPan(0, ImRect(min, max), button);
 }
 
+void PushClaimTransform(float scale, const ImVec2& offset)
+{
+    ImGuiTouchContext* touch = FindTouchContext();
+    if (touch == nullptr)
+        return;
+    ImGuiTouchClaimTransform t;
+    t.Scale = scale;
+    t.Offset = offset;
+    if (!touch->ClaimTransforms.empty())  // a canvas inside another: the outer one's transform applies after this one
+    {
+        const ImGuiTouchClaimTransform& outer = touch->ClaimTransforms.back();
+        t.Scale = outer.Scale * scale;
+        t.Offset = outer.Offset + offset * outer.Scale;
+    }
+    touch->ClaimTransforms.push_back(t);
+}
+
+void PopClaimTransform()
+{
+    ImGuiTouchContext* touch = FindTouchContext();
+    if (touch == nullptr)
+        return;
+    IM_ASSERT(!touch->ClaimTransforms.empty() && "PopClaimTransform() without PushClaimTransform()");
+    touch->ClaimTransforms.pop_back();
+}
+
+ImRect ClaimRectOnScreen(const ImRect& item_rect)
+{
+    ImRect rect = item_rect;
+    rect.ClipWith(GImGui->CurrentWindow->ClipRect);  // inside a canvas, both are in its coordinates
+    ImGuiTouchContext* touch = FindTouchContext();
+    if (touch != nullptr && !touch->ClaimTransforms.empty())
+    {
+        const ImGuiTouchClaimTransform& t = touch->ClaimTransforms.back();
+        rect = ImRect(rect.Min * t.Scale + t.Offset, rect.Max * t.Scale + t.Offset);
+    }
+    return rect;
+}
+
 //-----------------------------------------------------------------------------
 // [SECTION] The fingers (AddFingerEvent)
 //-----------------------------------------------------------------------------
@@ -315,6 +353,7 @@ void PinchBeforeNewFrame()
 void UpdateTouchPinch(bool scales_font)
 {
     ImGuiContext& g = *GImGui;
+    IM_ASSERT(GetTouchContext().ClaimTransforms.empty() && "PushClaimTransform() without PopClaimTransform()");
     ImGuiTouchPinchState& s = GetTouchContext().Pinch;
     s.PreviousTakers.swap(s.Takers);
     s.Takers.resize(0);

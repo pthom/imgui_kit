@@ -477,6 +477,12 @@ IMGUI_API void   SetRectPinchAsWheel(const ImVec2& min, const ImVec2& max, float
 IMGUI_API void   SetItemTwoFingerPanAsMouseDrag(ImGuiMouseButton button);
 IMGUI_API void   SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiMouseButton button);
 
+// A canvas that shows its widgets zoomed and moved (a node editor) wraps them in these, so that their claims (above,
+// and SetItemTakesDrags) are where the widgets show: on screen, local * scale + offset. Nests. The gesture's data
+// (ItemPinch) stays in screen coordinates. Nothing without the touch layer.
+IMGUI_API void   PushClaimTransform(float scale, const ImVec2& offset);
+IMGUI_API void   PopClaimTransform();
+
 // A finger on a touch screen, as the platform reports it: its id (any number the platform gives, stable while the
 // finger is down), its position (in the mouse's coordinates), and its phase. Report every finger, the first one
 // included: Dear ImGui sees only the first finger, as the mouse; these events let the kit see the others. With two

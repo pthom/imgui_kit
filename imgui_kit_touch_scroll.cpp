@@ -816,8 +816,7 @@ void AddDragTaker(const ImRect& item_rect, bool long_press_is_right_click, ImGui
     if (s.Context != &g || s.FrameCount != g.FrameCount)
         return;
     ImGuiWindow* window = g.CurrentWindow;
-    ImRect rect = item_rect;
-    rect.ClipWith(window->ClipRect);
+    ImRect rect = ClaimRectOnScreen(item_rect);
     if (rect.GetWidth() > 0.0f && rect.GetHeight() > 0.0f)
     {
         ImGuiTouchScrollState::DragTaker taker = {window->ID, rect, long_press_is_right_click, axis};

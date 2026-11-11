@@ -53,6 +53,8 @@ struct Bench
     ImGuiTouchPinchKind canvas_first_kind = -1;  // the first Kind other than Undecided
     float canvas_zoom = 1.f;
     ImVec2 canvas_wheel_pos;  // the mouse when the canvas last zoomed
+    int claim_canvases = 0;  // > 0: a rectangle (0,0)-(50,25) takes the pinch, inside 1 or 2 canvases (PushClaimTransform)
+    float claim_wheel = 0.f;  // the wheel seen while it is claimed
     ImGuiID canvas_id = 0;
     ImVec2 canvas_drag;
     ImGuiID button_id = 0;
@@ -168,6 +170,22 @@ struct Bench
                     canvas_wheel_pos = ImGui::GetIO().MousePos;
                 }
             }
+        }
+        if (claim_canvases > 0)
+        {
+            // The canvases show it at 2x: one from (100,150) on the screen; two nested, from (140,170)
+            if (claim_canvases == 1)
+                ImGuiTouch::PushClaimTransform(2.f, ImVec2(100.f, 150.f));
+            else
+            {
+                ImGuiTouch::PushClaimTransform(4.f, ImVec2(60.f, 130.f));
+                ImGuiTouch::PushClaimTransform(0.5f, ImVec2(20.f, 10.f));
+            }
+            ImGuiTouch::SetRectPinchAsWheel(ImVec2(0.f, 0.f), ImVec2(50.f, 25.f), 1.1f,
+                                            ImGuiTouchPinchDelivery_WheelNotches);
+            for (int i = 0; i < claim_canvases; ++i)
+                ImGuiTouch::PopClaimTransform();
+            claim_wheel += ImGui::GetIO().MouseWheel;
         }
         if (wide_content)
             ImGui::Dummy(ImVec2(800.f, 1.f));  // twice the window's width
@@ -1246,6 +1264,39 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
     CHECK(biggest_step < 1.08f);  // small steps: no jump at the start, no notch of 10%
     CHECK(frames_zoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
                                  // fingers' center only every half line, and a move holds the wheel back a frame
+}
+
+TEST_CASE("Touch pinch: inside a canvas (PushClaimTransform), a claim is where the canvas shows it on the screen")
+{
+    for (int canvases = 1; canvases <= 2; ++canvases)
+    {
+        CAPTURE(canvases);
+        Bench b;
+        b.claim_canvases = canvases;
+        b.Frames(3);
+        ImGui::GetStyle().FontScaleMain = 1.f;
+        const ImVec2 c = (canvases == 1) ? ImVec2(150.f, 175.f) : ImVec2(190.f, 195.f);  // the claim's center
+        b.Press(c);
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+        b.Frame();
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // a scale of 1.35: three notches of 10%
+        b.Frames(6);
+        CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+        CHECK(b.claim_wheel == doctest::Approx(3.f));
+        LiftFingers();
+        b.Release();
+
+        // On the rectangle's own coordinates, (0,0)-(50,25), nothing claims: the pinch scales the font
+        b.Press(b.lines_rect.GetCenter());
+        Fingers(ImVec2(10.f, 12.f), ImVec2(40.f, 12.f));
+        b.Frame();
+        Fingers(ImVec2(10.f, 12.f), ImVec2(55.f, 12.f));
+        b.Frames(2);
+        CHECK(ImGui::GetStyle().FontScaleMain == 1.5f);
+        LiftFingers();
+        b.Release();
+        ImGui::GetStyle().FontScaleMain = 1.f;
+    }
 }
 
 TEST_CASE("Touch scroll: a widget that takes the drags along X gets a sideways drag, even where the page scrolls "

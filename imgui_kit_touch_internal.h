@@ -121,6 +121,13 @@ struct ImGuiTouchPinchState
     int EndedFrame = -1;
 };
 
+// A canvas around its widgets (PushClaimTransform): their claims show on the screen at local * Scale + Offset
+struct ImGuiTouchClaimTransform
+{
+    float Scale = 1.0f;
+    ImVec2 Offset;
+};
+
 // While the keyboard is shown: where the caret was, so that its windows scroll only when it moves
 struct ImGuiTouchCaretView
 {
@@ -184,6 +191,7 @@ struct ImGuiTouchContext
     ImGuiTouchCaretView CaretView;
     ImGuiTouchScrollState Scroll;
     ImGuiTouchPinchState Pinch;
+    ImVector<ImGuiTouchClaimTransform> ClaimTransforms;  // the canvases around the current widget, the innermost last
     ImGuiTouchBrowserState Browser;  // SetupEmscripten(), SetupEmscriptenKeyboard()
 };
 
@@ -233,6 +241,8 @@ namespace ImGuiTouch
     // A widget that takes a finger's drags (SetItemTakesDrags, or Dear ImGui's draggable widgets
     // through ImGuiItemDragAxisCallback when the build has it); ImGuiAxis_None: all, at once
     void AddDragTaker(const ImRect& item_rect, bool long_press_is_right_click, ImGuiAxis axis);
+    // A widget's rectangle as its claims note it: clipped by its window, then on the screen (PushClaimTransform)
+    ImRect ClaimRectOnScreen(const ImRect& item_rect);
     // The content moves on its own this frame (the inertia, the bounce, an animation): IsAnimating() is true
     void RequestAnimation();
     void SetupKeepCaretInView(ImGuiContext* ctx);  // the caret kept above the keyboard (imgui_kit_touch_keyboard.cpp)
