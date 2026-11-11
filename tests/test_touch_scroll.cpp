@@ -53,6 +53,7 @@ struct Bench
     ImGuiTouchPinchKind canvas_first_kind = -1;  // the first Kind other than Undecided
     float canvas_zoom = 1.f;
     ImVec2 canvas_wheel_pos;  // the mouse when the canvas last zoomed
+    int canvas_rect_claim = 0;  // 1: the canvas's rectangle takes the pinch (SetRectPinchAsWheel); 2: with its id
     int claim_canvases = 0;  // > 0: a rectangle (0,0)-(50,25) takes the pinch, inside 1 or 2 canvases (PushClaimTransform)
     float claim_wheel = 0.f;  // the wheel seen while it is claimed
     ImGuiID canvas_id = 0;
@@ -160,6 +161,13 @@ struct Bench
             }
             if (canvas_pan_only)
                 ImGuiTouch::SetItemTwoFingerPanAsMouseDrag(canvas_pan_button);
+            if (canvas_rect_claim > 0)
+            {
+                ImGuiTouch::SetRectPinchAsWheel(canvasRect.Min, canvasRect.Max, 1.1f, ImGuiTouchPinchDelivery_WheelNotches,
+                                                canvas_rect_claim == 2 ? canvas_id : 0);
+                if (ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY) && ImGui::GetIO().MouseWheel != 0.f)
+                    canvas_zoom *= powf(1.1f, ImGui::GetIO().MouseWheel);
+            }
             if (canvas_takes_pinch)
             {
                 ImGuiTouch::SetItemPinchAsWheel(1.1f, canvas_delivery);
@@ -1205,6 +1213,32 @@ TEST_CASE("Touch pinch: two fingers that move together on a widget that takes th
     CHECK(!ImGui::GetIO().MouseDown[0]);
 }
 
+TEST_CASE("Touch pinch: when two fingers that drag a widget lift, its drag ends at their center, not at the first finger")
+{
+    Bench b;
+    b.canvas = true;
+    b.canvas_takes_pinch = true;
+    b.canvas_pan_button = ImGuiMouseButton_Left;
+    b.Frames(3);
+    const ImVec2 c = b.canvasRect.GetCenter();
+    b.Press(c);
+    Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+    b.Frames(2);
+    Fingers(c - ImVec2(20.f, 12.f), c + ImVec2(20.f, -12.f));  // the two move together: the drag starts
+    b.Frames(3);
+    Fingers(c - ImVec2(20.f, 22.f), c + ImVec2(20.f, -22.f));
+    b.Drag(ImVec2(0.f, -10.f), 2);
+    REQUIRE(ImGui::GetIO().MouseDown[0]);
+    const ImVec2 drag = b.canvas_drag;
+    LiftFingers();
+    b.MoveTo(c + ImVec2(-20.f, -22.f));  // the platform's last move, in the frame of the lift: the first finger's
+    b.Frames(2);
+    CHECK(!ImGui::GetIO().MouseDown[0]);
+    CHECK(Near(b.canvas_drag.x, drag.x, 1.f));
+    CHECK(Near(b.canvas_drag.y, drag.y, 1.f));
+    b.Release();
+}
+
 TEST_CASE("Touch pinch: while the fingers move at each frame, each wheel notch reaches the widget in a frame of its "
           "own")
 {
@@ -1264,6 +1298,31 @@ TEST_CASE("Touch pinch: a widget that reads the wheel's value gets the exact amo
     CHECK(biggest_step < 1.08f);  // small steps: no jump at the start, no notch of 10%
     CHECK(frames_zoomed >= 14);   // nearly each frame of the spread (17), not every other one: the mouse moves to the
                                  // fingers' center only every half line, and a move holds the wheel back a frame
+}
+
+TEST_CASE("Touch pinch: a rectangle claimed with an item's id takes that item's press over; without the id, the item keeps it")
+{
+    for (int with_id = 0; with_id <= 1; ++with_id)
+    {
+        CAPTURE(with_id);
+        Bench b;
+        b.canvas = true;
+        b.canvas_takes_drags = true;  // the canvas gets the first finger's press at once, and holds it
+        b.canvas_rect_claim = with_id ? 2 : 1;
+        b.Frames(3);
+        ImGui::GetStyle().FontScaleMain = 1.f;
+        const ImVec2 c = b.canvasRect.GetCenter();
+        b.Press(c);
+        CHECK(ImGui::GetActiveID() == b.canvas_id);
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(20.f, 0.f));
+        b.Frame();
+        Fingers(c - ImVec2(20.f, 0.f), c + ImVec2(34.f, 0.f));  // a scale of 1.35: three notches of 10%
+        b.Frames(6);
+        CHECK(ImGui::GetStyle().FontScaleMain == 1.f);
+        CHECK(b.canvas_zoom == doctest::Approx(with_id ? 1.331f : 1.f));
+        LiftFingers();
+        b.Release();
+    }
 }
 
 TEST_CASE("Touch pinch: inside a canvas (PushClaimTransform), a claim is where the canvas shows it on the screen")

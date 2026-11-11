@@ -231,7 +231,9 @@ static void BeforeNewFrame(ImGuiContext* ctx, ImGuiContextHook*)
     // There is no pointer between two touches: the position is invalid, as when a mouse leaves the window.
     // Otherwise the last touch keeps hovering what passes under it (the content that coasts after a fling), and
     // the GLFW backend re-adds that position at each frame (a finger triggers no mouseenter).
-    if (source == ImGuiMouseSource_TouchScreen && !pointer_down)
+    // Not while two fingers that lifted still hold their drag's button: the widget they dragged sees its release at
+    // the last position (with no position, a pan measured from the press would go back to its start).
+    if (source == ImGuiMouseSource_TouchScreen && !pointer_down && !ImGuiTouch::PinchHoldsMouseButton())
         g.IO.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
     RelayFingers(g.IO, b, p, cssWidth);
 }

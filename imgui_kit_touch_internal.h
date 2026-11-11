@@ -232,6 +232,8 @@ namespace ImGuiTouch
 
     // While a widget's pinch lasts, the mouse is the fingers' center: right before ImGui::NewFrame()
     void PinchBeforeNewFrame();
+    // Two fingers moved together hold a mouse button (their drag): released the frame after they lift
+    bool PinchHoldsMouseButton();
 
     // The current Dear ImGui context's touch state (see this file's top): created by the setups, freed with the Dear
     // ImGui context. GetTouchContext() asserts that a setup was called; FindTouchContext() returns nullptr.

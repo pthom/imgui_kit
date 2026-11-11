@@ -453,9 +453,9 @@ IMGUI_API bool   IsAnimating();
 IMGUI_API void   SetItemTakesDrags(ImGuiTouchAxis axis = ImGuiTouchAxis_Any, bool long_press_is_right_click = true);
 
 // Two fingers on a widget: by default they scale the font (a pinch) or are a right drag (moved together). A widget
-// changes that with one of these calls, right after it, at each frame (the claims of the last frame decide where the
-// fingers land). When claims nest, the smallest holding both fingers wins; the gesture stays with it until they lift.
-// Nothing without the touch layer.
+// changes that with one of these calls, right after it, at each frame, hovered or not (the claims of the last frame
+// decide where the fingers land, and there is no mouse between two touches). When claims nest, the smallest holding
+// both fingers wins; the gesture stays with it until they lift. Nothing without the touch layer.
 //
 // 1. The gesture itself (a canvas, a map): returns its data at this frame. The widget gets nothing else: no font
 //    scale, no wheel, no mouse drag. The item needs an id (an InvisibleButton, not an Image). Not with 2 or 3.
@@ -469,13 +469,19 @@ IMGUI_API ImGuiTouchPinch RectPinch(ImGuiID id, const ImVec2& min, const ImVec2&
 IMGUI_API void   SetItemPinchAsWheel(float wheel_zoom_factor,
                                      ImGuiTouchPinchDelivery delivery = ImGuiTouchPinchDelivery_WheelContinuous);
 IMGUI_API void   SetRectPinchAsWheel(const ImVec2& min, const ImVec2& max, float wheel_zoom_factor,
-                                     ImGuiTouchPinchDelivery delivery = ImGuiTouchPinchDelivery_WheelContinuous);
+                                     ImGuiTouchPinchDelivery delivery = ImGuiTouchPinchDelivery_WheelContinuous,
+                                     ImGuiID id = 0);
 //
 // 3. A widget that pans with a mouse button (a plot: left; a node editor: right): two fingers moved together on it
 //    become a drag with that button. Combines with 2. Alone, a pinch on the widget does nothing (the font keeps its
 //    size); with 2 alone, two fingers moved together are a right drag.
 IMGUI_API void   SetItemTwoFingerPanAsMouseDrag(ImGuiMouseButton button);
-IMGUI_API void   SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiMouseButton button);
+IMGUI_API void   SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiMouseButton button,
+                                                ImGuiID id = 0);
+//
+// The rectangle's id (optional): the widget's item that the first finger may hold when the second one lands (a
+// canvas's background); the gesture takes that press over, as with the item's calls. Otherwise a widget that holds the
+// press keeps it, and the two fingers do nothing.
 
 // A canvas that shows its widgets zoomed and moved (a node editor) wraps them in these, so that their claims (above,
 // and SetItemTakesDrags) are where the widgets show: on screen, local * scale + offset. Nests. The gesture's data

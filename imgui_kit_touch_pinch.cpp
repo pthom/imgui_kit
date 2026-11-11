@@ -196,9 +196,9 @@ void SetItemPinchAsWheel(float wheel_zoom_factor, ImGuiTouchPinchDelivery delive
 }
 
 void SetRectPinchAsWheel(const ImVec2& min, const ImVec2& max, float wheel_zoom_factor,
-                         ImGuiTouchPinchDelivery delivery)
+                         ImGuiTouchPinchDelivery delivery, ImGuiID id)
 {
-    ClaimWheel(0, ImRect(min, max), wheel_zoom_factor, delivery);
+    ClaimWheel(id, ImRect(min, max), wheel_zoom_factor, delivery);
 }
 
 void SetItemTwoFingerPanAsMouseDrag(ImGuiMouseButton button)
@@ -206,9 +206,16 @@ void SetItemTwoFingerPanAsMouseDrag(ImGuiMouseButton button)
     ClaimPan(GImGui->LastItemData.ID, GImGui->LastItemData.Rect, button);
 }
 
-void SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiMouseButton button)
+void SetRectTwoFingerPanAsMouseDrag(const ImVec2& min, const ImVec2& max, ImGuiMouseButton button, ImGuiID id)
 {
-    ClaimPan(0, ImRect(min, max), button);
+    ClaimPan(id, ImRect(min, max), button);
+}
+
+bool PinchHoldsMouseButton()
+{
+    ImGuiTouchContext* touch = FindTouchContext();
+    ImGuiMouseButton button;
+    return touch != nullptr && touch->Pinch.Gesture == ImGuiTouchPinchGesture_Drag && DragButton(touch->Pinch, &button);
 }
 
 void PushClaimTransform(float scale, const ImVec2& offset)
@@ -321,8 +328,23 @@ void PinchBeforeNewFrame()
     if (touch == nullptr)
         return;
     ImGuiTouchPinchState& s = touch->Pinch;
-    if (!s.HasTaker || s.Gesture == ImGuiTouchPinchGesture_None || s.Fingers.Size < 2)
+    if (!s.HasTaker || s.Gesture == ImGuiTouchPinchGesture_None)
         return;
+    if (s.Fingers.Size < 2)
+    {
+        // The fingers lifted, and their drag's button is released at the next frame: until then the mouse stays at
+        // their center, where the drag ends (the platform's last move is the first finger's)
+        if (PinchHoldsMouseButton())
+            for (int i = 0; i < g.InputEventsQueue.Size;)
+            {
+                const ImGuiInputEvent& e = g.InputEventsQueue[i];
+                if (e.Type == ImGuiInputEventType_MousePos && !e.AddedByTestEngine)
+                    g.InputEventsQueue.erase(g.InputEventsQueue.Data + i);
+                else
+                    ++i;
+            }
+        return;
+    }
     const ImVec2 center = Center(s.Fingers[0], s.Fingers[1]);
     const float tolerance = g.FontSize * 0.5f;
     const bool far = ImLengthSqr(g.IO.MousePos - center) > tolerance * tolerance;
